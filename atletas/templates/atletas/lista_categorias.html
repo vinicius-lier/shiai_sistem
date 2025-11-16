@@ -1,0 +1,76 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Lista de Categorias{% endblock %}
+
+{% block content %}
+<h1>Lista de Categorias</h1>
+
+<a href="{% url 'cadastrar_categoria' %}" class="btn">Cadastrar Nova Categoria</a>
+
+<div class="filter-box" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+    <h3 style="margin-top: 0;">Filtros</h3>
+    <form method="get" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+        <div>
+            <label for="classe">Classe:</label>
+            <select id="classe" name="classe" style="width: 150px;">
+                <option value="">Todas</option>
+                {% for classe in classes %}
+                <option value="{{ classe }}" {% if classe == classe_filtro %}selected{% endif %}>{{ classe }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div>
+            <label for="sexo">Sexo:</label>
+            <select id="sexo" name="sexo" style="width: 150px;">
+                <option value="">Todos</option>
+                <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
+                <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
+            </select>
+        </div>
+        
+        <div>
+            <label for="categoria">Categoria:</label>
+            <input type="text" id="categoria" name="categoria" value="{{ categoria_filtro }}" placeholder="Buscar categoria" style="width: 200px;">
+        </div>
+        
+        <button type="submit" class="btn">Aplicar Filtros</button>
+        <a href="{% url 'lista_categorias' %}" class="btn">Limpar</a>
+    </form>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Classe</th>
+            <th>Sexo</th>
+            <th>Categoria</th>
+            <th>Limite Mín (kg)</th>
+            <th>Limite Máx (kg)</th>
+            <th>Label</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for categoria in categorias %}
+        <tr>
+            <td>{{ categoria.classe }}</td>
+            <td>{{ categoria.get_sexo_display }}</td>
+            <td>{{ categoria.categoria_nome }}</td>
+            <td>{{ categoria.limite_min }}</td>
+            <td>
+                {% if categoria.limite_max >= 999.0 %}
+                    {{ categoria.limite_min }} kg ou mais
+                {% else %}
+                    {{ categoria.limite_max }}
+                {% endif %}
+            </td>
+            <td>{{ categoria.label }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" style="text-align: center;">Nenhuma categoria cadastrada</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

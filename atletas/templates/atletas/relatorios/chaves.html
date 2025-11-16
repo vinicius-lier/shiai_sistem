@@ -1,0 +1,25 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Relatório - Chaves{% endblock %}
+
+{% block content %}
+<h1>Relatório - Chaves</h1>
+
+{% for chave in chaves %}
+<div style="margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+    <h2>{{ chave.classe }} - {{ chave.get_sexo_display }} - {{ chave.categoria }}</h2>
+    <p><strong>Nº de Atletas:</strong> {{ chave.atletas.count }}</p>
+    <p><strong>Tipo:</strong> {{ chave.estrutura.tipo|default:"-" }}</p>
+    
+    <h3>Atletas da Chave:</h3>
+    <ul>
+        {% for atleta in chave.atletas.all %}
+        <li>{{ atleta.nome }} ({{ atleta.academia.nome }})</li>
+        {% endfor %}
+    </ul>
+</div>
+{% empty %}
+<p>Nenhuma chave gerada</p>
+{% endfor %}
+{% endblock %}
+

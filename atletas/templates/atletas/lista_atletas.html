@@ -1,0 +1,132 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Lista de Atletas{% endblock %}
+
+{% block content %}
+<h1>Lista de Atletas</h1>
+
+<a href="{% url 'cadastrar_atleta' %}" class="btn">Cadastrar Novo Atleta</a>
+<a href="{% url 'importar_atletas' %}" class="btn btn-success">Importar de Planilha</a>
+<a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}modo=imprimir" class="btn">🖨 Imprimir Filtrados</a>
+
+{% if total_encontrados > 0 %}
+    <p style="margin-top: 15px;"><strong>Total encontrado: {{ total_encontrados }} atleta(s)</strong></p>
+{% endif %}
+
+<div class="filter-box" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+    <h3 style="margin-top: 0;">Filtros</h3>
+    <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <div>
+            <label for="nome">Nome:</label>
+            <input type="text" id="nome" name="nome" value="{{ nome_filtro }}" placeholder="Buscar por nome" style="width: 100%;">
+        </div>
+        
+        <div>
+            <label for="classe">Classe:</label>
+            <select id="classe" name="classe" style="width: 100%;">
+                <option value="">Todas</option>
+                {% for classe in classes %}
+                <option value="{{ classe }}" {% if classe == classe_filtro %}selected{% endif %}>{{ classe }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div>
+            <label for="sexo">Sexo:</label>
+            <select id="sexo" name="sexo" style="width: 100%;">
+                <option value="">Todos</option>
+                <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
+                <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
+            </select>
+        </div>
+        
+        <div>
+            <label for="categoria">Categoria:</label>
+            <input type="text" id="categoria" name="categoria" value="{{ categoria_filtro }}" placeholder="Buscar categoria" style="width: 100%;">
+        </div>
+        
+        <div>
+            <label for="academia">Academia:</label>
+            <select id="academia" name="academia" style="width: 100%;">
+                <option value="">Todas</option>
+                {% for academia in academias %}
+                <option value="{{ academia.id }}" {% if academia_filtro|default:""|stringformat:"s" == academia.id|stringformat:"s" %}selected{% endif %}>{{ academia.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div>
+            <label for="status">Status:</label>
+            <select id="status" name="status" style="width: 100%;">
+                <option value="">Todos</option>
+                <option value="OK" {% if status_filtro == 'OK' %}selected{% endif %}>OK</option>
+                <option value="Eliminado Peso" {% if status_filtro == 'Eliminado Peso' %}selected{% endif %}>Eliminado por Peso</option>
+                <option value="Eliminado Indisciplina" {% if status_filtro == 'Eliminado Indisciplina' %}selected{% endif %}>Eliminado por Indisciplina</option>
+            </select>
+        </div>
+        
+        <div>
+            <label for="faixa">Faixa:</label>
+            <input type="text" id="faixa" name="faixa" value="{{ faixa_filtro }}" placeholder="Ex: Amarela, Azul..." style="width: 100%;">
+        </div>
+        
+        <div>
+            <label for="ordenar">Ordenar por:</label>
+            <select id="ordenar" name="ordenar" style="width: 100%;">
+                <option value="nome" {% if ordenacao == 'nome' %}selected{% endif %}>Nome</option>
+                <option value="classe" {% if ordenacao == 'classe' %}selected{% endif %}>Classe</option>
+                <option value="categoria_nome" {% if ordenacao == 'categoria_nome' %}selected{% endif %}>Categoria</option>
+                <option value="academia__nome" {% if ordenacao == 'academia__nome' %}selected{% endif %}>Academia</option>
+                <option value="peso_oficial" {% if ordenacao == 'peso_oficial' %}selected{% endif %}>Peso Oficial</option>
+                <option value="status" {% if ordenacao == 'status' %}selected{% endif %}>Status</option>
+            </select>
+        </div>
+        
+        <div style="display: flex; gap: 10px; align-items: end;">
+            <button type="submit" class="btn" style="flex: 1;">Aplicar Filtros</button>
+            <a href="{% url 'lista_atletas' %}" class="btn" style="flex: 1; text-align: center;">Limpar</a>
+        </div>
+    </form>
+</div>
+
+<div class="table-responsive">
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Sexo</th>
+                <th>Classe</th>
+                <th>Categoria</th>
+                <th>Faixa</th>
+                <th>Academia</th>
+                <th>Peso Oficial</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for atleta in atletas %}
+            <tr>
+                <td>{{ atleta.nome }}</td>
+                <td>{{ atleta.get_sexo_display }}</td>
+                <td>{{ atleta.classe }}</td>
+                <td>{{ atleta.categoria_ajustada|default:atleta.categoria_nome }}</td>
+                <td>{{ atleta.faixa }}</td>
+                <td>{{ atleta.academia.nome }}</td>
+                <td>{{ atleta.peso_oficial|default:"-" }} kg</td>
+                <td>
+                    {% if atleta.status == 'OK' %}
+                        <span class="status-ok">{{ atleta.status }}</span>
+                    {% else %}
+                        <span class="status-eliminado">{{ atleta.status }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" style="text-align: center;">Nenhum atleta cadastrado</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

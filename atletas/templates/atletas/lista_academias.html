@@ -1,0 +1,35 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Lista de Academias{% endblock %}
+
+{% block content %}
+<h1>Lista de Academias</h1>
+
+<a href="{% url 'cadastrar_academia' %}" class="btn">Cadastrar Nova Academia</a>
+
+<table>
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Cidade</th>
+            <th>Estado</th>
+            <th>Pontos</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for academia in academias %}
+        <tr>
+            <td>{{ academia.nome }}</td>
+            <td>{{ academia.cidade }}</td>
+            <td>{{ academia.estado }}</td>
+            <td><strong>{{ academia.pontos }}</strong></td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4" style="text-align: center;">Nenhuma academia cadastrada</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+

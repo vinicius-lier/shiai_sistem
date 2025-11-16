@@ -1,0 +1,24 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Cadastrar Academia{% endblock %}
+
+{% block content %}
+<h1>Cadastrar Academia</h1>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <label for="nome">Nome:</label>
+    <input type="text" id="nome" name="nome" required>
+    
+    <label for="cidade">Cidade:</label>
+    <input type="text" id="cidade" name="cidade" required>
+    
+    <label for="estado">Estado (UF):</label>
+    <input type="text" id="estado" name="estado" maxlength="2" required>
+    
+    <button type="submit">Cadastrar Academia</button>
+</form>
+
+<a href="{% url 'lista_academias' %}" class="btn">Voltar para Lista</a>
+{% endblock %}

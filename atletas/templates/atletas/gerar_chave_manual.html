@@ -1,0 +1,119 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Gerar Lutas Casadas{% endblock %}
+
+{% block content %}
+<h1>Gerar Lutas Casadas (Chave Manual)</h1>
+
+<p>Use esta tela para montar uma chave manual, escolhendo os atletas que irão lutar entre si. Esta chave <strong>não conta para o ranking</strong>, é apenas para lutas casadas.</p>
+
+<div class="filter-box">
+    <h3>Filtros para facilitar seleção</h3>
+    <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+        <div>
+            <label for="nome">Nome:</label>
+            <input type="text" id="nome" name="nome" value="{{ nome_filtro }}" placeholder="Buscar por nome" style="width: 100%;">
+        </div>
+        <div>
+            <label for="classe">Classe:</label>
+            <select id="classe" name="classe" style="width: 100%;">
+                <option value="">Todas</option>
+                {% for c in classes %}
+                <option value="{{ c }}" {% if c == classe_filtro %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="sexo">Sexo:</label>
+            <select id="sexo" name="sexo" style="width: 100%;">
+                <option value="">Todos</option>
+                <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
+                <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
+            </select>
+        </div>
+        <div>
+            <label for="academia">Academia:</label>
+            <select id="academia" name="academia" style="width: 100%;">
+                <option value="">Todas</option>
+                {% for acad in academias %}
+                <option value="{{ acad.id }}" {% if acad.id|stringformat:"s" == academia_filtro|stringformat:"s" %}selected{% endif %}>{{ acad.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: flex-end;">
+            <button type="submit" class="btn" style="flex: 1;">Aplicar filtros</button>
+            <a href="{% url 'gerar_chave_manual' %}" class="btn" style="flex: 1; text-align: center;">Limpar</a>
+        </div>
+    </form>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="filter-box">
+        <h3>Configuração da Chave</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+            <div>
+                <label for="nome_chave">Nome da chave:</label>
+                <input type="text" id="nome_chave" name="nome_chave" placeholder="Ex.: Lutas casadas SUB 11 Misto" style="width: 100%;">
+            </div>
+            <div>
+                <label for="classe_chave">Classe (opcional):</label>
+                <input type="text" id="classe_chave" name="classe_chave" placeholder="Ex.: SUB 11" style="width: 100%;">
+            </div>
+            <div>
+                <label for="sexo_chave">Sexo da chave:</label>
+                <select id="sexo_chave" name="sexo_chave" style="width: 100%;">
+                    <option value="M">Masculino</option>
+                    <option value="F">Feminino</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40px;">Sel.</th>
+                    <th>Nome</th>
+                    <th>Classe</th>
+                    <th>Sexo</th>
+                    <th>Categoria</th>
+                    <th>Faixa</th>
+                    <th>Academia</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for atleta in atletas %}
+                <tr>
+                    <td style="text-align: center;">
+                        <input type="checkbox" name="atletas" value="{{ atleta.id }}">
+                    </td>
+                    <td>{{ atleta.nome }}</td>
+                    <td>{{ atleta.classe }}</td>
+                    <td>{{ atleta.get_sexo_display }}</td>
+                    <td>{{ atleta.categoria_ajustada|default:atleta.categoria_nome }}</td>
+                    <td>{{ atleta.faixa }}</td>
+                    <td>{{ atleta.academia.nome }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center;">Nenhum atleta encontrado com os filtros atuais</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <p style="margin-top: 10px; font-size: 14px;">
+        Os atletas serão pareados em ordem de seleção: 1 x 2, 3 x 4, 5 x 6, etc. Se houver atleta sobrando, ele ficará em WO.
+    </p>
+
+    <button type="submit" class="btn btn-success">Gerar Lutas Casadas</button>
+    <a href="{% url 'lista_chaves' %}" class="btn">Voltar</a>
+</form>
+
+{% endblock %}
+
+

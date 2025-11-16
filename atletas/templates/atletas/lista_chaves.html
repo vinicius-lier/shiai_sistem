@@ -1,0 +1,87 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Lista de Chaves{% endblock %}
+
+{% block content %}
+<h1>Lista de Chaves</h1>
+
+<a href="{% url 'gerar_chave_view' %}" class="btn">Gerar Nova Chave</a>
+<a href="{% url 'gerar_chave_manual' %}" class="btn btn-success">Gerar Lutas Casadas (Manual)</a>
+
+{% if total_chaves %}
+    <p style="margin-top: 10px;"><strong>Total de chaves encontradas:</strong> {{ total_chaves }}</p>
+{% endif %}
+
+<div class="filter-box" style="margin: 20px 0;">
+    <h3 style="margin-top: 0;">Filtros</h3>
+    <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+        <div>
+            <label for="classe">Classe:</label>
+            <select id="classe" name="classe" style="width: 100%;">
+                <option value="">Todas</option>
+                {% for c in classes %}
+                <option value="{{ c }}" {% if c == classe_filtro %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="sexo">Sexo:</label>
+            <select id="sexo" name="sexo" style="width: 100%;">
+                <option value="">Todos</option>
+                <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
+                <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="categoria">Categoria:</label>
+            <select id="categoria" name="categoria" style="width: 100%;">
+                <option value="">Todas</option>
+                {% for cat in categorias %}
+                <option value="{{ cat }}" {% if cat == categoria_filtro %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 8px; align-items: flex-end;">
+            <button type="submit" class="btn" style="flex: 1;">Aplicar filtros</button>
+            <a href="{% url 'lista_chaves' %}" class="btn" style="flex: 1; text-align: center;">Limpar</a>
+        </div>
+    </form>
+</div>
+
+<div class="table-responsive">
+    <table>
+        <thead>
+            <tr>
+                <th>Classe</th>
+                <th>Sexo</th>
+                <th>Categoria</th>
+                <th>Nº Atletas</th>
+                <th>Tipo</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for chave in chaves %}
+            <tr>
+                <td>{{ chave.classe }}</td>
+                <td>{{ chave.get_sexo_display }}</td>
+                <td>{{ chave.categoria }}</td>
+                <td>{{ chave.atletas.count }}</td>
+                <td>{{ chave.estrutura.tipo|default:"-" }}</td>
+                <td>
+                    <a href="{% url 'detalhe_chave' chave.id %}" class="btn">Ver Detalhes</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center;">Nenhuma chave gerada</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

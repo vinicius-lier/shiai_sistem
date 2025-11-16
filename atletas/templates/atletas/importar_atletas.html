@@ -1,0 +1,70 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Importar Atletas{% endblock %}
+
+{% block content %}
+<h1>Importar Atletas de Planilha</h1>
+
+<div class="alert alert-success" style="background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 20px 0;">
+    <h3>Formato do Arquivo CSV</h3>
+    <p>O arquivo CSV deve ter as seguintes colunas (na primeira linha):</p>
+    <ul>
+        <li><strong>nome</strong> - Nome do atleta (obrigatório)</li>
+        <li><strong>ano_nasc</strong> ou <strong>Ano Nasc</strong> - Ano de nascimento (obrigatório)</li>
+        <li><strong>sexo</strong> ou <strong>Sexo</strong> - M ou F (obrigatório)</li>
+        <li><strong>faixa</strong> ou <strong>Faixa</strong> - Faixa do atleta (obrigatório)</li>
+        <li><strong>academia</strong> ou <strong>Academia</strong> - Nome da academia (obrigatório, será criada se não existir)</li>
+        <li><strong>categoria</strong> ou <strong>Categoria</strong> - Nome da categoria (obrigatório, deve existir no sistema)</li>
+        <li><strong>peso_previsto</strong> ou <strong>Peso Previsto</strong> ou <strong>peso</strong> - Peso previsto em kg (opcional)</li>
+    </ul>
+    <p><strong>Exemplo de linha:</strong></p>
+    <code style="display: block; padding: 10px; background: #f8f9fa; border-radius: 5px; margin-top: 10px;">
+        nome,ano_nasc,sexo,faixa,academia,categoria,peso_previsto<br>
+        João Silva,2010,M,Laranja,Academia Judô São Paulo,Meio Leve,45.5<br>
+        Maria Santos,2011,F,Amarela,Academia Judô Rio,Leve,38.2
+    </code>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-danger{% else %}alert-success{% endif %}" style="margin: 20px 0;">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+{% if erros %}
+    <div class="alert alert-danger" style="margin: 20px 0;">
+        <h4>Erros encontrados:</h4>
+        <ul>
+            {% for erro in erros %}
+            <li>{{ erro }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <label for="arquivo">Selecione o arquivo CSV:</label>
+    <input type="file" id="arquivo" name="arquivo" accept=".csv" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 100%; max-width: 400px; margin: 10px 0;">
+    
+    <button type="submit" class="btn" style="margin-top: 10px;">Importar Atletas</button>
+</form>
+
+<a href="{% url 'lista_atletas' %}" class="btn" style="margin-top: 10px;">Voltar para Lista</a>
+
+<div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+    <h3>Notas Importantes:</h3>
+    <ul>
+        <li>O arquivo deve estar em formato <strong>CSV</strong> (separado por vírgulas)</li>
+        <li>Use vírgula (,) como separador decimal para peso</li>
+        <li>A primeira linha deve conter os nomes das colunas</li>
+        <li>A categoria deve existir previamente no sistema e corresponder à classe calculada automaticamente pela idade</li>
+        <li>Academias serão criadas automaticamente se não existirem</li>
+        <li>O sistema calcula automaticamente a classe baseado no ano de nascimento</li>
+    </ul>
+</div>
+{% endblock %}
+

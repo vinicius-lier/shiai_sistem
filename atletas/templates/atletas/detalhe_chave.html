@@ -1,0 +1,179 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Detalhe da Chave{% endblock %}
+
+{% block extra_css %}
+<style>
+.print-only {
+    display: none;
+}
+.screen-only {
+    display: inline-block;
+}
+
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 10mm;
+    }
+
+    body {
+        background: #ffffff !important;
+        padding: 0;
+    }
+
+    nav,
+    .btn,
+    .filter-box,
+    script {
+        display: none !important;
+    }
+
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+
+    h1 {
+        margin: 0 0 10px 0;
+        border: none;
+    }
+
+    .screen-only,
+    .col-vencedor {
+        display: none !important;
+    }
+
+    .print-only {
+        display: block !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Detalhe da Chave</h1>
+<h2>{{ chave.classe }} - {{ chave.get_sexo_display }} - {{ chave.categoria }}</h2>
+
+<div style="margin: 10px 0 20px 0;" class="screen-only">
+    <button type="button" class="btn" onclick="window.print()">🖨 Imprimir chave (para anotação manual)</button>
+</div>
+
+
+<h3>Resultados</h3>
+{% if resultados %}
+    <div style="margin: 20px 0;">
+        {% if resultados|length > 0 %}
+            <p><strong>1º Lugar:</strong> {{ resultados.0.nome }} ({{ resultados.0.academia.nome }})</p>
+        {% endif %}
+        {% if resultados|length > 1 %}
+            <p><strong>2º Lugar:</strong> {{ resultados.1.nome }} ({{ resultados.1.academia.nome }})</p>
+        {% endif %}
+        {% if resultados|length > 2 %}
+            <p><strong>3º Lugares:</strong>
+                {% for atleta in resultados|slice:"2:" %}
+                    {{ atleta.nome }} ({{ atleta.academia.nome }}){% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+        {% endif %}
+    </div>
+{% else %}
+    <p>Chave ainda não finalizada</p>
+{% endif %}
+
+<h3>Lutas</h3>
+<div class="table-responsive">
+    <table>
+        <thead>
+            <tr>
+                <th>Round</th>
+                <th>Atleta A</th>
+                <th>vs</th>
+                <th>Atleta B</th>
+                <th class="col-vencedor">Vencedor</th>
+                <th>Ações / Anotações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if lutas %}
+                {% for luta in lutas %}
+                <tr>
+                    <td>{{ luta.round }}</td>
+                    <td>{{ luta.atleta_a.nome|default:"WO" }}</td>
+                    <td>vs</td>
+                    <td>{{ luta.atleta_b.nome|default:"WO" }}</td>
+                    <td class="col-vencedor">
+                        {% if luta.vencedor %}
+                            <strong>{{ luta.vencedor.nome }}</strong><br>
+                            <small>{{ luta.get_tipo_vitoria_display }} ({{ luta.pontos_vencedor }} pts)</small>
+                        {% else %}
+                            <em>Pendente</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="screen-only">
+                            {% if not luta.concluida and luta.atleta_a and luta.atleta_b %}
+                                <form method="post" action="{% url 'registrar_vencedor' luta.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <select name="vencedor" required style="margin-right: 5px;">
+                                        <option value="">Selecione</option>
+                                        <option value="{{ luta.atleta_a.id }}">{{ luta.atleta_a.nome }}</option>
+                                        <option value="{{ luta.atleta_b.id }}">{{ luta.atleta_b.nome }}</option>
+                                    </select>
+                                    <select name="tipo_vitoria" required style="margin-right: 5px;">
+                                        <option value="IPPON">Ippon (10 pontos)</option>
+                                        <option value="WAZARI">Wazari (7 pontos)</option>
+                                        <option value="WAZARI_WAZARI">Wazari-Wazari (7 pontos)</option>
+                                        <option value="YUKO">Yuko (1 ponto)</option>
+                                    </select>
+                                    <button type="submit" class="btn" style="padding: 8px 12px; min-height: 44px;">Registrar</button>
+                                </form>
+                            {% elif luta.concluida %}
+                                <span class="status-ok">Concluída - {{ luta.get_tipo_vitoria_display }} ({{ luta.pontos_vencedor }} pts)</span>
+                            {% else %}
+                                <em>Aguardando luta anterior</em>
+                            {% endif %}
+                        </div>
+
+                        <div class="print-only" style="margin-top: 4px;">
+                            <input type="text" style="width: 100%; padding: 4px; font-size: 12px; border: 1px solid #000;">
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                {% if chave.estrutura.tipo == "campeao_automatico" and resultados %}
+                <tr>
+                    <td>-</td>
+                    <td>{{ resultados.0.nome }}</td>
+                    <td>vs</td>
+                    <td>WO</td>
+                    <td class="col-vencedor">
+                        <strong>{{ resultados.0.nome }}</strong><br>
+                        <small>Campeão automático</small>
+                    </td>
+                    <td>
+                        <div class="screen-only">
+                            <em>Chave com apenas um atleta (campeão automático).</em>
+                        </div>
+                        <div class="print-only" style="margin-top: 4px;">
+                            <input type="text" style="width: 100%; padding: 4px; font-size: 12px; border: 1px solid #000;">
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center;">Nenhuma luta gerada</td>
+                </tr>
+                {% endif %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<a href="{% url 'lista_chaves' %}" class="btn screen-only">Voltar para Lista</a>
+<a href="{% url 'calcular_pontuacao' %}" class="btn btn-success screen-only">Calcular Pontuação</a>
+{% endblock %}

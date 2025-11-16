@@ -1,0 +1,33 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Relatório - Resultados por Categoria{% endblock %}
+
+{% block content %}
+<h1>Relatório - Resultados por Categoria</h1>
+
+{% for item in resultados_por_categoria %}
+<div style="margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+    <h2>{{ item.chave.classe }} - {{ item.chave.get_sexo_display }} - {{ item.chave.categoria }}</h2>
+    
+    {% if item.resultados %}
+        {% if item.resultados|length > 0 %}
+            <p><strong>1º Lugar:</strong> {{ item.resultados.0.nome }} ({{ item.resultados.0.academia.nome }})</p>
+        {% endif %}
+        {% if item.resultados|length > 1 %}
+            <p><strong>2º Lugar:</strong> {{ item.resultados.1.nome }} ({{ item.resultados.1.academia.nome }})</p>
+        {% endif %}
+        {% if item.resultados|length > 2 %}
+            <p><strong>3º Lugares:</strong>
+                {% for atleta in item.resultados|slice:"2:" %}
+                    {{ atleta.nome }} ({{ atleta.academia.nome }}){% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+        {% endif %}
+    {% else %}
+        <p><em>Categoria ainda não finalizada</em></p>
+    {% endif %}
+</div>
+{% empty %}
+<p>Nenhum resultado disponível</p>
+{% endfor %}
+{% endblock %}

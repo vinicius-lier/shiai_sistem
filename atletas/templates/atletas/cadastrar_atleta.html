@@ -1,0 +1,105 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Cadastrar Atleta{% endblock %}
+
+{% block content %}
+<h1>Cadastrar Atleta</h1>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <label for="nome">Nome:</label>
+    <input type="text" id="nome" name="nome" required>
+    
+    <label for="ano_nasc">Ano de Nascimento:</label>
+    <input type="number" id="ano_nasc" name="ano_nasc" min="1900" max="2024" required>
+    
+    <label for="sexo">Sexo:</label>
+    <select id="sexo" name="sexo" required>
+        <option value="">Selecione</option>
+        <option value="M">Masculino</option>
+        <option value="F">Feminino</option>
+    </select>
+    
+    <label for="faixa">Faixa:</label>
+    <input type="text" id="faixa" name="faixa" placeholder="Ex: Branca, Amarela, Laranja..." required>
+    
+    <label for="academia">Academia:</label>
+    <select id="academia" name="academia" required>
+        <option value="">Selecione</option>
+        {% for academia in academias %}
+        <option value="{{ academia.id }}">{{ academia.nome }}</option>
+        {% endfor %}
+    </select>
+    
+    <label for="categoria">Categoria:</label>
+    <select id="categoria" name="categoria" required>
+        <option value="">Selecione primeiro o ano de nascimento e sexo</option>
+        {% for categoria in categorias %}
+        <option value="{{ categoria.id }}" data-classe="{{ categoria.classe }}" data-sexo="{{ categoria.sexo }}">
+            {{ categoria.label }}
+        </option>
+        {% endfor %}
+    </select>
+    
+    <label for="peso_previsto">Peso Previsto (kg):</label>
+    <input type="number" id="peso_previsto" name="peso_previsto" step="0.1" min="0">
+    
+    <button type="submit">Cadastrar Atleta</button>
+</form>
+
+<a href="{% url 'lista_atletas' %}" class="btn">Voltar para Lista</a>
+
+<script>
+document.getElementById('ano_nasc').addEventListener('change', function() {
+    calcularClasse();
+});
+
+document.getElementById('sexo').addEventListener('change', function() {
+    calcularClasse();
+});
+
+function calcularClasse() {
+    const anoNasc = document.getElementById('ano_nasc').value;
+    const sexo = document.getElementById('sexo').value;
+    const categoriaSelect = document.getElementById('categoria');
+    
+    if (!anoNasc || !sexo) {
+        return;
+    }
+    
+    // Calcular idade e classe
+    const hoje = new Date();
+    const idade = hoje.getFullYear() - parseInt(anoNasc);
+    
+    let classe = '';
+    if (idade <= 9) classe = 'SUB 9';
+    else if (idade <= 11) classe = 'SUB 11';
+    else if (idade <= 13) classe = 'SUB 13';
+    else if (idade <= 15) classe = 'SUB 15';
+    else if (idade <= 18) classe = 'SUB 18';
+    else if (idade <= 21) classe = 'SUB 21';
+    else classe = 'ADULTO';
+    
+    // Filtrar categorias
+    const options = categoriaSelect.options;
+    for (let i = 0; i < options.length; i++) {
+        const option = options[i];
+        if (option.value === '') {
+            option.style.display = '';
+            continue;
+        }
+        
+        const optionClasse = option.getAttribute('data-classe');
+        const optionSexo = option.getAttribute('data-sexo');
+        
+        if (optionClasse === classe && optionSexo === sexo) {
+            option.style.display = '';
+        } else {
+            option.style.display = 'none';
+        }
+    }
+}
+</script>
+{% endblock %}
+

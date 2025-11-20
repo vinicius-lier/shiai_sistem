@@ -1,0 +1,106 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Gerar Chaves - {{ evento.nome }}{% endblock %}
+
+{% block content %}
+{% if evento_expirado %}
+<div style="background: #E3F2FD; border: 1px solid #2196F3; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 24px;">ℹ️</span>
+        <div>
+            <strong style="color: #1976D2;">Evento Encerrado</strong>
+            <p style="margin: 5px 0 0 0; color: #424242; font-size: 14px;">
+                Este evento já foi realizado. As informações abaixo são somente para consulta.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div>
+        <h1 style="margin: 0;">🥋 Gerar Chaves</h1>
+        <p style="color: var(--text-sec); margin: 5px 0 0 0;">Evento: <strong>{{ evento.nome }}</strong></p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <a href="{% url 'eventos:listar_chaves_evento' evento.id %}" class="btn" style="background: var(--primary);">📋 Ver Chaves Geradas</a>
+        <a href="{% url 'eventos:lista_eventos' %}" class="btn" style="background: var(--text-sec);">← Voltar</a>
+    </div>
+</div>
+
+{% if categorias %}
+<div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+    <h2 style="margin: 0 0 20px 0; color: var(--text);">📊 Categorias Disponíveis</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 16px;">
+        {% for info in categorias %}
+        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 18px; color: var(--text);">
+                        {{ info.categoria.classe }} - {{ info.categoria.get_sexo_display }} - {{ info.categoria.categoria_nome }}
+                    </h3>
+                    <p style="margin: 8px 0 0 0; font-size: 14px; color: var(--text-sec);">
+                        Limites: {{ info.categoria.limite_min }} a {% if info.categoria.limite_max >= 999.0 %}∞{% else %}{{ info.categoria.limite_max }}{% endif %} kg
+                    </p>
+                </div>
+                {% if info.chave_existe %}
+                <span style="background: var(--success); color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">✓ Chave Existe</span>
+                {% endif %}
+            </div>
+            
+            <div style="display: flex; gap: 20px; margin-bottom: 15px; font-size: 14px;">
+                <div>
+                    <span style="color: var(--text-sec);">Total:</span>
+                    <strong style="color: var(--text);">{{ info.total_atletas }}</strong>
+                </div>
+                <div>
+                    <span style="color: var(--text-sec);">Pesados:</span>
+                    <strong style="color: {% if info.atletas_pesados == info.total_atletas %}var(--success){% else %}var(--warning){% endif %};">
+                        {{ info.atletas_pesados }}/{{ info.total_atletas }}
+                    </strong>
+                </div>
+            </div>
+            
+            {% if evento_expirado %}
+            <div style="padding: 12px; background: rgba(158, 158, 158, 0.1); border-radius: 6px; border-left: 4px solid #9E9E9E;">
+                <p style="margin: 0; font-size: 13px; color: #616161;">
+                    🔒 Evento encerrado - chaves não podem ser modificadas
+                </p>
+            </div>
+            {% elif info.atletas_pesados == info.total_atletas and info.total_atletas >= 2 %}
+            <a href="{% url 'eventos:selecionar_tipo_chave' evento.id info.categoria.id %}" 
+               class="btn" 
+               style="width: 100%; background: var(--primary); text-align: center;">
+                {% if info.chave_existe %}
+                🔄 Recalcular Chave
+                {% else %}
+                ➕ Gerar Chave
+                {% endif %}
+            </a>
+            {% else %}
+            <div style="padding: 12px; background: rgba(255, 193, 7, 0.1); border-radius: 6px; border-left: 4px solid var(--warning);">
+                <p style="margin: 0; font-size: 13px; color: var(--warning);">
+                    {% if info.total_atletas < 2 %}
+                    ⚠️ É necessário pelo menos 2 atletas para gerar chave.
+                    {% else %}
+                    ⚠️ Ainda há atletas sem pesagem. Complete a pesagem antes de gerar a chave.
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 60px 40px; text-align: center;">
+    <div style="font-size: 64px; margin-bottom: 20px; opacity: 0.5;">📭</div>
+    <h2 style="color: var(--text-sec); margin-bottom: 10px;">Nenhuma categoria disponível</h2>
+    <p style="color: var(--text-sec);">Complete a pesagem dos atletas para gerar as chaves.</p>
+    <a href="{% url 'eventos:pesagem_evento' evento.id %}" class="btn" style="margin-top: 20px;">⚖️ Ir para Pesagem</a>
+</div>
+{% endif %}
+{% endblock %}
+
+

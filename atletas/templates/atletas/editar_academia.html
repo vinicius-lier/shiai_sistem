@@ -1,0 +1,199 @@
+{% extends 'atletas/base.html' %}
+{% load static %}
+
+{% block title %}Editar Academia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px var(--shadow);
+        max-width: 600px;
+    }
+    
+    .form-section-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--primary);
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: var(--text);
+        font-size: 14px;
+    }
+    
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 14px;
+        background: var(--card-bg);
+        color: var(--text);
+        transition: border-color 0.2s ease;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px var(--primary-light);
+    }
+    
+    .form-group small {
+        display: block;
+        margin-top: 5px;
+        color: var(--text-sec);
+        font-size: 12px;
+    }
+    
+    .logo-preview {
+        margin-top: 10px;
+        max-width: 150px;
+        max-height: 150px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 5px;
+        background: var(--bg);
+    }
+    
+    .current-logo {
+        margin-top: 10px;
+        max-width: 150px;
+        max-height: 150px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 5px;
+        background: var(--bg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Editar Academia</h1>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <div class="form-section">
+        <div class="form-section-title">Dados da Academia</div>
+        
+        <div class="form-group">
+            <label for="nome">Nome Completo:</label>
+            <input type="text" id="nome" name="nome" value="{{ academia.nome }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="sigla">Sigla:</label>
+            <input type="text" id="sigla" name="sigla" value="{{ academia.sigla }}" maxlength="10">
+            <small>Sigla da academia (opcional)</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="cidade">Cidade:</label>
+            <input type="text" id="cidade" name="cidade" value="{{ academia.cidade }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="estado">Estado (UF):</label>
+            <input type="text" id="estado" name="estado" value="{{ academia.estado }}" maxlength="2" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="telefone">Telefone:</label>
+            <input type="text" id="telefone" name="telefone" value="{{ academia.telefone }}" placeholder="(21) 99999-9999">
+        </div>
+        
+        <div class="form-group">
+            <label for="logo">Logo:</label>
+            {% if academia.logo %}
+                <div>
+                    <p style="margin-bottom: 10px; color: var(--text-sec);">Logo atual:</p>
+                    <img src="{{ academia.logo.url }}" alt="{{ academia.nome }}" class="current-logo">
+                </div>
+            {% endif %}
+            <input type="file" id="logo" name="logo" accept="image/*" onchange="previewLogo(this)" style="margin-top: 10px;">
+            <small>Selecione um novo logo para substituir o atual</small>
+            <div id="logo-preview" style="display: none; margin-top: 10px;">
+                <p style="margin-bottom: 5px; color: var(--text-sec);">Novo logo:</p>
+                <img id="preview-img" class="logo-preview" alt="Preview">
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-section">
+        <div class="form-section-title">Acesso ao Sistema</div>
+        
+        <div class="form-group">
+            <label for="usuario_acesso">Usuário de Acesso:</label>
+            <input type="text" id="usuario_acesso" name="usuario_acesso" value="{{ academia.usuario_acesso|default:'' }}" placeholder="Ex: solera2024">
+            <small>Usuário para login no painel da academia (opcional)</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="senha_acesso">Nova Senha:</label>
+            <input type="password" id="senha_acesso" name="senha_acesso" placeholder="Deixe em branco para não alterar">
+            <small>Mínimo de 6 caracteres. Deixe em branco para manter a senha atual.</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="senha_acesso_confirmar">Confirmar Nova Senha:</label>
+            <input type="password" id="senha_acesso_confirmar" name="senha_acesso_confirmar" placeholder="Confirme a nova senha">
+            <small>Digite a mesma senha novamente para confirmar.</small>
+        </div>
+        
+        {% if academia.usuario_acesso %}
+            <div style="padding: 12px; background: #E3F2FD; border-left: 4px solid #2196F3; border-radius: 4px; margin-top: 10px;">
+                <strong style="color: #1976D2;">✓ Login configurado</strong>
+                <p style="margin: 5px 0 0 0; color: #424242; font-size: 13px;">
+                    A academia pode acessar o sistema usando o usuário: <strong>{{ academia.usuario_acesso }}</strong>
+                </p>
+            </div>
+        {% else %}
+            <div style="padding: 12px; background: #FFF3E0; border-left: 4px solid #FF9800; border-radius: 4px; margin-top: 10px;">
+                <strong style="color: #F57C00;">⚠ Login não configurado</strong>
+                <p style="margin: 5px 0 0 0; color: #424242; font-size: 13px;">
+                    Configure usuário e senha para permitir que a academia acesse o painel.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <button type="submit" class="btn">✓ Salvar Alterações</button>
+    <a href="{% url 'lista_academias' %}" class="btn-secondary">← Voltar para Lista</a>
+</form>
+
+<script>
+function previewLogo(input) {
+    const preview = document.getElementById('logo-preview');
+    const previewImg = document.getElementById('preview-img');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}
+

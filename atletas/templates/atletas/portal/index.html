@@ -1,0 +1,734 @@
+{% extends 'atletas/portal/public_base.html' %}
+{% load static %}
+
+{% block title %}Portal de Inscrições - 5º Núcleo de Judô{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Banner Principal - Hero */
+    .hero-banner {
+        background: var(--primary);
+        color: white;
+        padding: 50px 40px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-banner::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+            radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+        pointer-events: none;
+    }
+    
+    .hero-banner::after {
+        content: '🥋';
+        position: absolute;
+        font-size: 200px;
+        opacity: 0.03;
+        right: -50px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+    
+    [data-theme="dark"] .hero-banner {
+        background: #2A2A2A;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .hero-content {
+        position: relative;
+        z-index: 1;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .hero-title {
+        font-size: 2.2rem;
+        font-weight: 600;
+        color: #FFFFFF;
+        margin: 0 0 15px 0;
+        line-height: 1.2;
+        letter-spacing: -0.3px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .hero-subtitle {
+        font-size: 24px;
+        color: #FFFFFF;
+        margin: 0 0 30px 0;
+        opacity: 0.7;
+        font-weight: 400;
+        line-height: 1.4;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+    
+    .hero-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 25px;
+    }
+    
+    .hero-btn {
+        padding: 14px 28px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .hero-btn-primary {
+        background: white;
+        color: var(--primary);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .hero-btn-primary:hover {
+        background: var(--bg);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .hero-btn-secondary {
+        background: transparent;
+        color: white;
+        border: 2px solid white;
+    }
+    
+    .hero-btn-secondary:hover {
+        background: white;
+        color: var(--primary);
+    }
+    
+    /* Seções */
+    .section {
+        padding: 50px 40px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .section-title {
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 15px;
+        text-align: center;
+        border-bottom: 3px solid var(--primary);
+        padding-bottom: 15px;
+    }
+    
+    .section-description {
+        text-align: center;
+        color: var(--text-sec);
+        font-size: 16px;
+        margin-bottom: 40px;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    [data-theme="dark"] .section-title {
+        border-bottom-color: var(--primary);
+    }
+    
+    /* Cards de Eventos */
+    .eventos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 24px;
+        margin-bottom: 40px;
+    }
+    
+    .evento-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 1px 3px var(--shadow);
+        transition: all 0.2s ease;
+    }
+    
+    .evento-card:hover {
+        box-shadow: 0 4px 12px var(--shadow);
+        transform: translateY(-2px);
+    }
+    
+    .evento-header {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--border);
+    }
+    
+    .evento-nome {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0 0 10px 0;
+    }
+    
+    .evento-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        background: var(--primary);
+        color: white;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .evento-info {
+        margin: 15px 0;
+    }
+    
+    .evento-info-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 10px 0;
+        color: var(--text);
+        font-size: 14px;
+    }
+    
+    .evento-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .empty-events {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 60px 40px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+    }
+    
+    .empty-events-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+        opacity: 0.6;
+    }
+    
+    .empty-events-message {
+        font-size: 20px;
+        color: var(--text);
+        margin-bottom: 15px;
+        font-weight: 600;
+    }
+    
+    .empty-events-subtitle {
+        color: var(--text-sec);
+        font-size: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .empty-events-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    /* Seção SHIKEN Detalhada */
+    .shiken-section {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 50px 40px;
+        margin: 40px 0;
+    }
+    
+    .shiken-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        align-items: center;
+    }
+    
+    .shiken-text h3 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0 0 15px 0;
+    }
+    
+    .shiken-text p {
+        color: var(--text-sec);
+        font-size: 16px;
+        line-height: 1.7;
+        margin-bottom: 25px;
+    }
+    
+    .shiken-benefits {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 30px 0;
+    }
+    
+    .shiken-benefits li {
+        padding: 10px 0;
+        color: var(--text);
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .shiken-benefits li::before {
+        content: '✓';
+        color: var(--primary);
+        font-weight: 700;
+        font-size: 18px;
+    }
+    
+    .shiken-visual {
+        text-align: center;
+    }
+    
+    .shiken-icon-large {
+        font-size: 120px;
+        opacity: 0.8;
+    }
+    
+    /* Notícias */
+    .noticias-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+        margin-bottom: 40px;
+    }
+    
+    .noticia-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 1px 3px var(--shadow);
+    }
+    
+    .noticia-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .noticia-badge {
+        background: var(--primary);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    
+    .noticia-data {
+        color: var(--text-sec);
+        font-size: 12px;
+    }
+    
+    .noticia-titulo {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 10px;
+    }
+    
+    .noticia-resumo {
+        color: var(--text-sec);
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 15px;
+    }
+    
+    /* Calendário */
+    .calendario-container {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 1px 3px var(--shadow);
+    }
+    
+    /* Marketing */
+    .marketing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+    }
+    
+    .marketing-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 1px 3px var(--shadow);
+        text-align: center;
+    }
+    
+    .marketing-icon {
+        font-size: 48px;
+        margin-bottom: 20px;
+    }
+    
+    .marketing-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 15px;
+    }
+    
+    .marketing-description {
+        color: var(--text-sec);
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 1.8rem;
+            text-align: center;
+        }
+        
+        .hero-subtitle {
+            font-size: 18px;
+            text-align: center;
+            opacity: 0.7;
+        }
+        
+        .hero-banner {
+            padding: 40px 20px;
+        }
+        
+        .hero-content {
+            text-align: center;
+        }
+        
+        .hero-buttons {
+            justify-content: center;
+        }
+        
+        .section {
+            padding: 40px 20px;
+        }
+        
+        .section-title {
+            font-size: 28px;
+        }
+        
+        .eventos-grid,
+        .noticias-grid,
+        .marketing-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .shiken-content {
+            grid-template-columns: 1fr;
+        }
+        
+        .shiken-icon-large {
+            font-size: 80px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Banner Principal -->
+<section class="hero-banner">
+    <div class="hero-content">
+        <h1 class="hero-title">Judô na Costa Verde</h1>
+        <p class="hero-subtitle">Sistema Oficial de Inscrições do 5º Núcleo de Judô – Região Sul Fluminense</p>
+        <div class="hero-buttons">
+            <a href="#eventos" class="hero-btn hero-btn-primary">Ver Eventos</a>
+            <a href="{% url 'login_tipo' %}" class="hero-btn hero-btn-secondary">Área da Academia</a>
+        </div>
+    </div>
+</section>
+
+<!-- Eventos Públicos -->
+<section id="eventos" class="section" style="padding-top: 30px;">
+    <h2 class="section-title">📅 Eventos Disponíveis</h2>
+    <p class="section-description">
+        Confira os eventos abertos para inscrição. As academias podem inscrever seus atletas através do sistema online.
+    </p>
+    <div class="eventos-grid">
+        {% for evento in eventos_publicos %}
+        <div class="evento-card">
+            <div class="evento-header">
+                <h3 class="evento-nome">{{ evento.nome }}</h3>
+                <span class="evento-badge">Inscrições Abertas</span>
+            </div>
+            <div class="evento-info">
+                {% if evento.data_evento %}
+                <div class="evento-info-item">
+                    <span>📅</span>
+                    <span><strong>Data do Evento:</strong> {{ evento.data_evento|date:"d/m/Y" }}</span>
+                </div>
+                {% endif %}
+                {% if evento.local %}
+                <div class="evento-info-item">
+                    <span>📍</span>
+                    <span><strong>Local:</strong> {{ evento.local }}</span>
+                </div>
+                {% endif %}
+                {% if evento.cidade %}
+                <div class="evento-info-item">
+                    <span>🏙️</span>
+                    <span><strong>Cidade:</strong> {{ evento.cidade }}</span>
+                </div>
+                {% endif %}
+                {% if evento.data_limite_inscricao %}
+                <div class="evento-info-item">
+                    <span>⏰</span>
+                    <span><strong>Prazo de Inscrição:</strong> {{ evento.data_limite_inscricao|date:"d/m/Y" }}</span>
+                </div>
+                {% endif %}
+                {% if evento.valor_federado or evento.valor_nao_federado %}
+                <div class="evento-info-item">
+                    <span>💰</span>
+                    <span>
+                        <strong>Valores:</strong>
+                        {% if evento.valor_federado %}Federado: R$ {{ evento.valor_federado|floatformat:2 }}{% endif %}
+                        {% if evento.valor_federado and evento.valor_nao_federado %} | {% endif %}
+                        {% if evento.valor_nao_federado %}Não Federado: R$ {{ evento.valor_nao_federado|floatformat:2 }}{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="evento-actions">
+                {% if evento.regulamento %}
+                <a href="{{ evento.regulamento.url }}" target="_blank" class="btn">📄 Ver Regulamento</a>
+                {% endif %}
+                {% if user.is_authenticated %}
+                    {% if user.profile.tipo_usuario == 'academia' %}
+                    <a href="{% url 'eventos:inscrever_atletas' evento.id %}" class="btn">✍️ Inscrever Atletas</a>
+                    {% else %}
+                    <a href="{% url 'eventos:inscrever_atletas' evento.id %}" class="btn">✍️ Inscrever Atletas</a>
+                    {% endif %}
+                {% else %}
+                <a href="{% url 'login_tipo' %}?next={% url 'eventos:inscrever_atletas' evento.id %}" class="btn">✍️ Inscrever Atletas</a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-events">
+            <div class="empty-events-icon">📭</div>
+            <div class="empty-events-message">Nenhum evento disponível no momento</div>
+            <div class="empty-events-subtitle">
+                Novos eventos serão divulgados em breve. Fique atento ao calendário oficial.
+            </div>
+            <div class="empty-events-actions">
+                <a href="#calendario" class="btn">📅 Ver Calendário</a>
+                <a href="#contato" class="btn">📄 Regulamentos</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Seção SHIKEN Detalhada -->
+<section class="section" style="background: var(--bg); padding-top: 30px;">
+    <div class="shiken-section">
+        <div class="shiken-content">
+            <div class="shiken-text">
+                <h3>Conheça o SHIKEN — Gestão de Exames de Faixa</h3>
+                <p>
+                    Sistema completo desenvolvido para gerenciar exames de faixas em academias de judô. 
+                    Organize, documente e gerencie todo o processo de forma profissional e eficiente.
+                </p>
+                <ul class="shiken-benefits">
+                    <li>Controle completo de exames e graduações</li>
+                    <li>Documentação automática de resultados</li>
+                    <li>Histórico completo de cada atleta</li>
+                    <li>Relatórios e certificados personalizados</li>
+                    <li>Interface intuitiva e fácil de usar</li>
+                </ul>
+                <a href="#contato" class="btn">Saiba mais sobre o SHIKEN</a>
+            </div>
+            <div class="shiken-visual">
+                <div class="shiken-icon-large">🥋</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Notícias -->
+<section id="noticias" class="section" style="background: var(--bg);">
+    <h2 class="section-title">📰 Notícias e Comunicados</h2>
+    <div class="noticias-grid">
+        <div>
+            <h3 style="font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 20px; border-bottom: 2px solid var(--primary); padding-bottom: 10px;">
+                Confederação Brasileira de Judô
+            </h3>
+            <div class="noticia-card">
+                <div class="noticia-header">
+                    <span class="noticia-badge">CBJ</span>
+                    <span class="noticia-data">Novembro 2024</span>
+                </div>
+                <h4 class="noticia-titulo">Regulamentos Oficiais 2024</h4>
+                <p class="noticia-resumo">
+                    Acompanhe as atualizações dos regulamentos oficiais da CBJ para competições nacionais e internacionais.
+                </p>
+                <a href="https://www.cbj.com.br" target="_blank" class="btn" style="padding: 8px 16px; font-size: 13px;">Ver mais →</a>
+            </div>
+        </div>
+        
+        <div>
+            <h3 style="font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 20px; border-bottom: 2px solid var(--primary); padding-bottom: 10px;">
+                Federação de Judô do Estado do Rio
+            </h3>
+            <div class="noticia-card">
+                <div class="noticia-header">
+                    <span class="noticia-badge">FJERJ</span>
+                    <span class="noticia-data">Novembro 2024</span>
+                </div>
+                <h4 class="noticia-titulo">Calendário Estadual 2024</h4>
+                <p class="noticia-resumo">
+                    Consulte o calendário oficial de competições estaduais da FJERJ e fique por dentro das datas importantes.
+                </p>
+                <a href="https://judorio.org/" target="_blank" class="btn" style="padding: 8px 16px; font-size: 13px;">Ver mais →</a>
+            </div>
+        </div>
+        
+        <div>
+            <h3 style="font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 20px; border-bottom: 2px solid var(--primary); padding-bottom: 10px;">
+                5º Núcleo de Judô
+            </h3>
+            <div class="noticia-card">
+                <div class="noticia-header">
+                    <span class="noticia-badge">Núcleo</span>
+                    <span class="noticia-data">Atual</span>
+                </div>
+                <h4 class="noticia-titulo">Sistema de Inscrições Online</h4>
+                <p class="noticia-resumo">
+                    O 5º Núcleo de Judô – Região Sul Fluminense agora conta com sistema completo de gestão de competições e inscrições online.
+                </p>
+                <a href="#eventos" class="btn" style="padding: 8px 16px; font-size: 13px;">Ver eventos →</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Calendário -->
+<section id="calendario" class="section">
+    <h2 class="section-title">📅 Calendário Oficial</h2>
+    <div class="calendario-container">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Evento</th>
+                        <th>Organizador</th>
+                        <th>Local</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evento in eventos_publicos %}
+                    <tr>
+                        <td>
+                            {% if evento.data_evento %}
+                                {{ evento.data_evento|date:"d/m/Y" }}
+                            {% else %}
+                                <span style="color: var(--text-sec);">-</span>
+                            {% endif %}
+                        </td>
+                        <td><strong>{{ evento.nome }}</strong></td>
+                        <td>5º Núcleo</td>
+                        <td>{{ evento.local|default:evento.cidade|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-sec);">
+                            Nenhum evento no calendário
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr>
+                        <td colspan="4" style="padding-top: 20px; border-top: 2px solid var(--border);">
+                            <p style="margin: 0; color: var(--text-sec); font-size: 14px;">
+                                <strong>Calendário CBJ/FJERJ:</strong> Consulte os sites oficiais para eventos nacionais e estaduais.
+                            </p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Marketing -->
+<section id="shiken" class="section" style="background: var(--bg);">
+    <h2 class="section-title">🚀 Nossos Produtos</h2>
+    <div class="marketing-grid">
+        <div class="marketing-card">
+            <div class="marketing-icon">🥋</div>
+            <h3 class="marketing-title">SHIKEN</h3>
+            <p class="marketing-description">
+                Sistema completo de gestão de exames de faixas. Organize, gerencie e documente todos os exames da sua academia de forma profissional.
+            </p>
+            <a href="#contato" class="btn">Saiba mais</a>
+        </div>
+        
+        <div class="marketing-card">
+            <div class="marketing-icon">🏆</div>
+            <h3 class="marketing-title">Sistema de Eventos</h3>
+            <p class="marketing-description">
+                Gestão completa de competições: pesagem, geração de chaves, registro de lutas e cálculo automático de rankings.
+            </p>
+            <a href="#eventos" class="btn">Saiba mais</a>
+        </div>
+        
+        <div class="marketing-card">
+            <div class="marketing-icon">🎮</div>
+            <h3 class="marketing-title">Judô Kids</h3>
+            <p class="marketing-description">
+                Gamificação para academias. Torne o aprendizado do judô mais divertido e engajador para crianças e jovens.
+            </p>
+            <a href="#contato" class="btn">Saiba mais</a>
+        </div>
+    </div>
+</section>
+
+<!-- Contato -->
+<section id="contato" class="section">
+    <h2 class="section-title">📞 Contato</h2>
+    <div style="max-width: 800px; margin: 0 auto; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 40px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h3 style="font-size: 24px; font-weight: 600; color: var(--text); margin-bottom: 15px;">
+                5º Núcleo de Judô – Região Sul Fluminense
+            </h3>
+            <p style="color: var(--text-sec); font-size: 16px;">
+                Entre em contato conosco para mais informações sobre eventos, inscrições e nossos produtos.
+            </p>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 30px;">
+            <div style="text-align: center;">
+                <div style="font-size: 32px; margin-bottom: 10px;">🌐</div>
+                <strong style="color: var(--text);">Website</strong>
+                <p style="color: var(--text-sec); margin-top: 5px;">judorio.org</p>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 32px; margin-bottom: 10px;">📧</div>
+                <strong style="color: var(--text);">Email</strong>
+                <p style="color: var(--text-sec); margin-top: 5px;">contato@fjerj.org.br</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

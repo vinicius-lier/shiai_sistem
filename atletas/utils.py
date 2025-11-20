@@ -31,6 +31,69 @@ def get_categorias_disponiveis(classe, sexo):
     return Categoria.objects.filter(classe=classe, sexo=sexo).order_by('limite_min')
 
 
+def categoria_por_peso(classe, sexo, peso):
+    """
+    Determina a categoria adequada baseado no peso do atleta.
+    REGRAS OBRIGATÓRIAS:
+    1. Categoria deve pertencer à mesma classe do atleta
+    2. Categoria deve conter o peso: limite_min <= peso <= limite_max
+    3. Se acima da última categoria, sugere a mais pesada
+    4. Se abaixo da primeira categoria, sugere a primeira
+    5. Festival não remaneja (retorna None se classe = Festival)
+    
+    Args:
+        classe: Classe do atleta (SUB 9, SUB 11, etc)
+        sexo: Sexo do atleta ('M' ou 'F')
+        peso: Peso oficial do atleta em kg
+    
+    Returns:
+        Categoria object se encontrada, None caso contrário
+    """
+    # REGRA 5: Festival não remaneja
+    if classe == 'Festival':
+        return None
+    
+    # REGRA 1: Buscar TODAS as categorias da mesma classe e sexo
+    categorias = Categoria.objects.filter(
+        classe=classe,
+        sexo=sexo
+    ).order_by('limite_min')
+    
+    if not categorias.exists():
+        return None
+    
+    # REGRA 2: Procurar categoria que CONTÉM o peso
+    for categoria in categorias:
+        limite_max_real = categoria.limite_max if categoria.limite_max < 999.0 else 999999.0
+        
+        # Verificar se o peso está dentro dos limites desta categoria
+        if categoria.limite_min <= peso <= limite_max_real:
+            return categoria
+    
+    # Se não encontrou categoria que contenha o peso:
+    
+    # REGRA 4: Se está abaixo da primeira categoria, sugerir a primeira
+    primeira_categoria = categorias.first()
+    if primeira_categoria and peso < primeira_categoria.limite_min:
+        return primeira_categoria
+    
+    # REGRA 3: Se está acima da última categoria, sugerir a mais pesada
+    # Buscar categoria "acima de" (limite_max >= 999.0) primeiro
+    ultima_categoria = categorias.filter(limite_max__gte=999.0).order_by('-limite_min').first()
+    if not ultima_categoria:
+        # Se não tem categoria "acima de", pegar a última categoria normal (maior limite_max)
+        ultima_categoria = categorias.order_by('-limite_max').first()
+    
+    if ultima_categoria:
+        # Se chegou aqui, significa que o peso não está dentro de nenhuma categoria
+        # e não está abaixo da primeira. Portanto, está acima da última.
+        # Sempre retornar a última categoria (mais pesada)
+        return ultima_categoria
+    
+    # Nenhuma categoria encontrada (não deveria acontecer se há categorias cadastradas)
+    return None
+
+
 def ajustar_categoria_por_peso(atleta, peso_oficial):
     """Ajusta a categoria do atleta baseado no peso oficial"""
     categoria_atual = Categoria.objects.filter(
@@ -325,18 +388,33 @@ def atualizar_proxima_luta(luta):
         pass
 
 
-def calcular_pontuacao_academias(campeonato_id=None):
-    """Calcula e atualiza a pontuação de todas as academias para um campeonato"""
-    # Obter ou criar campeonato padrão/ativo
-    if campeonato_id:
-        campeonato = Campeonato.objects.filter(id=campeonato_id).first()
-    else:
-        campeonato = Campeonato.objects.filter(ativo=True).first()
-    if not campeonato:
-        campeonato = Campeonato.objects.create(nome="Campeonato Padrão", ativo=True)
+def calcular_pontuacao_academias(evento_id=None):
+    """
+    ✅ REFATORADO: Calcula e atualiza a pontuação de todas as academias para um EVENTO.
+    Agora usa EventoAtleta ao invés de Campeonato.
+    """
+    from eventos.models import Evento, EventoAtleta
+    from django.db.models import Sum
     
-    # Limpar pontuações anteriores deste campeonato
-    AcademiaPontuacao.objects.filter(campeonato=campeonato).delete()
+    # Obter evento ativo ou mais recente
+    if evento_id:
+        evento = Evento.objects.filter(id=evento_id).first()
+    else:
+        evento = Evento.objects.filter(ativo=True).order_by('-data_evento').first()
+    
+    if not evento:
+        evento = Evento.objects.order_by('-data_evento').first()
+    
+    if not evento:
+        # Se não há evento, usar sistema antigo (compatibilidade)
+        from atletas.models import Campeonato
+        campeonato = Campeonato.objects.filter(ativo=True).first()
+        if not campeonato:
+            return  # Não há evento nem campeonato
+    
+    # ✅ NOVO: Calcular baseado em EventoAtleta
+    # Limpar pontos anteriores das academias para este evento
+    Academia.objects.all().update(pontos=0)
     
     # Mapa de pontuações por academia
     pontos_academias = {}
@@ -355,19 +433,22 @@ def calcular_pontuacao_academias(campeonato_id=None):
             }
         return pontos_academias[academia.id]
     
-    # 1. Pontos de Festival
-    atletas_festival = Atleta.objects.filter(classe='Festival', status='OK')
-    for atleta in atletas_festival:
-        reg = get_registro(atleta.academia)
+    # 1. Pontos de Festival (baseado em EventoAtleta)
+    evento_atletas_festival = EventoAtleta.objects.filter(
+        evento=evento,
+        atleta__classe='Festival',
+        status='OK'
+    )
+    for evento_atleta in evento_atletas_festival:
+        reg = get_registro(evento_atleta.academia)
         reg['festival'] += 1
     
-    # 2. Pontos por colocações nas chaves
-    chaves = Chave.objects.all()
+    # 2. Pontos por colocações nas chaves do evento
+    chaves = Chave.objects.filter(evento=evento)
     for chave in chaves:
-        # Sempre usar get_resultados_chave:
-        # - Conta resultados reais de lutas já decididas
-        # - Inclui WOs e casos de campeão automático
-        resultados = get_resultados_chave(chave)
+        # Usar obter_resultados_chave do luta_services
+        from atletas.services.luta_services import obter_resultados_chave
+        resultados = obter_resultados_chave(chave)
         if not resultados:
             continue
         
@@ -385,16 +466,16 @@ def calcular_pontuacao_academias(campeonato_id=None):
         chave.estrutura = estrutura
         chave.save()
         
-        # Aplicar contagem por colocação
+        # Aplicar contagem por colocação (baseado em EventoAtleta)
         for idx, atleta_id in enumerate(resultados, 1):
             if not atleta_id:
                 continue
             try:
-                atleta = Atleta.objects.get(id=atleta_id)
-            except Atleta.DoesNotExist:
+                evento_atleta = EventoAtleta.objects.get(evento=evento, atleta_id=atleta_id)
+            except EventoAtleta.DoesNotExist:
                 continue
 
-            reg = get_registro(atleta.academia)
+            reg = get_registro(evento_atleta.academia)
 
             # Pontuação por colocação:
             # 1º = ouro, 2º = prata, 3º = bronze, 4º = quarto, 5º = quinto
@@ -409,14 +490,13 @@ def calcular_pontuacao_academias(campeonato_id=None):
             elif idx == 5:
                 reg['quinto'] += 1
     
-    # 3. Remanejamentos (-1 ponto por atleta remanejado)
-    atletas_remanejados = Atleta.objects.filter(remanejado=True, status='OK')
-    for atleta in atletas_remanejados:
-        reg = get_registro(atleta.academia)
+    # 3. Remanejamentos (-1 ponto por atleta remanejado no evento)
+    evento_atletas_remanejados = EventoAtleta.objects.filter(evento=evento, remanejado=True, status='OK')
+    for evento_atleta in evento_atletas_remanejados:
+        reg = get_registro(evento_atleta.academia)
         reg['remanejamento'] += 1
     
-    # 4. Calcular pontos totais e salvar registros
-    Academia.objects.all().update(pontos=0)
+    # 4. Calcular pontos totais e atualizar Academia.pontos
     for data in pontos_academias.values():
         academia = data['academia']
         ouro = data['ouro']
@@ -439,21 +519,14 @@ def calcular_pontuacao_academias(campeonato_id=None):
             remanejamento * (-1)
         )
         
-        AcademiaPontuacao.objects.create(
-            campeonato=campeonato,
-            academia=academia,
-            ouro=ouro,
-            prata=prata,
-            bronze=bronze,
-            quarto=quarto,
-            quinto=quinto,
-            festival=festival,
-            remanejamento=remanejamento,
-            pontos_totais=pontos_totais,
-        )
-        
-        academia.pontos = pontos_totais
+        # Atualizar pontos da academia (soma de todos os eventos)
+        # Para ranking geral, somar pontos de todos os eventos
+        pontos_geral = EventoAtleta.objects.filter(academia=academia).aggregate(total=Sum('pontos'))['total'] or 0
+        academia.pontos = pontos_geral
         academia.save()
+        
+        # Manter compatibilidade com AcademiaPontuacao (se necessário para relatórios antigos)
+        # Mas não criar novos registros, apenas atualizar Academia.pontos
 
 
 def registrar_remanejamento(inscricao_id):

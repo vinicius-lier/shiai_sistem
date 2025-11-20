@@ -1,0 +1,81 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Configurar Evento - {{ evento.nome }}{% endblock %}
+
+{% block content %}
+<h1>⚙️ Configurar Evento: {{ evento.nome }}</h1>
+
+<form method="post" style="max-width: 800px;">
+    {% csrf_token %}
+    
+    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 30px; margin-bottom: 24px;">
+        <h2 style="margin-top: 0; margin-bottom: 20px; color: var(--text);">Parâmetros do Evento</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+                <label for="idade_min">Idade Mínima</label>
+                <input type="number" id="idade_min" name="idade_min" value="{{ parametros.idade_min|default:0 }}" min="0" style="width: 100%;">
+            </div>
+            <div>
+                <label for="idade_max">Idade Máxima</label>
+                <input type="number" id="idade_max" name="idade_max" value="{{ parametros.idade_max|default:99 }}" min="0" style="width: 100%;">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>
+                <input type="checkbox" name="usar_pesagem" {% if not parametros or parametros.usar_pesagem %}checked{% endif %}>
+                Usar Pesagem Oficial
+            </label>
+            <small style="color: var(--text-sec); display: block; margin-top: 5px;">
+                Se marcado, será obrigatório pesar os atletas antes de gerar as chaves.
+            </small>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>
+                <input type="checkbox" name="usar_chaves_automaticas" {% if not parametros or parametros.usar_chaves_automaticas %}checked{% endif %}>
+                Gerar Chaves Automaticamente
+            </label>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>
+                <input type="checkbox" name="permitir_festival" {% if parametros and parametros.permitir_festival %}checked{% endif %}>
+                Permitir Festival (3-6 anos)
+            </label>
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--text);">Sistema de Pontuação</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+                <label for="pontuacao_primeiro">1º Lugar</label>
+                <input type="number" id="pontuacao_primeiro" name="pontuacao_primeiro" value="{{ parametros.pontuacao_primeiro|default:10 }}" min="0" style="width: 100%;">
+            </div>
+            <div>
+                <label for="pontuacao_segundo">2º Lugar</label>
+                <input type="number" id="pontuacao_segundo" name="pontuacao_segundo" value="{{ parametros.pontuacao_segundo|default:7 }}" min="0" style="width: 100%;">
+            </div>
+            <div>
+                <label for="pontuacao_terceiro">3º Lugar</label>
+                <input type="number" id="pontuacao_terceiro" name="pontuacao_terceiro" value="{{ parametros.pontuacao_terceiro|default:5 }}" min="0" style="width: 100%;">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label for="penalidade_remanejamento">Penalidade por Remanejamento (pontos)</label>
+            <input type="number" id="penalidade_remanejamento" name="penalidade_remanejamento" value="{{ parametros.penalidade_remanejamento|default:1 }}" min="0" style="width: 100%;">
+            <small style="color: var(--text-sec); display: block; margin-top: 5px;">
+                Pontos que serão descontados da academia quando um atleta for remanejado de categoria.
+            </small>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 15px;">
+        <button type="submit" class="btn">💾 Salvar Parâmetros</button>
+        <a href="{% url 'eventos:lista_eventos' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+</form>
+{% endblock %}
+

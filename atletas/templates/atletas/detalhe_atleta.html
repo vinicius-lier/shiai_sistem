@@ -1,0 +1,475 @@
+{% extends 'atletas/base.html' %}
+{% load static %}
+
+{% block title %}Detalhes do Atleta - {{ atleta.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detalhe-atleta-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px 40px;
+    }
+    
+    .detalhe-header {
+        display: flex;
+        gap: 40px;
+        margin-bottom: 40px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 2px 8px var(--shadow);
+    }
+    
+    .atleta-foto-grande {
+        width: 200px;
+        height: 200px;
+        border-radius: 12px;
+        background: var(--bg);
+        border: 2px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 80px;
+        flex-shrink: 0;
+    }
+    
+    .atleta-foto-grande img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+    
+    .detalhe-header-content {
+        flex: 1;
+    }
+    
+    .atleta-nome-grande {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0 0 15px 0;
+    }
+    
+    .atleta-subtitulo {
+        font-size: 18px;
+        color: var(--text-sec);
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--border);
+    }
+    
+    .atleta-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .info-icon {
+        font-size: 20px;
+        width: 30px;
+        text-align: center;
+    }
+    
+    .info-content {
+        flex: 1;
+    }
+    
+    .info-label {
+        font-size: 12px;
+        color: var(--text-sec);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    
+    .info-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text);
+    }
+    
+    .atleta-stats-section {
+        display: flex;
+        gap: 30px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 2px solid var(--border);
+    }
+    
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .stat-icon {
+        font-size: 32px;
+    }
+    
+    .stat-content {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #FFD700;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+        color: var(--text-sec);
+        text-transform: uppercase;
+    }
+    
+    .detalhe-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-detalhe {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .btn-editar {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .btn-editar:hover {
+        background: var(--primary-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px var(--shadow);
+    }
+    
+    .btn-whatsapp {
+        background: #25D366;
+        color: white;
+    }
+    
+    .btn-whatsapp:hover {
+        background: #20BA5A;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px var(--shadow);
+    }
+    
+    .btn-voltar {
+        background: var(--card-bg);
+        color: var(--text);
+        border: 1px solid var(--border);
+    }
+    
+    .btn-voltar:hover {
+        background: var(--bg);
+        border-color: var(--primary);
+    }
+    
+    .detalhe-section {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px var(--shadow);
+    }
+    
+    .section-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0 0 20px 0;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--border);
+    }
+    
+    .pesagem-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background: var(--bg);
+        border-radius: 8px;
+        margin-bottom: 10px;
+        border: 1px solid var(--border);
+    }
+    
+    .pesagem-data {
+        font-weight: 600;
+        color: var(--text);
+    }
+    
+    .pesagem-peso {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .empty-pesagem {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-sec);
+        font-style: italic;
+    }
+    
+    .status-badge-detalhe {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-left: 10px;
+    }
+    
+    .badge-ok {
+        background: rgba(46, 125, 50, 0.1);
+        color: var(--success);
+        border: 1px solid var(--success);
+    }
+    
+    .badge-eliminado {
+        background: rgba(211, 47, 47, 0.1);
+        color: var(--danger);
+        border: 1px solid var(--danger);
+    }
+    
+    @media (max-width: 768px) {
+        .detalhe-header {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .atleta-foto-grande {
+            width: 150px;
+            height: 150px;
+        }
+        
+        .atleta-nome-grande {
+            font-size: 24px;
+        }
+        
+        .atleta-info-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .atleta-stats-section {
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .detalhe-actions {
+            flex-direction: column;
+        }
+        
+        .btn-detalhe {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detalhe-atleta-container">
+    <div class="detalhe-header">
+        <div class="atleta-foto-grande">
+            🥋
+        </div>
+        
+        <div class="detalhe-header-content">
+            <h1 class="atleta-nome-grande">
+                {{ atleta.nome }}
+                {% if atleta.status == 'OK' %}
+                    <span class="status-badge-detalhe badge-ok">{{ atleta.get_status_display }}</span>
+                {% elif atleta.status == 'Eliminado Peso' or atleta.status == 'Eliminado Indisciplina' %}
+                    <span class="status-badge-detalhe badge-eliminado">{{ atleta.get_status_display }}</span>
+                {% endif %}
+            </h1>
+            
+            <div class="atleta-subtitulo">
+                {{ atleta.classe|default:"-" }} – {{ atleta.get_sexo_display }} – {{ atleta.faixa }}
+            </div>
+            
+            <div class="atleta-info-grid">
+                <div class="info-item">
+                    <div class="info-icon">🏛️</div>
+                    <div class="info-content">
+                        <div class="info-label">Federado</div>
+                        <div class="info-value">
+                            {% if atleta.federado %}
+                                <span style="color: var(--success); font-weight: 600;">✔ Sim</span>
+                                {% if atleta.zempo %}
+                                    <span style="color: var(--primary); margin-left: 8px; font-size: 14px;">{{ atleta.zempo }}</span>
+                                {% else %}
+                                    <span style="color: var(--danger); margin-left: 8px; font-size: 12px;">Sem ZEMPO!</span>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: #9E9E9E;">✘ Não</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">📍</div>
+                    <div class="info-content">
+                        <div class="info-label">Academia</div>
+                        <div class="info-value">
+                            {% if atleta.academia.sigla %}[{{ atleta.academia.sigla }}] {% endif %}{{ atleta.academia.nome }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">⚖️</div>
+                    <div class="info-content">
+                        <div class="info-label">Categoria</div>
+                        <div class="info-value">
+                            {% if atleta.categoria_ajustada %}
+                                {{ atleta.categoria_ajustada }}
+                                {% if atleta.peso_oficial %}
+                                    ({{ atleta.peso_oficial }} kg)
+                                {% endif %}
+                            {% else %}
+                                {{ atleta.categoria_nome|default:"Não definida" }}
+                                {% if atleta.peso_previsto %}
+                                    (previsto: {{ atleta.peso_previsto }} kg)
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">🎂</div>
+                    <div class="info-content">
+                        <div class="info-label">Idade</div>
+                        <div class="info-value">{{ atleta.idade }} anos ({{ atleta.ano_nasc }})</div>
+                    </div>
+                </div>
+                
+                {% if atleta.peso_oficial %}
+                <div class="info-item">
+                    <div class="info-icon">⚖️</div>
+                    <div class="info-content">
+                        <div class="info-label">Peso Oficial</div>
+                        <div class="info-value">{{ atleta.peso_oficial }} kg</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="atleta-stats-section">
+                <div class="stat-item">
+                    <div class="stat-icon">🥇</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ atleta.get_medalhas_count }}</div>
+                        <div class="stat-label">Medalhas</div>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ atleta.get_participacoes_count }}</div>
+                        <div class="stat-label">Participações</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detalhe-actions">
+                {% if evento_atual %}
+                <a href="{% url 'eventos:pesagem_evento' evento_atual.id %}?atleta={{ atleta.id }}" class="btn-detalhe btn-editar">
+                {% else %}
+                <a href="{% url 'eventos:lista_eventos' %}" class="btn-detalhe btn-editar">
+                {% endif %}
+                    ✏️ Editar
+                </a>
+                {% if atleta.academia.get_whatsapp_url %}
+                <a href="{{ atleta.academia.get_whatsapp_url }}" target="_blank" class="btn-detalhe btn-whatsapp">
+                    📲 WhatsApp Academia
+                </a>
+                {% endif %}
+                <a href="{% url 'lista_atletas' %}" class="btn-detalhe btn-voltar">
+                    ← Voltar para Lista
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    {% if atleta.peso_oficial or atleta.motivo_ajuste %}
+    <div class="detalhe-section">
+        <h2 class="section-title">📊 Informações de Pesagem</h2>
+        
+        {% if atleta.peso_oficial %}
+        <div class="pesagem-item">
+            <div>
+                <div class="pesagem-data">Peso Oficial Registrado</div>
+                <div style="font-size: 12px; color: var(--text-sec); margin-top: 4px;">
+                    {% if atleta.categoria_ajustada %}
+                        Categoria ajustada: {{ atleta.categoria_ajustada }}
+                    {% else %}
+                        Categoria original: {{ atleta.categoria_nome }}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="pesagem-peso">{{ atleta.peso_oficial }} kg</div>
+        </div>
+        {% endif %}
+        
+        {% if atleta.motivo_ajuste %}
+        <div style="margin-top: 20px; padding: 15px; background: var(--bg); border-radius: 8px; border-left: 4px solid var(--warning);">
+            <div style="font-weight: 600; margin-bottom: 8px; color: var(--text);">Motivo do Ajuste:</div>
+            <div style="color: var(--text-sec);">{{ atleta.motivo_ajuste }}</div>
+        </div>
+        {% endif %}
+        
+        {% if atleta.remanejado %}
+        <div style="margin-top: 15px; padding: 12px; background: rgba(255, 193, 7, 0.1); border-radius: 8px; border: 1px solid #F57C00;">
+            <div style="font-weight: 600; color: #F57C00;">⚠️ Atleta foi remanejado de categoria</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if atleta.chaves.exists %}
+    <div class="detalhe-section">
+        <h2 class="section-title">🥋 Histórico de Competições</h2>
+        
+        {% for chave in atleta.chaves.all %}
+        <div class="pesagem-item">
+            <div>
+                <div class="pesagem-data">{{ chave.classe }} - {{ chave.get_sexo_display }} - {{ chave.categoria }}</div>
+            </div>
+            <a href="{% url 'detalhe_chave' chave.id %}" class="btn-detalhe btn-voltar" style="padding: 8px 16px; font-size: 12px;">
+                Ver Chave →
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

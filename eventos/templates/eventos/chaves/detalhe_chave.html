@@ -1,0 +1,243 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Detalhe da Chave - {{ evento.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.print-only {
+    display: none;
+}
+.screen-only {
+    display: inline-block;
+}
+
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 10mm;
+    }
+
+    body {
+        background: #ffffff !important;
+        padding: 0;
+    }
+
+    nav,
+    .btn,
+    .filter-box,
+    script {
+        display: none !important;
+    }
+
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+
+    h1 {
+        margin: 0 0 10px 0;
+        border: none;
+    }
+
+    .screen-only,
+    .col-vencedor {
+        display: none !important;
+    }
+
+    .print-only {
+        display: block !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% if evento_expirado %}
+<div style="background: #E3F2FD; border: 1px solid #2196F3; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 24px;">ℹ️</span>
+        <div>
+            <strong style="color: #1976D2;">Evento Encerrado</strong>
+            <p style="margin: 5px 0 0 0; color: #424242; font-size: 14px;">
+                Este evento já foi realizado. As informações abaixo são somente para consulta.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div>
+        <h1 style="margin: 0;">🥋 Detalhe da Chave</h1>
+        <p style="color: var(--text-sec); margin: 5px 0 0 0;">
+            Evento: <strong>{{ evento.nome }}</strong>
+        </p>
+        <p style="color: var(--text-sec); margin: 5px 0 0 0;">
+            Categoria: <strong>{{ chave.classe }} - {{ chave.get_sexo_display }} - {{ chave.categoria }}</strong>
+        </p>
+        {% if chave.tipo_chave %}
+        <p style="color: var(--text-sec); margin: 5px 0 0 0;">
+            Tipo: <strong>{{ chave.get_tipo_chave_display }}</strong>
+        </p>
+        {% endif %}
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn" onclick="window.print()">🖨 Imprimir</button>
+        <a href="{% url 'eventos:listar_chaves_evento' evento.id %}" class="btn" style="background: var(--text-sec);">← Voltar</a>
+    </div>
+</div>
+
+{% if chave.finalizada %}
+<div style="background: rgba(46, 125, 50, 0.1); border: 1px solid var(--success); border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+    <h3 style="margin: 0 0 15px 0; color: var(--success);">🏆 Chave Finalizada</h3>
+    {% if resultados %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        {% if resultados|length > 0 %}
+        <div style="background: var(--card-bg); padding: 16px; border-radius: 6px; border-left: 4px solid #FFD700;">
+            <div style="font-size: 12px; color: var(--text-sec); margin-bottom: 4px;">🥇 1º Lugar</div>
+            <div style="font-weight: 600; color: var(--text);">{{ resultados.0.nome }}</div>
+            <div style="font-size: 12px; color: var(--text-sec);">{{ resultados.0.academia.nome }}</div>
+        </div>
+        {% endif %}
+        {% if resultados|length > 1 %}
+        <div style="background: var(--card-bg); padding: 16px; border-radius: 6px; border-left: 4px solid #C0C0C0;">
+            <div style="font-size: 12px; color: var(--text-sec); margin-bottom: 4px;">🥈 2º Lugar</div>
+            <div style="font-weight: 600; color: var(--text);">{{ resultados.1.nome }}</div>
+            <div style="font-size: 12px; color: var(--text-sec);">{{ resultados.1.academia.nome }}</div>
+        </div>
+        {% endif %}
+        {% if resultados|length > 2 %}
+        <div style="background: var(--card-bg); padding: 16px; border-radius: 6px; border-left: 4px solid #CD7F32;">
+            <div style="font-size: 12px; color: var(--text-sec); margin-bottom: 4px;">🥉 3º Lugares</div>
+            {% for atleta in resultados|slice:"2:" %}
+            <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">{{ atleta.nome }}</div>
+            <div style="font-size: 12px; color: var(--text-sec); margin-bottom: 8px;">{{ atleta.academia.nome }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<h3 style="margin: 30px 0 20px 0;">Lutas</h3>
+<div class="table-responsive">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: var(--primary); color: white;">
+                <th style="padding: 12px; text-align: left;">Round</th>
+                <th style="padding: 12px; text-align: left;">Atleta A</th>
+                <th style="padding: 12px; text-align: center;">vs</th>
+                <th style="padding: 12px; text-align: left;">Atleta B</th>
+                <th class="col-vencedor" style="padding: 12px; text-align: left;">Vencedor</th>
+                <th style="padding: 12px; text-align: left;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if lutas %}
+                {% for luta in lutas %}
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 12px;">{{ luta.round }}</td>
+                    <td style="padding: 12px;">
+                        {% if luta.atleta_a %}
+                            <strong>{{ luta.atleta_a.nome }}</strong><br>
+                            <small style="color: var(--text-sec);">
+                                {% if luta.atleta_a.academia.sigla %}[{{ luta.atleta_a.academia.sigla }}] {% endif %}{{ luta.atleta_a.academia.nome }}
+                            </small>
+                        {% else %}
+                            <em style="color: var(--text-sec);">Aguardando</em>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px; text-align: center;">vs</td>
+                    <td style="padding: 12px;">
+                        {% if luta.atleta_b %}
+                            <strong>{{ luta.atleta_b.nome }}</strong><br>
+                            <small style="color: var(--text-sec);">
+                                {% if luta.atleta_b.academia.sigla %}[{{ luta.atleta_b.academia.sigla }}] {% endif %}{{ luta.atleta_b.academia.nome }}
+                            </small>
+                        {% else %}
+                            {% if chave.tipo_chave == 'SIMPLES_3' and luta.round == 2 %}
+                                <em style="color: #FF9800; font-weight: 600;">⏳ Aguardando vencedor da Luta 1</em>
+                            {% else %}
+                                <em style="color: var(--text-sec);">Aguardando</em>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td class="col-vencedor" style="padding: 12px;">
+                        {% if luta.vencedor %}
+                            <strong style="color: var(--success);">{{ luta.vencedor.nome }}</strong><br>
+                            <small>{{ luta.get_tipo_vitoria_display }} ({{ luta.pontos_vencedor }} pts)</small>
+                        {% else %}
+                            <em style="color: var(--text-sec);">Pendente</em>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px;">
+                        <div class="screen-only">
+                            {% if evento_expirado %}
+                                <em style="color: var(--text-sec);">Evento encerrado - somente leitura</em>
+                            {% elif not luta.concluida and luta.atleta_a and luta.atleta_b %}
+                                <form method="post" action="{% url 'registrar_vencedor' luta.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <select name="vencedor" required style="margin-right: 5px; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                        <option value="">Selecione</option>
+                                        <option value="{{ luta.atleta_a.id }}">{{ luta.atleta_a.nome }}</option>
+                                        <option value="{{ luta.atleta_b.id }}">{{ luta.atleta_b.nome }}</option>
+                                    </select>
+                                    <select name="tipo_vitoria" required style="margin-right: 5px; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                        <option value="IPPON">Ippon (10 pontos)</option>
+                                        <option value="WAZARI">Wazari (7 pontos)</option>
+                                        <option value="WAZARI_WAZARI">Wazari-Wazari (7 pontos)</option>
+                                        <option value="YUKO">Yuko (1 ponto)</option>
+                                        <option value="WO">W.O. (Walkover)</option>
+                                    </select>
+                                    <button type="submit" class="btn" style="padding: 8px 16px;">Registrar</button>
+                                </form>
+                            {% elif luta.concluida %}
+                                <span style="color: var(--success); font-weight: 600;">✓ Concluída</span>
+                            {% else %}
+                                <em style="color: var(--text-sec);">Aguardando luta anterior</em>
+                            {% endif %}
+                        </div>
+                        <div class="print-only" style="margin-top: 4px;">
+                            <input type="text" style="width: 100%; padding: 4px; font-size: 12px; border: 1px solid #000;">
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-sec);">
+                        Nenhuma luta gerada para esta chave.
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+{% if not chave.finalizada and lutas and not evento_expirado %}
+    {% if pode_finalizar %}
+        <div style="margin-top: 30px; padding: 20px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;">
+            <h3 style="margin: 0 0 15px 0;">Finalizar Chave</h3>
+            <p style="color: var(--text-sec); margin-bottom: 15px;">
+                Após registrar todos os resultados, finalize a chave para calcular os pontos e atualizar o ranking.
+            </p>
+            <form method="post" action="{% url 'eventos:finalizar_chave_evento' evento.id chave.id %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn" style="background: var(--success);">✅ Finalizar Chave</button>
+            </form>
+        </div>
+    {% else %}
+        <div style="margin-top: 30px; padding: 20px; background: #FFF3E0; border: 1px solid #FF9800; border-radius: 8px;">
+            <p style="color: #F57C00; margin: 0;">
+                ⏳ Aguarde todas as lutas serem concluídas para finalizar a chave.
+            </p>
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}
+
+

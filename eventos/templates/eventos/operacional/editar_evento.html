@@ -1,0 +1,75 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Editar Evento - {{ evento.nome }}{% endblock %}
+
+{% block content %}
+<h1>✏️ Editar Evento: {{ evento.nome }}</h1>
+
+<form method="post" style="max-width: 800px;">
+    {% csrf_token %}
+    
+    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 30px; margin-bottom: 24px;">
+        <h2 style="margin-top: 0; margin-bottom: 20px; color: var(--text);">Informações Básicas</h2>
+        
+        <div style="margin-bottom: 20px;">
+            <label for="nome">Nome do Evento *</label>
+            <input type="text" id="nome" name="nome" value="{{ evento.nome }}" required style="width: 100%;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label for="descricao">Descrição</label>
+            <textarea id="descricao" name="descricao" rows="4" style="width: 100%;">{{ evento.descricao }}</textarea>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label for="local">Local *</label>
+            <input type="text" id="local" name="local" value="{{ evento.local }}" required style="width: 100%;">
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+                <label for="data_evento">Data do Evento *</label>
+                <input type="date" id="data_evento" name="data_evento" value="{{ evento.data_evento|date:'Y-m-d' }}" required style="width: 100%;">
+            </div>
+            <div>
+                <label for="data_limite_inscricao">Prazo de Inscrição *</label>
+                <input type="date" id="data_limite_inscricao" name="data_limite_inscricao" value="{{ evento.data_limite_inscricao|date:'Y-m-d' }}" required style="width: 100%;">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>
+                <input type="checkbox" name="ativo" {% if evento.ativo %}checked{% endif %}>
+                Evento ativo
+            </label>
+        </div>
+    </div>
+    
+    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 30px; margin-bottom: 24px;">
+        <h2 style="margin-top: 0; margin-bottom: 20px; color: var(--text);">Valores de Inscrição</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+                <label for="valor_federado">Valor Federado (R$) *</label>
+                <input type="number" id="valor_federado" name="valor_federado" step="0.01" min="0" value="{{ evento.valor_federado|default:'0.00' }}" required style="width: 100%;">
+                <small style="color: var(--text-sec); display: block; margin-top: 5px;">
+                    Valor para atletas com registro na federação
+                </small>
+            </div>
+            <div>
+                <label for="valor_nao_federado">Valor Não Federado (R$) *</label>
+                <input type="number" id="valor_nao_federado" name="valor_nao_federado" step="0.01" min="0" value="{{ evento.valor_nao_federado|default:'0.00' }}" required style="width: 100%;">
+                <small style="color: var(--text-sec); display: block; margin-top: 5px;">
+                    Valor para atletas sem registro na federação
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 15px;">
+        <button type="submit" class="btn">💾 Salvar Alterações</button>
+        <a href="{% url 'eventos:lista_eventos' %}" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+{% endblock %}
+

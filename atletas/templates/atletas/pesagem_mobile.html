@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pesagem - Mobile</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/corporate.css' %}">
     <style>
         * {
             margin: 0;
@@ -12,13 +14,14 @@
         }
         body {
             font-family: Arial, sans-serif;
-            background: #f5f5f5;
+            background: var(--bg);
+            color: var(--text);
             padding: 10px;
             max-width: 480px;
             margin: 0 auto;
         }
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
             color: white;
             padding: 15px;
             border-radius: 10px;
@@ -30,24 +33,28 @@
             margin: 0;
         }
         .filtros {
-            background: white;
+            background: var(--card-bg);
+            color: var(--text);
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px var(--shadow);
+            border: 1px solid var(--border);
         }
         .filtros select, .filtros input {
             width: 100%;
             padding: 15px;
             font-size: 16px;
-            border: 2px solid #ddd;
+            border: 2px solid var(--border);
             border-radius: 5px;
             margin-bottom: 10px;
+            background: var(--card-bg);
+            color: var(--text);
         }
         .btn-filtrar {
             width: 100%;
             padding: 15px;
-            background: #667eea;
+            background: var(--primary);
             color: white;
             border: none;
             border-radius: 5px;
@@ -56,11 +63,13 @@
             cursor: pointer;
         }
         .atleta-card {
-            background: white;
+            background: var(--card-bg);
+            color: var(--text);
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px var(--shadow);
+            border: 1px solid var(--border);
         }
         .atleta-nome {
             font-size: 18px;
@@ -77,9 +86,11 @@
             padding: 20px;
             font-size: 24px;
             text-align: center;
-            border: 3px solid #667eea;
+            border: 3px solid var(--primary);
             border-radius: 10px;
             margin: 10px 0;
+            background: var(--card-bg);
+            color: var(--text);
         }
         .btn-salvar {
             width: 100%;
@@ -132,7 +143,7 @@
         }
         .peso-atual {
             font-size: 20px;
-            color: #667eea;
+            color: var(--primary);
             font-weight: bold;
             text-align: center;
             margin: 10px 0;
@@ -140,7 +151,7 @@
     </style>
 </head>
 <body>
-    <a href="{% url 'pesagem' %}?desktop=1" class="link-voltar">← Versão Desktop</a>
+    <a href="{% url 'eventos:lista_eventos' %}" class="link-voltar">← Ver Eventos</a>
     
     <div class="header">
         <h1>⚖️ Pesagem - Mobile</h1>
@@ -164,7 +175,7 @@
             <input type="text" name="categoria" placeholder="Buscar categoria..." value="{{ categoria_filtro }}">
             
             <button type="submit" class="btn-filtrar">🔍 Filtrar</button>
-            <a href="{% url 'pesagem_mobile' %}" style="display: block; text-align: center; padding: 10px; background: #dc3545; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">Limpar Filtros</a>
+            <a href="{% url 'eventos:lista_eventos' %}" style="display: block; text-align: center; padding: 10px; background: #dc3545; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">Ver Eventos</a>
         </form>
     </div>
 
@@ -312,6 +323,15 @@
     function fecharModal() {
         document.getElementById('modal-remanejamento').style.display = 'none';
     }
+    
+    // Sistema de Theming
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let initialTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', initialTheme);
+    }
+    initTheme();
     </script>
 </body>
 </html>

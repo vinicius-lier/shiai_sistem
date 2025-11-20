@@ -1,0 +1,287 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Inscrever Atletas - {{ evento.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .atleta-card-inscricao {
+        background: var(--card-bg);
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        padding: 20px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .atleta-card-inscricao:hover {
+        border-color: var(--primary);
+        box-shadow: 0 2px 8px var(--shadow);
+    }
+    
+    .atleta-card-inscricao.selected {
+        border-color: var(--primary);
+        background: var(--primary-light);
+    }
+    
+    .atleta-card-inscricao input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+    
+    .atleta-foto-mini {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        flex-shrink: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if evento_expirado %}
+<div style="background: #FFF3E0; border: 1px solid #FF9800; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 24px;">⚠️</span>
+        <div>
+            <strong style="color: #F57C00;">Evento Encerrado</strong>
+            <p style="margin: 5px 0 0 0; color: #424242; font-size: 14px;">
+                Inscrições encerradas. O evento já aconteceu.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div>
+        <h1 style="margin: 0;">➕ Inscrever Atletas</h1>
+        <p style="color: var(--text-sec); margin: 5px 0 0 0;">Evento: <strong>{{ evento.nome }}</strong></p>
+        {% if evento_expirado %}
+        <span style="background: #F57C00; color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-top: 5px; display: inline-block;">Evento Encerrado</span>
+        {% endif %}
+    </div>
+    <a href="{% url 'eventos:eventos_disponiveis' %}" class="btn btn-secondary">← Voltar</a>
+</div>
+
+<form method="post" id="form-inscricao">
+    {% csrf_token %}
+    
+    <!-- Filtros -->
+    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+        <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 180px;">
+                <label for="nome" style="font-size: 12px; font-weight: 600; color: var(--text-sec); text-transform: uppercase; margin-bottom: 6px; display: block;">Nome</label>
+                <input type="text" id="nome" name="nome" value="{{ nome_filtro }}" placeholder="Buscar por nome..." style="width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px;">
+            </div>
+            <div style="flex: 1; min-width: 180px;">
+                <label for="classe" style="font-size: 12px; font-weight: 600; color: var(--text-sec); text-transform: uppercase; margin-bottom: 6px; display: block;">Classe</label>
+                <select id="classe" name="classe" style="width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; height: 44px;">
+                    <option value="">Todas</option>
+                    {% for classe in classes %}
+                    <option value="{{ classe }}" {% if classe == classe_filtro %}selected{% endif %}>{{ classe }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if is_operacional and academias %}
+            <div style="flex: 1; min-width: 180px;">
+                <label for="academia" style="font-size: 12px; font-weight: 600; color: var(--text-sec); text-transform: uppercase; margin-bottom: 6px; display: block;">Academia</label>
+                <select id="academia" name="academia" style="width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; height: 44px;">
+                    <option value="">Todas</option>
+                    {% for acad in academias %}
+                    <option value="{{ acad.id }}" {% if acad.id|stringformat:"s" == academia_filtro %}selected{% endif %}>
+                        {% if acad.sigla %}[{{ acad.sigla }}] {% endif %}{{ acad.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div style="display: flex; gap: 12px;">
+                <button type="submit" formmethod="get" class="btn-filter">🔍 Filtrar</button>
+                <a href="{% url 'eventos:inscrever_atletas' evento.id %}" class="btn-clear">✖️ Limpar</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botão Cadastrar Novo -->
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'eventos:cadastrar_atleta_rapido' evento.id %}" class="btn" style="display: inline-flex; align-items: center; gap: 8px;">
+            ➕ Cadastrar Novo Atleta
+        </a>
+    </div>
+    
+    <!-- Lista de Atletas -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 30px;">
+        {% for atleta in atletas %}
+        <div class="atleta-card-inscricao {% if atleta.id in inscritos_ids %}selected{% endif %}" onclick="toggleAtleta({{ atleta.id }})">
+            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                <div class="atleta-foto-mini">🥋</div>
+                <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 16px; color: var(--text);">{{ atleta.nome }}</h3>
+                            <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-sec);">
+                                {{ atleta.classe|default:"Classe não calculada" }} • {{ atleta.get_sexo_display }} • {{ atleta.faixa }}
+                            </p>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-top: 5px;">
+                                {% if atleta.federado %}
+                                    <span style="color: var(--success); font-size: 14px;" title="Federado">✔</span>
+                                    <span style="font-size: 11px; color: var(--text-sec);">Federado</span>
+                                    {% if atleta.zempo %}
+                                        <span style="font-size: 11px; color: var(--primary); font-weight: 600;">• {{ atleta.zempo }}</span>
+                                    {% else %}
+                                        <span style="font-size: 11px; color: var(--danger); font-weight: 600;">• Sem ZEMPO!</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color: #9E9E9E; font-size: 14px;" title="Não Federado">✘</span>
+                                    <span style="font-size: 11px; color: var(--text-sec);">Não Federado</span>
+                                {% endif %}
+                            </div>
+                            {% if is_operacional %}
+                            <p style="margin: 5px 0 0 0; font-size: 11px; color: var(--primary); font-weight: 600;">
+                                {% if atleta.academia.sigla %}[{{ atleta.academia.sigla }}] {% endif %}{{ atleta.academia.nome }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <input type="checkbox" name="atletas" value="{{ atleta.id }}" 
+                               {% if atleta.id in inscritos_ids %}checked disabled{% endif %}
+                               onchange="updateCard(this, {{ atleta.id }})"
+                               style="margin-top: 5px;">
+                    </div>
+                    {% if atleta.id in inscritos_ids %}
+                    <div style="padding: 6px 12px; background: rgba(46, 125, 50, 0.1); color: var(--success); border-radius: 4px; font-size: 11px; font-weight: 600; display: inline-block;">
+                        ✓ Já inscrito
+                    </div>
+                    {% else %}
+                    <!-- ✅ NOVO: Campos de federação para inscrição -->
+                    <div style="margin-top: 10px; padding: 10px; background: var(--bg); border-radius: 6px; border: 1px solid var(--border);">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <input type="checkbox" 
+                                   name="federado_{{ atleta.id }}" 
+                                   id="federado_{{ atleta.id }}"
+                                   {% if atleta.federado %}checked{% endif %}
+                                   onchange="toggleZempo({{ atleta.id }})">
+                            <label for="federado_{{ atleta.id }}" style="font-size: 12px; font-weight: 600; color: var(--text); cursor: pointer;">
+                                É Federado?
+                            </label>
+                        </div>
+                        <div id="zempo_container_{{ atleta.id }}" style="{% if not atleta.federado %}display: none;{% endif %}">
+                            <label for="zempo_{{ atleta.id }}" style="font-size: 11px; color: var(--text-sec); display: block; margin-bottom: 4px;">Número ZEMPO:</label>
+                            <input type="text" 
+                                   name="zempo_{{ atleta.id }}" 
+                                   id="zempo_{{ atleta.id }}"
+                                   value="{{ atleta.zempo|default:'' }}"
+                                   placeholder="Ex: 123456"
+                                   style="width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px;">
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;">
+            <div style="font-size: 48px; margin-bottom: 20px;">👥</div>
+            <h2 style="color: var(--text-sec);">Nenhum atleta encontrado</h2>
+            <p style="color: var(--text-sec);">Cadastre novos atletas ou ajuste os filtros.</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Botão de Inscrição -->
+    {% if atletas %}
+    <div style="position: sticky; bottom: 0; background: var(--card-bg); border-top: 2px solid var(--border); padding: 20px; margin: 0 -40px -30px -40px; box-shadow: 0 -2px 8px var(--shadow);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong id="contador-selecionados">0</strong> atleta(s) selecionado(s)
+            </div>
+            <button type="submit" class="btn" id="btn-inscrever" {% if evento_expirado %}disabled{% else %}disabled{% endif %}>
+                ✅ Incluir no Evento
+            </button>
+        </div>
+    </div>
+    {% endif %}
+</form>
+
+<script>
+function toggleAtleta(atletaId) {
+    const checkbox = document.querySelector(`input[type="checkbox"][value="${atletaId}"]`);
+    if (checkbox && !checkbox.disabled) {
+        checkbox.checked = !checkbox.checked;
+        updateCard(checkbox, atletaId);
+    }
+}
+
+function updateCard(checkbox, atletaId) {
+    const card = checkbox.closest('.atleta-card-inscricao');
+    if (checkbox.checked) {
+        card.classList.add('selected');
+    } else {
+        card.classList.remove('selected');
+    }
+    updateContador();
+}
+
+function updateContador() {
+    const checkboxes = document.querySelectorAll('input[name="atletas"]:checked:not([disabled])');
+    const contador = document.getElementById('contador-selecionados');
+    const btnInscrever = document.getElementById('btn-inscrever');
+    
+    if (contador) {
+        contador.textContent = checkboxes.length;
+    }
+    
+    if (btnInscrever) {
+        btnInscrever.disabled = checkboxes.length === 0;
+    }
+}
+
+// Atualizar contador ao carregar
+document.addEventListener('DOMContentLoaded', function() {
+    updateContador();
+    
+    // ✅ NOVO: Se houver parâmetro ?novo_atleta= na URL, marcar o checkbox automaticamente
+    const urlParams = new URLSearchParams(window.location.search);
+    const novoAtletaId = urlParams.get('novo_atleta');
+    if (novoAtletaId) {
+        const checkbox = document.querySelector(`input[type="checkbox"][value="${novoAtletaId}"]`);
+        if (checkbox && !checkbox.disabled) {
+            checkbox.checked = true;
+            updateCard(checkbox, parseInt(novoAtletaId));
+            // Scroll até o card
+            const card = checkbox.closest('.atleta-card-inscricao');
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Destacar o card
+                card.style.border = '2px solid var(--primary)';
+                card.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+            }
+        }
+    }
+    
+    // ✅ NOVO: Função para mostrar/ocultar campo ZEMPO
+    window.toggleZempo = function(atletaId) {
+        const checkbox = document.getElementById(`federado_${atletaId}`);
+        const container = document.getElementById(`zempo_container_${atletaId}`);
+        const input = document.getElementById(`zempo_${atletaId}`);
+        
+        if (checkbox && container && input) {
+            if (checkbox.checked) {
+                container.style.display = 'block';
+                input.required = true;
+            } else {
+                container.style.display = 'none';
+                input.required = false;
+                input.value = '';
+            }
+        }
+    };
+});
+</script>
+{% endblock %}
+

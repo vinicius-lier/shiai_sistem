@@ -1,35 +1,351 @@
 {% extends 'atletas/base.html' %}
+{% load static %}
 
 {% block title %}Lista de Academias{% endblock %}
 
-{% block content %}
-<h1>Lista de Academias</h1>
-
-<a href="{% url 'cadastrar_academia' %}" class="btn">Cadastrar Nova Academia</a>
-
-<table>
-    <thead>
-        <tr>
-            <th>Nome</th>
-            <th>Cidade</th>
-            <th>Estado</th>
-            <th>Pontos</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for academia in academias %}
-        <tr>
-            <td>{{ academia.nome }}</td>
-            <td>{{ academia.cidade }}</td>
-            <td>{{ academia.estado }}</td>
-            <td><strong>{{ academia.pontos }}</strong></td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="4" style="text-align: center;">Nenhuma academia cadastrada</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% block extra_css %}
+<style>
+    /* Container Principal */
+    .academias-container {
+        width: 90%;
+        max-width: 1400px;
+        margin: 24px auto 0;
+        padding: 0 24px;
+    }
+    
+    /* Cabeçalho da Página */
+    .academias-header {
+        background: var(--primary);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px var(--shadow);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    [data-theme="dark"] .academias-header {
+        background: #2A2A2A;
+        border: 1px solid var(--border);
+    }
+    
+    .academias-header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: white;
+    }
+    
+    .academias-header .btn-cadastrar {
+        background: white;
+        color: var(--primary);
+        padding: 10px 20px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    
+    .academias-header .btn-cadastrar:hover {
+        background: var(--bg);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Wrapper da Tabela */
+    .academias-table-wrapper {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px var(--shadow);
+    }
+    
+    /* Tabela */
+    .academias-table-wrapper table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .academias-table-wrapper thead {
+        background: var(--primary);
+    }
+    
+    [data-theme="dark"] .academias-table-wrapper thead {
+        background: #2A2A2A;
+    }
+    
+    .academias-table-wrapper thead th {
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 14px;
+        min-height: 48px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .academias-table-wrapper thead th:last-child {
+        text-align: right;
+    }
+    
+    .academias-table-wrapper tbody tr {
+        background: var(--card-bg);
+        border-bottom: 1px solid var(--border);
+        min-height: 48px;
+        transition: background-color 0.2s ease;
+    }
+    
+    .academias-table-wrapper tbody tr:nth-child(even) {
+        background: var(--bg);
+    }
+    
+    [data-theme="dark"] .academias-table-wrapper tbody tr:nth-child(even) {
+        background: #2A2A2A;
+    }
+    
+    .academias-table-wrapper tbody tr:hover {
+        background: var(--primary-light);
+    }
+    
+    [data-theme="dark"] .academias-table-wrapper tbody tr:hover {
+        background: rgba(100, 181, 246, 0.1);
+    }
+    
+    .academias-table-wrapper tbody td {
+        padding: 12px;
+        color: var(--text);
+        font-size: 14px;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .academias-table-wrapper tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    /* Logo */
+    .logo-thumbnail {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 6px;
+        background: white;
+        padding: 2px;
+        border: 1px solid var(--border);
+    }
+    
+    .logo-placeholder {
+        width: 40px;
+        height: 40px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: var(--text-sec);
+    }
+    
+    /* Botões de Ações */
+    .action-buttons-cell {
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        justify-content: flex-start;
+        align-items: center;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+    }
+    
+    .btn-action {
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        min-width: 85px;
+        height: 36px;
+        box-sizing: border-box;
+    }
+    
+    .btn-action:hover {
+        filter: brightness(0.9);
+        transform: translateY(-1px);
+    }
+    
+    .btn-action-primary {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .btn-action-primary-light {
+        background: #64B5F6;
+        color: white;
+    }
+    
+    .btn-action-danger {
+        background: var(--danger);
+        color: white;
+    }
+    
+    .btn-action-whatsapp {
+        background: #25D366;
+        color: white;
+    }
+    
+    .btn-action-whatsapp:hover {
+        filter: brightness(0.9);
+        transform: translateY(-1px);
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-state-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    
+    /* Responsivo */
+    @media (max-width: 768px) {
+        .academias-container {
+            width: 100%;
+            padding: 0 16px;
+        }
+        
+        .academias-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .academias-header .btn-cadastrar {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .academias-table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .academias-table-wrapper table {
+            min-width: 800px;
+        }
+        
+        .action-buttons-cell {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        
+        .btn-action {
+            flex-shrink: 0;
+        }
+    }
+</style>
 {% endblock %}
 
+{% block content %}
+<div class="academias-container">
+    <!-- Cabeçalho -->
+    <div class="academias-header">
+        <h1>🏫 Academias</h1>
+        <a href="{% url 'cadastrar_academia' %}" class="btn-cadastrar">➕ Cadastrar Nova Academia</a>
+    </div>
+    
+    <!-- Tabela -->
+    <div class="academias-table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 60px;">Logo</th>
+                    <th>Nome</th>
+                    <th>Sigla</th>
+                    <th>Cidade</th>
+                    <th>Estado</th>
+                    <th>Telefone</th>
+                    <th style="width: 400px;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for academia in academias %}
+                <tr>
+                    <td>
+                        {% if academia.logo %}
+                            <img src="{{ academia.logo.url }}" alt="{{ academia.nome }}" class="logo-thumbnail">
+                        {% else %}
+                            <div class="logo-placeholder">🏫</div>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ academia.nome }}</strong></td>
+                    <td>
+                        {% if academia.sigla %}
+                            <span style="color: var(--primary); font-weight: 600;">{{ academia.sigla }}</span>
+                        {% else %}
+                            <span style="color: var(--text-sec);">-</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ academia.cidade }}</td>
+                    <td>{{ academia.estado }}</td>
+                    <td>
+                        {% if academia.telefone %}
+                            {{ academia.telefone }}
+                        {% else %}
+                            <span style="color: var(--text-sec);">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons-cell">
+                            <a href="{% url 'editar_academia' academia.id %}" class="btn-action btn-action-primary">
+                                ✏️ Editar
+                            </a>
+                            <a href="{% url 'atletas_academia' academia.id %}" class="btn-action btn-action-primary-light">
+                                👥 Atletas
+                            </a>
+                            {% if academia.telefone %}
+                            <a href="{{ academia.get_whatsapp_url }}" 
+                               target="_blank" 
+                               class="btn-action btn-action-whatsapp">
+                                📲 WhatsApp
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'excluir_academia' academia.id %}" class="btn-action btn-action-danger">
+                                🗑️ Excluir
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🏫</div>
+                            <div style="font-size: 18px; color: var(--text-sec); margin-bottom: 20px;">
+                                Nenhuma academia cadastrada
+                            </div>
+                            <a href="{% url 'cadastrar_academia' %}" class="btn-action btn-action-primary">Cadastrar Primeira Academia</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chave - Mobile</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/corporate.css' %}">
     <style>
         * {
             margin: 0;
@@ -12,13 +14,14 @@
         }
         body {
             font-family: Arial, sans-serif;
-            background: #f5f5f5;
+            background: var(--bg);
+            color: var(--text);
             padding: 10px;
             max-width: 480px;
             margin: 0 auto;
         }
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
             color: white;
             padding: 15px;
             border-radius: 10px;
@@ -30,11 +33,13 @@
             margin: 0;
         }
         .info-chave {
-            background: white;
+            background: var(--card-bg);
+            color: var(--text);
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px var(--shadow);
+            border: 1px solid var(--border);
             text-align: center;
         }
         .info-chave h2 {
@@ -45,7 +50,7 @@
             margin-bottom: 20px;
         }
         .round-title {
-            background: #667eea;
+            background: var(--primary);
             color: white;
             padding: 12px;
             border-radius: 8px;
@@ -55,11 +60,13 @@
             text-align: center;
         }
         .luta-card {
-            background: white;
+            background: var(--card-bg);
+            color: var(--text);
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px var(--shadow);
+            border: 1px solid var(--border);
         }
         .luta-info {
             font-size: 16px;
@@ -68,11 +75,13 @@
         .atleta-linha {
             padding: 8px;
             margin: 5px 0;
-            background: #f8f9fa;
+            background: var(--bg);
+            color: var(--text);
             border-radius: 5px;
         }
         .atleta-linha.vencedor {
-            background: #d4edda;
+            background: rgba(46, 125, 50, 0.2);
+            color: var(--success);
             font-weight: bold;
         }
         .btn-resolver {
@@ -110,19 +119,21 @@
             font-weight: bold;
         }
         .resultados {
-            background: #d4edda;
+            background: rgba(46, 125, 50, 0.1);
+            border: 1px solid var(--success);
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 15px;
         }
         .resultados h3 {
-            color: #155724;
+            color: var(--success);
             margin-bottom: 10px;
         }
         .resultado-item {
             padding: 10px;
             margin: 5px 0;
-            background: white;
+            background: var(--card-bg);
+            color: var(--text);
             border-radius: 5px;
             font-size: 16px;
         }
@@ -186,5 +197,15 @@
         Nenhuma luta gerada
     </div>
     {% endfor %}
+    <script>
+        // Sistema de Theming
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let initialTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', initialTheme);
+        }
+        initTheme();
+    </script>
 </body>
 </html>

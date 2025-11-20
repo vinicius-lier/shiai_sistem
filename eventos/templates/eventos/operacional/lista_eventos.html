@@ -1,0 +1,64 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Eventos{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <h1 style="margin: 0;">📅 Eventos</h1>
+    <a href="{% url 'eventos:criar_evento' %}" class="btn">➕ Criar Novo Evento</a>
+</div>
+
+<div class="table-responsive">
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Data do Evento</th>
+                <th>Local</th>
+                <th>Prazo Inscrição</th>
+                <th>Inscritos</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for evento in eventos %}
+            <tr>
+                <td><strong>{{ evento.nome }}</strong></td>
+                <td>{{ evento.data_evento|date:"d/m/Y" }}</td>
+                <td>{{ evento.local }}</td>
+                <td>{{ evento.data_limite_inscricao|date:"d/m/Y" }}</td>
+                <td>{{ evento.total_inscritos }}</td>
+                <td>
+                    {% if evento.ativo %}
+                        <span class="status-ok">Ativo</span>
+                    {% else %}
+                        <span class="status-eliminado">Inativo</span>
+                    {% endif %}
+                    {% if evento.inscricoes_abertas %}
+                        <br><small style="color: var(--success);">Inscrições Abertas</small>
+                    {% else %}
+                        <br><small style="color: var(--text-sec);">Inscrições Encerradas</small>
+                    {% endif %}
+                </td>
+                <td>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <a href="{% url 'eventos:editar_evento' evento.id %}" class="btn" style="padding: 8px 12px; font-size: 12px;">✏️ Editar</a>
+                        <a href="{% url 'eventos:configurar_evento' evento.id %}" class="btn" style="padding: 8px 12px; font-size: 12px;">⚙️ Configurar</a>
+                        <a href="{% url 'eventos:ver_inscritos' evento.id %}" class="btn" style="padding: 8px 12px; font-size: 12px;">👥 Inscritos</a>
+                        <a href="{% url 'eventos:pesagem_evento' evento.id %}" class="btn" style="padding: 8px 12px; font-size: 12px; background: var(--success);">⚖️ Pesagem</a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-sec);">
+                    Nenhum evento cadastrado
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

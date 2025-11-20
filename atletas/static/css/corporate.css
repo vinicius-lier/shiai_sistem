@@ -1,0 +1,739 @@
+/* ============================================
+   SISTEMA CORPORATIVO CBJ/FJERJ
+   ÚNICO ARQUIVO DE ESTILOS DO SISTEMA
+   ============================================ */
+
+/* ============================================
+   VARIÁVEIS CSS - TEMA CLARO
+   ============================================ */
+:root[data-theme="light"] {
+    --bg: #f5f5f5;
+    --card-bg: #ffffff;
+    --text: #1a1a1a;
+    --text-sec: #555;
+    --border: #d9d9d9;
+    --primary: #0A2342;
+    --primary-hover: #0d2f52;
+    --primary-light: rgba(10, 35, 66, 0.1);
+    --danger: #D32F2F;
+    --danger-hover: #C62828;
+    --success: #2E7D32;
+    --success-hover: #1B5E20;
+    --warning: #F57C00;
+    --shadow: rgba(0, 0, 0, 0.08);
+    --shadow-hover: rgba(0, 0, 0, 0.12);
+    --overlay: rgba(0, 0, 0, 0.5);
+}
+
+/* Variáveis auxiliares para compatibilidade */
+:root[data-theme="light"] {
+    --corporate-blue: var(--primary);
+    --corporate-blue-hover: var(--primary-hover);
+    --sidebar-bg: var(--card-bg);
+    --sidebar-text: var(--text);
+    --sidebar-hover: var(--bg);
+    --sidebar-header: var(--primary);
+}
+
+/* ============================================
+   VARIÁVEIS CSS - TEMA ESCURO
+   ============================================ */
+:root[data-theme="dark"] {
+    --bg: #1A1A1A;
+    --card-bg: #2A2A2A;
+    --text: #eee;
+    --text-sec: #bbb;
+    --border: #444;
+    --primary: #64B5F6;
+    --primary-hover: #42A5F5;
+    --primary-light: rgba(100, 181, 246, 0.15);
+    --danger: #EF5350;
+    --danger-hover: #E53935;
+    --success: #66BB6A;
+    --success-hover: #4CAF50;
+    --warning: #FFA726;
+    --shadow: rgba(0, 0, 0, 0.3);
+    --shadow-hover: rgba(0, 0, 0, 0.5);
+    --overlay: rgba(0, 0, 0, 0.7);
+}
+
+/* Variáveis auxiliares para compatibilidade */
+:root[data-theme="dark"] {
+    --corporate-blue: var(--primary);
+    --corporate-blue-hover: var(--primary-hover);
+    --sidebar-bg: var(--card-bg);
+    --sidebar-text: var(--text);
+    --sidebar-hover: var(--bg);
+    --sidebar-header: #2A2A2A;
+}
+
+/* ============================================
+   RESET E BASE
+   ============================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ============================================
+   LAYOUT PRINCIPAL
+   ============================================ */
+.wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.main-content {
+    flex: 1;
+    margin-left: 280px;
+    padding: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    transition: margin-left 0.3s ease;
+}
+
+/* Quando não há sidebar (páginas públicas/login) */
+.main-content.no-sidebar {
+    margin-left: 0;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 30px 40px;
+}
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+.sidebar {
+    width: 280px;
+    background: var(--card-bg);
+    color: var(--text);
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    box-shadow: 2px 0 8px var(--shadow);
+    z-index: 1000;
+    transition: transform 0.3s ease;
+    border-right: 1px solid var(--border);
+}
+
+.sidebar-header {
+    padding: 25px 20px;
+    background: var(--primary);
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar-header img {
+    max-width: 100px;
+    height: auto;
+    display: block;
+}
+
+.sidebar-header .logo-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 20px 0;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    margin: 0;
+}
+
+.sidebar-menu a {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.sidebar-menu a .menu-icon {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+    opacity: 0.85;
+}
+
+.sidebar-menu a:hover {
+    background: var(--bg);
+    border-left-color: var(--primary);
+    color: var(--primary);
+}
+
+.sidebar-menu a.active {
+    background: var(--bg);
+    border-left-color: var(--primary);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.sidebar-menu-separator {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 20px;
+}
+
+.sidebar-menu-group-title {
+    padding: 16px 20px 10px 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-sec);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+}
+
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1001;
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 20px;
+    box-shadow: 0 2px 8px var(--shadow);
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--overlay);
+    z-index: 999;
+}
+
+.sidebar-overlay.active {
+    display: block;
+}
+
+/* ============================================
+   HEADER DA PÁGINA
+   ============================================ */
+.page-header {
+    background: var(--primary);
+    color: white;
+    padding: 24px 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .page-header {
+    background: #2A2A2A;
+    border-bottom: 1px solid var(--border);
+}
+
+.page-header .logo-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 6px;
+    overflow: hidden;
+}
+
+.page-header .logo-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.page-header .header-content {
+    flex: 1;
+}
+
+.page-header .header-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    color: white;
+    letter-spacing: -0.3px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.page-header .header-subtitle {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    font-weight: 400;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.page-header .header-divider {
+    height: 2px;
+    background: rgba(255, 255, 255, 0.3);
+    margin: 8px 0;
+    width: 100%;
+}
+
+.page-header .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.btn-portal {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 20px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-portal:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* ============================================
+   TIPOGRAFIA
+   ============================================ */
+h1 {
+    color: var(--text);
+    margin-bottom: 24px;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 12px;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+h2 {
+    color: var(--text);
+    margin: 24px 0 16px 0;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+h3 {
+    color: var(--text);
+    margin: 20px 0 12px 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* ============================================
+   TABELAS
+   ============================================ */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 20px 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 100%;
+}
+
+table th, table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+table th {
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+[data-theme="dark"] table th {
+    background: #2A2A2A;
+    color: var(--text);
+    border-bottom: 2px solid var(--border);
+}
+
+table tbody tr:hover {
+    background: var(--bg);
+}
+
+table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ============================================
+   FORMULÁRIOS
+   ============================================ */
+form {
+    margin: 24px 0;
+}
+
+form label {
+    display: block;
+    margin: 12px 0 6px 0;
+    font-weight: 500;
+    color: var(--text);
+    font-size: 14px;
+}
+
+form input, form select, form textarea {
+    width: 100%;
+    max-width: 500px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 14px;
+    background: var(--card-bg);
+    color: var(--text);
+    transition: border-color 0.2s ease;
+}
+
+form input:focus, form select:focus, form textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+/* ============================================
+   BOTÕES
+   ============================================ */
+.btn, form button, button.btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.btn:hover, form button:hover, button.btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px var(--shadow);
+    color: white;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+.btn-secondary:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-danger {
+    background: var(--danger);
+}
+
+.btn-danger:hover {
+    background: var(--danger-hover);
+}
+
+.btn-success {
+    background: var(--success);
+}
+
+.btn-success:hover {
+    background: var(--success-hover);
+}
+
+/* ============================================
+   CARDS
+   ============================================ */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 3px var(--shadow);
+}
+
+.filter-box {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px var(--shadow);
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 24px;
+    border-radius: 8px;
+    flex: 1;
+    min-width: 200px;
+    box-shadow: 0 1px 3px var(--shadow);
+}
+
+.stat-card h3 {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    color: var(--text-sec);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-card .number {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+}
+
+.stat-card .label {
+    font-size: 14px;
+    color: var(--text-sec);
+    margin-top: 8px;
+}
+
+/* ============================================
+   ALERTAS
+   ============================================ */
+.alert {
+    padding: 14px 18px;
+    margin: 20px 0;
+    border-radius: 4px;
+    border: 1px solid;
+}
+
+.alert-success {
+    background: rgba(46, 125, 50, 0.1);
+    color: var(--success);
+    border-color: var(--success);
+}
+
+.alert-danger {
+    background: rgba(211, 47, 47, 0.1);
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+/* ============================================
+   STATUS E BADGES
+   ============================================ */
+.status-ok {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.status-eliminado {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.badge-ok {
+    background: rgba(46, 125, 50, 0.1);
+    color: var(--success);
+    border: 1px solid var(--success);
+}
+
+.badge-eliminado {
+    background: rgba(211, 47, 47, 0.1);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+}
+
+.badge-festival {
+    background: rgba(255, 193, 7, 0.1);
+    color: #F57C00;
+    border: 1px solid #F57C00;
+}
+
+/* ============================================
+   LINKS
+   ============================================ */
+a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--primary-hover);
+}
+
+/* ============================================
+   THEME TOGGLE
+   ============================================ */
+.theme-toggle {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    z-index: 1002;
+    background: var(--card-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 2px 8px var(--shadow);
+    transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    transform: scale(1.05);
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-sec);
+}
+
+/* ============================================
+   RESPONSIVIDADE
+   ============================================ */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    .sidebar-toggle {
+        display: block;
+    }
+    .main-content {
+        margin-left: 0;
+    }
+    .page-header {
+        padding: 20px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .page-header .header-actions {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .btn-portal {
+        width: 100%;
+        text-align: center;
+    }
+    .page-header .logo-icon {
+        width: 48px;
+        height: 48px;
+    }
+    .page-header .header-title {
+        font-size: 18px;
+    }
+    .page-header .header-subtitle {
+        font-size: 12px;
+    }
+    .container {
+        padding: 20px;
+    }
+    .sidebar-header img {
+        max-width: 80px;
+    }
+    h1 {
+        font-size: 22px;
+    }
+    h2 {
+        font-size: 18px;
+    }
+    table th, table td {
+        padding: 10px;
+        font-size: 12px;
+    }
+    .theme-toggle {
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+}
+

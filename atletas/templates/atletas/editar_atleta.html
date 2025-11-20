@@ -1,0 +1,247 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Editar Atleta{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px var(--shadow);
+    }
+    
+    .form-section-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--border);
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text);
+        font-size: 14px;
+    }
+    
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        max-width: 500px;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 14px;
+        background: var(--card-bg);
+        color: var(--text);
+        transition: all 0.2s ease;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+    }
+    [data-theme="dark"] .form-group input:focus,
+    [data-theme="dark"] .form-group select:focus {
+        box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2);
+    }
+    
+    .form-group small {
+        display: block;
+        margin-top: 5px;
+        color: var(--text-sec);
+        font-size: 13px;
+    }
+    
+    .btn-submit {
+        background: var(--corporate-blue);
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    [data-theme="dark"] .btn-submit {
+        background: var(--primary);
+    }
+    
+    .btn-submit:hover {
+        background: var(--corporate-blue-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px var(--shadow);
+    }
+    [data-theme="dark"] .btn-submit:hover {
+        background: var(--primary-hover);
+    }
+    
+    #zempo-group {
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: opacity 0.3s ease, max-height 0.3s ease, margin 0.3s ease;
+    }
+    
+    #zempo-group.show {
+        opacity: 1;
+        max-height: 200px;
+        margin-bottom: 20px;
+    }
+    
+    .foto-preview {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid var(--border);
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-content">
+        <h1 class="header-title">✏️ Editar Atleta</h1>
+        <p class="header-subtitle">Atualize os dados básicos do atleta</p>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <div class="form-section">
+        <div class="form-section-title">Dados Pessoais</div>
+        
+        <div class="form-group">
+            <label for="nome">Nome Completo:</label>
+            <input type="text" id="nome" name="nome" value="{{ atleta.nome }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="ano_nasc">Ano de Nascimento:</label>
+            <input type="number" id="ano_nasc" name="ano_nasc" min="1900" max="2024" value="{{ atleta.ano_nasc }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="sexo">Sexo:</label>
+            <select id="sexo" name="sexo" required>
+                <option value="">Selecione</option>
+                <option value="M" {% if atleta.sexo == 'M' %}selected{% endif %}>Masculino</option>
+                <option value="F" {% if atleta.sexo == 'F' %}selected{% endif %}>Feminino</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="faixa">Faixa:</label>
+            <input type="text" id="faixa" name="faixa" value="{{ atleta.faixa }}" placeholder="Ex: Branca, Amarela, Laranja..." required>
+        </div>
+        
+        <div class="form-group">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <input type="checkbox" id="federado" name="federado" onchange="toggleZempo()" {% if atleta.federado %}checked{% endif %} style="width: 20px; height: 20px; cursor: pointer;">
+                <label for="federado" style="margin: 0; font-weight: 600; cursor: pointer;">É Federado?</label>
+            </div>
+            <small>Marque se o atleta possui registro na federação (CBJ/FJERJ)</small>
+        </div>
+        
+        <div class="form-group" id="zempo-group" style="{% if atleta.federado %}display: block; opacity: 1;{% else %}display: none;{% endif %}">
+            <label for="zempo">Número ZEMPO <span style="color: var(--danger);">*</span>:</label>
+            <input type="text" id="zempo" name="zempo" value="{{ atleta.zempo|default:'' }}" placeholder="Ex: JU067540" maxlength="15" style="text-transform: uppercase;" {% if atleta.federado %}required{% endif %}>
+            <small>Número de registro na federação (obrigatório para atletas federados)</small>
+        </div>
+        
+        {% if academia_logada %}
+        <div class="form-group">
+            <label>Academia:</label>
+            <input type="text" value="{% if academia_logada.sigla %}[{{ academia_logada.sigla }}] {% endif %}{{ academia_logada.nome }}" readonly style="background: var(--bg);">
+            <input type="hidden" name="academia" value="{{ academia_logada.id }}">
+        </div>
+        {% else %}
+        <div class="form-group">
+            <label for="academia">Academia:</label>
+            <select id="academia" name="academia" required>
+                <option value="">Selecione</option>
+                {% for academia in academias %}
+                <option value="{{ academia.id }}" {% if atleta.academia.id == academia.id %}selected{% endif %}>
+                    {% if academia.sigla %}[{{ academia.sigla }}] {% endif %}{{ academia.nome }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        
+        <div class="form-group">
+            <label for="foto">Foto do Atleta:</label>
+            <input type="file" id="foto" name="foto" accept="image/*">
+            {% if atleta.foto %}
+            <div>
+                <img src="{{ atleta.foto.url }}" alt="Foto atual" class="foto-preview">
+                <small>Foto atual (deixe em branco para manter)</small>
+            </div>
+            {% else %}
+            <small>Nenhuma foto cadastrada</small>
+            {% endif %}
+        </div>
+    </div>
+    
+    <button type="submit" class="btn-submit">✓ Salvar Alterações</button>
+</form>
+
+<div style="margin-top: 30px;">
+    <a href="{% url 'lista_atletas' %}" class="btn" style="background: var(--text-sec);">← Voltar para Lista</a>
+</div>
+
+<script>
+function toggleZempo() {
+    const federado = document.getElementById('federado').checked;
+    const zempoGroup = document.getElementById('zempo-group');
+    const zempoInput = document.getElementById('zempo');
+    
+    if (federado) {
+        zempoGroup.classList.add('show');
+        zempoGroup.style.display = 'block';
+        setTimeout(() => {
+            zempoGroup.style.opacity = '1';
+        }, 10);
+        zempoInput.required = true;
+    } else {
+        zempoGroup.style.opacity = '0';
+        setTimeout(() => {
+            if (!document.getElementById('federado').checked) {
+                zempoGroup.classList.remove('show');
+                zempoGroup.style.display = 'none';
+            }
+        }, 300);
+        zempoInput.required = false;
+        zempoInput.value = '';
+    }
+}
+
+// Inicializar estado do ZEMPO ao carregar
+document.addEventListener('DOMContentLoaded', function() {
+    const federado = document.getElementById('federado').checked;
+    if (federado) {
+        const zempoGroup = document.getElementById('zempo-group');
+        zempoGroup.classList.add('show');
+        zempoGroup.style.opacity = '1';
+    }
+});
+</script>
+{% endblock %}
+
+

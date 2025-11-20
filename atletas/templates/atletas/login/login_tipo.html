@@ -1,0 +1,122 @@
+{% extends 'atletas/portal/public_base.html' %}
+{% load static %}
+
+{% block title %}Escolher Tipo de Login{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-tipo-container {
+        max-width: 800px;
+        margin: 60px auto;
+        padding: 0 20px;
+    }
+    
+    .login-tipo-header {
+        text-align: center;
+        margin-bottom: 50px;
+    }
+    
+    .login-tipo-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0 0 15px 0;
+    }
+    
+    .login-tipo-header p {
+        color: var(--text-sec);
+        font-size: 16px;
+    }
+    
+    .login-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+    }
+    
+    .login-option-card {
+        background: var(--card-bg);
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 40px 30px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        display: block;
+        color: var(--text);
+    }
+    
+    .login-option-card:hover {
+        border-color: var(--primary);
+        box-shadow: 0 4px 12px var(--shadow);
+        transform: translateY(-4px);
+    }
+    
+    .login-option-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+    
+    .login-option-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0 0 15px 0;
+    }
+    
+    .login-option-description {
+        color: var(--text-sec);
+        font-size: 15px;
+        line-height: 1.6;
+        margin: 0;
+    }
+    
+    .login-option-card.primary {
+        border-color: var(--primary);
+        background: var(--primary-light);
+    }
+    
+    .login-option-card.primary .login-option-title {
+        color: var(--primary);
+    }
+    
+    @media (max-width: 768px) {
+        .login-options {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-tipo-container">
+    <div class="login-tipo-header">
+        <h1>🔐 Escolher Tipo de Login</h1>
+        <p>Selecione o tipo de acesso que deseja realizar</p>
+    </div>
+    
+    <div class="login-options">
+        <a href="{% url 'login_academia' %}" class="login-option-card primary">
+            <div class="login-option-icon">🏫</div>
+            <h2 class="login-option-title">Login da Academia</h2>
+            <p class="login-option-description">
+                Acesso para academias cadastradas. Gerencie seus atletas, faça inscrições e acompanhe resultados.
+            </p>
+        </a>
+        
+        <a href="{% url 'login_operacional' %}" class="login-option-card">
+            <div class="login-option-icon">⚙️</div>
+            <h2 class="login-option-title">Login Operacional</h2>
+            <p class="login-option-description">
+                Acesso para gestão e operação do sistema. Controle completo de competições, pesagens e chaves.
+            </p>
+        </a>
+    </div>
+    
+    <div style="text-align: center; margin-top: 40px;">
+        <a href="{% url 'portal_publico' %}" style="color: var(--text-sec); font-size: 14px;">← Voltar ao portal</a>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,228 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Nova Competição{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px var(--shadow);
+    }
+    
+    .form-section-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--border);
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text);
+        font-size: 14px;
+    }
+    
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        max-width: 500px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 15px;
+        background: var(--card-bg);
+        color: var(--text);
+        transition: all 0.2s ease;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--corporate-blue);
+        box-shadow: 0 0 0 3px rgba(10, 35, 66, 0.1);
+    }
+    
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin: 20px 0;
+    }
+    
+    .checkbox-item {
+        display: flex;
+        align-items: start;
+        gap: 12px;
+        padding: 15px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--card-bg);
+        transition: all 0.2s ease;
+    }
+    
+    .checkbox-item:hover {
+        border-color: var(--corporate-blue);
+        background: var(--bg);
+    }
+    
+    .checkbox-item input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+        cursor: pointer;
+    }
+    
+    .checkbox-item label {
+        flex: 1;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--text);
+    }
+    
+    .checkbox-item small {
+        display: block;
+        margin-top: 5px;
+        color: var(--text-sec);
+        font-size: 13px;
+    }
+    
+    .info-box {
+        background: rgba(10, 35, 66, 0.05);
+        border: 1px solid var(--corporate-blue);
+        border-radius: 8px;
+        padding: 15px;
+        margin: 20px 0;
+        color: var(--text);
+    }
+    
+    .btn-submit {
+        background: var(--corporate-blue);
+        color: white;
+        padding: 15px 40px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(10, 35, 66, 0.2);
+    }
+    
+    .btn-submit:hover {
+        background: var(--corporate-blue-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(10, 35, 66, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Criar Nova Competição</h1>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="form-section">
+        <div class="form-section-title">Informações Básicas</div>
+        
+        <div class="form-group">
+            <label for="nome">Nome do Evento:</label>
+            <input type="text" id="nome" name="nome" required placeholder="Ex: Campeonato Regional 2024">
+        </div>
+        
+        <div class="form-group">
+            <label for="data_inicio">Data de Início:</label>
+            <input type="date" id="data_inicio" name="data_inicio">
+        </div>
+        
+        <div class="form-group">
+            <label for="data_fim">Data de Término:</label>
+            <input type="date" id="data_fim" name="data_fim">
+        </div>
+        
+        <div class="form-group">
+            <label for="cidade">Cidade:</label>
+            <input type="text" id="cidade" name="cidade" placeholder="Ex: Angra dos Reis">
+        </div>
+        
+        <div class="form-group">
+            <label for="presidente_mesa">Presidente de Mesa:</label>
+            <input type="text" id="presidente_mesa" name="presidente_mesa" placeholder="Nome do presidente">
+        </div>
+    </div>
+    
+    {% if competicao_anterior %}
+    <div class="info-box">
+        <strong>ℹ️ Competição Anterior Detectada:</strong><br>
+        <strong>{{ competicao_anterior.nome }}</strong><br>
+        Você pode importar dados da competição anterior usando as opções abaixo.
+    </div>
+    {% endif %}
+    
+    <div class="form-section">
+        <div class="form-section-title">Parametrizações</div>
+        
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="importar_academias" name="importar_academias" checked>
+                <label for="importar_academias">
+                    Importar academias da competição anterior
+                    <small>Mantém as academias já cadastradas ({{ academias_existentes }} academias existentes)</small>
+                </label>
+            </div>
+            
+            <div class="checkbox-item">
+                <input type="checkbox" id="importar_atletas" name="importar_atletas">
+                <label for="importar_atletas">
+                    Importar atletas da competição anterior
+                    <small>Mantém os atletas já cadastrados ({{ atletas_existentes }} atletas existentes)</small>
+                </label>
+            </div>
+            
+            <div class="checkbox-item">
+                <input type="checkbox" id="manter_categorias" name="manter_categorias" checked>
+                <label for="manter_categorias">
+                    Manter categorias personalizadas
+                    <small>Preserva as categorias configuradas ({{ categorias_existentes }} categorias existentes)</small>
+                </label>
+            </div>
+            
+            <div class="checkbox-item">
+                <input type="checkbox" id="zerar_ranking" name="zerar_ranking" checked>
+                <label for="zerar_ranking">
+                    Zerar ranking e pontuações
+                    <small>Reseta todas as pontuações das academias para iniciar do zero</small>
+                </label>
+            </div>
+            
+            <div class="checkbox-item">
+                <input type="checkbox" id="manter_pontuacao_remanejamento" name="manter_pontuacao_remanejamento">
+                <label for="manter_pontuacao_remanejamento">
+                    Manter pontuação de remanejamento
+                    <small>Preserva as penalidades de remanejamento acumuladas</small>
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <button type="submit" class="btn-submit">✓ Criar Competição</button>
+</form>
+
+<div style="margin-top: 30px;">
+    <a href="{% url 'lista_competicoes' %}" class="btn" style="background: var(--text-sec);">← Voltar</a>
+</div>
+{% endblock %}
+
+

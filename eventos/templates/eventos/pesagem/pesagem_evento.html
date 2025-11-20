@@ -1,0 +1,819 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Pesagem - {{ evento.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Removido: pesagem-header não faz parte do layout padrão */
+    
+    .filter-box {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 4px var(--shadow);
+    }
+    
+    .filter-form {
+        display: flex;
+        gap: 16px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+    
+    .filter-group {
+        flex: 1;
+        min-width: 180px;
+    }
+    
+    .filter-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-sec);
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        display: block;
+    }
+    
+    .filter-group select,
+    .filter-group input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        height: 44px;
+    }
+    
+    .pesagem-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px var(--shadow);
+    }
+    
+    .pesagem-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .pesagem-table th {
+        background: var(--primary);
+        color: white;
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        padding: 16px;
+        text-align: left;
+    }
+    
+    .pesagem-table td {
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+    }
+    
+    .pesagem-table tbody tr:hover {
+        background: var(--bg);
+    }
+    
+    .form-pesagem-inline {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    .form-pesagem-inline input[type="number"],
+    .peso-input {
+        width: 120px !important;
+        padding: 10px 12px !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 6px !important;
+        height: 44px !important;
+        background: var(--card-bg) !important;
+        color: var(--text) !important;
+        font-size: 14px !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: textfield !important;
+        cursor: text !important;
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 10 !important;
+        opacity: 1 !important;
+        box-sizing: border-box !important;
+    }
+    
+    .form-pesagem-inline input[type="number"]:focus,
+    .peso-input:focus {
+        outline: none !important;
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1) !important;
+    }
+    
+    .form-pesagem-inline input[type="number"]::-webkit-inner-spin-button,
+    .form-pesagem-inline input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none !important;
+        margin: 0 !important;
+    }
+    
+    .form-pesagem-inline {
+        position: relative;
+        z-index: 1;
+        pointer-events: auto;
+    }
+    
+    .form-pesagem-inline * {
+        pointer-events: auto !important;
+    }
+    
+    .form-pesagem-inline button {
+        padding: 10px 20px;
+        height: 44px;
+        white-space: nowrap;
+    }
+    
+    .status-badge-pesagem {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .status-pendente {
+        background: rgba(158, 158, 158, 0.1);
+        color: #9e9e9e;
+        border: 1px solid #9e9e9e;
+    }
+    
+    .status-ok {
+        background: rgba(46, 125, 50, 0.1);
+        color: var(--success);
+        border: 1px solid var(--success);
+    }
+    
+    .status-remanejado {
+        background: rgba(255, 193, 7, 0.1);
+        color: #F57C00;
+        border: 1px solid #F57C00;
+    }
+    
+    .status-desc {
+        background: rgba(211, 47, 47, 0.1);
+        color: var(--danger);
+        border: 1px solid var(--danger);
+    }
+    
+    /* Modais */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+    }
+    
+    .modal-content {
+        background: var(--card-bg);
+        padding: 30px;
+        border-radius: 12px;
+        max-width: 600px;
+        width: 90%;
+        box-shadow: 0 10px 30px var(--shadow);
+        border: 1px solid var(--border);
+    }
+    
+    .modal-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0 0 20px 0;
+    }
+    
+    .modal-body {
+        margin: 20px 0;
+        color: var(--text);
+    }
+    
+    .modal-info {
+        padding: 15px;
+        background: var(--bg);
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border-left: 4px solid var(--primary);
+    }
+    
+    .modal-info strong {
+        color: var(--text);
+    }
+    
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+    
+    .btn-modal {
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-remanejar {
+        background: #F57C00;
+        color: white;
+    }
+    
+    .btn-remanejar:hover {
+        background: #E65100;
+    }
+    
+    .btn-desclassificar {
+        background: var(--danger);
+        color: white;
+    }
+    
+    .btn-desclassificar:hover {
+        background: var(--danger-hover);
+    }
+    
+    .btn-cancelar {
+        background: var(--card-bg);
+        color: var(--text);
+        border: 1px solid var(--border);
+    }
+    
+    .btn-cancelar:hover {
+        background: var(--bg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if bloqueado %}
+<div style="background: #FFF3E0; border: 1px solid #FF9800; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 24px;">⚠️</span>
+        <div>
+            <strong style="color: #F57C00;">Pesagem Encerrada</strong>
+            <p style="margin: 5px 0 0 0; color: #424242; font-size: 14px;">
+                Este evento já foi realizado. Os dados abaixo são somente para consulta.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div style="margin-bottom: 30px;">
+    <h1 style="color: var(--text); margin-bottom: 10px;">⚖️ Pesagem - {{ evento.nome }}</h1>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 15px;">
+        <div style="padding: 12px 20px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;">
+            <div style="font-size: 12px; color: var(--text-sec); margin-bottom: 4px;">Total Inscritos</div>
+            <div style="font-size: 24px; font-weight: 700; color: var(--text);">{{ evento_atletas|length }}</div>
+        </div>
+        <div style="padding: 12px 20px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;">
+            <div style="font-size: 12px; color: var(--text-sec); margin-bottom: 4px;">Pendentes</div>
+            <div style="font-size: 24px; font-weight: 700; color: var(--text);">{{ pendentes }}</div>
+        </div>
+        <div style="padding: 12px 20px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;">
+            <div style="font-size: 12px; color: var(--text-sec); margin-bottom: 4px;">Pesados</div>
+            <div style="font-size: 24px; font-weight: 700; color: var(--text);">{{ evento_atletas|length|add:"-"|add:pendentes }}</div>
+        </div>
+        {% if todos_pesados and not evento.pesagem_encerrada %}
+        <div style="padding: 12px 20px; background: rgba(46, 125, 50, 0.1); border: 1px solid var(--success); border-radius: 6px;">
+            <div style="font-size: 12px; color: var(--text-sec); margin-bottom: 4px;">Status</div>
+            <div style="font-size: 16px; font-weight: 600; color: var(--success);">✅ Todos Pesados</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="filter-box">
+    <form method="get" class="filter-form">
+        <div class="filter-group">
+            <label for="nome">Nome</label>
+            <input type="text" id="nome" name="nome" value="{{ nome_filtro }}" placeholder="Buscar por nome...">
+        </div>
+        <div class="filter-group">
+            <label for="classe">Classe</label>
+            <select id="classe" name="classe">
+                <option value="">Todas</option>
+                {% for classe in classes %}
+                <option value="{{ classe }}" {% if classe == classe_filtro %}selected{% endif %}>{{ classe }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="">Todos</option>
+                <option value="PENDENTE" {% if status_filtro == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+                <option value="OK" {% if status_filtro == 'OK' %}selected{% endif %}>OK</option>
+                <option value="REMANEJADO" {% if status_filtro == 'REMANEJADO' %}selected{% endif %}>Remanejado</option>
+                <option value="DESC" {% if status_filtro == 'DESC' %}selected{% endif %}>Desclassificado</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="academia">Academia</label>
+            <select id="academia" name="academia">
+                <option value="">Todas</option>
+                {% for acad in academias %}
+                <option value="{{ acad.id }}" {% if acad.id|stringformat:"s" == academia_filtro %}selected{% endif %}>
+                    {% if acad.sigla %}[{{ acad.sigla }}] {% endif %}{{ acad.nome }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn-filter">🔍 Filtrar</button>
+            <a href="{% url 'eventos:pesagem_evento' evento.id %}" class="btn-clear">✖️ Limpar</a>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de Pesagem -->
+<div class="pesagem-table-wrapper">
+    <table class="pesagem-table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Academia</th>
+                <th>Classe</th>
+                <th>Categoria Atual</th>
+                <th>Categoria Limite</th>
+                <th>Peso (kg)</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for evento_atleta in evento_atletas %}
+            <tr data-evento-atleta-id="{{ evento_atleta.id }}">
+                <td><strong>{{ evento_atleta.atleta.nome }}</strong></td>
+                <td>
+                    {% if evento_atleta.academia.sigla %}[{{ evento_atleta.academia.sigla }}] {% endif %}
+                    {{ evento_atleta.academia.nome }}
+                </td>
+                <td>{{ evento_atleta.atleta.classe|default:"-" }}</td>
+                <td>
+                    {% if evento_atleta.categoria_final %}
+                        {{ evento_atleta.categoria_final.categoria_nome }}
+                    {% elif evento_atleta.categoria %}
+                        {{ evento_atleta.categoria.categoria_nome }}
+                    {% elif evento_atleta.categoria_ajustada %}
+                        {{ evento_atleta.categoria_ajustada }}
+                    {% elif evento_atleta.atleta.categoria_nome %}
+                        {{ evento_atleta.atleta.categoria_nome }}
+                    {% else %}
+                        <span style="color: var(--text-sec);">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if evento_atleta.categoria_final %}
+                        {% if evento_atleta.categoria_final.limite_max >= 999.0 %}
+                            <span style="color: var(--text); font-weight: 500;">{{ evento_atleta.categoria_final.limite_min }} kg ou mais</span>
+                        {% else %}
+                            <span style="color: var(--text); font-weight: 500;">{{ evento_atleta.categoria_final.limite_min }} a {{ evento_atleta.categoria_final.limite_max }} kg</span>
+                        {% endif %}
+                    {% elif evento_atleta.categoria %}
+                        {% if evento_atleta.categoria.limite_max >= 999.0 %}
+                            <span style="color: var(--text); font-weight: 500;">{{ evento_atleta.categoria.limite_min }} kg ou mais</span>
+                        {% else %}
+                            <span style="color: var(--text); font-weight: 500;">{{ evento_atleta.categoria.limite_min }} a {{ evento_atleta.categoria.limite_max }} kg</span>
+                        {% endif %}
+                    {% else %}
+                        <span style="color: var(--text-sec);">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if evento_atleta.peso_oficial %}
+                        <strong style="color: var(--primary);">{{ evento_atleta.peso_oficial }} kg</strong>
+                    {% else %}
+                        <span style="color: var(--text-sec);">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if evento_atleta.status_pesagem == 'OK' %}
+                        <span class="status-badge-pesagem status-ok">OK</span>
+                    {% elif evento_atleta.status_pesagem == 'REMANEJADO' %}
+                        <span class="status-badge-pesagem status-remanejado">REMANEJADO</span>
+                    {% elif evento_atleta.status_pesagem == 'DESC' %}
+                        <span class="status-badge-pesagem status-desc">DESCLASSIFICADO</span>
+                    {% else %}
+                        <span class="status-badge-pesagem status-pendente">PENDENTE</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if evento_atleta.status_pesagem == 'PENDENTE' or not evento_atleta.peso_oficial %}
+                    <form class="form-pesagem-inline" data-evento-atleta-id="{{ evento_atleta.id }}" onsubmit="registrarPeso(event, {{ evento_atleta.id }})">
+                        {% csrf_token %}
+                        <input type="number" 
+                               name="peso" 
+                               step="0.1" 
+                               min="0" 
+                               placeholder="Peso (kg)" 
+                               required 
+                               inputmode="decimal" 
+                               class="form-control peso-input" 
+                               id="peso-input-{{ evento_atleta.id }}"
+                               autocomplete="off"
+                               style="width: 120px !important; padding: 10px 12px !important; border: 1px solid var(--border) !important; border-radius: 6px !important; height: 44px !important; background: var(--card-bg) !important; color: var(--text) !important; font-size: 14px !important; cursor: text !important; pointer-events: auto !important;"
+                               {% if bloqueado %}disabled readonly style="background: #F5F5F5 !important; cursor: not-allowed !important;"{% endif %}>
+                        <button type="submit" class="btn" style="padding: 10px 20px; height: 44px; white-space: nowrap;" {% if bloqueado %}disabled style="background: #9E9E9E; cursor: not-allowed;"{% endif %}>Registrar</button>
+                    </form>
+                    {% else %}
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <span style="color: var(--text-sec); font-size: 12px;">Pesado</span>
+                        {% if evento_atleta.peso_oficial %}
+                        <span style="color: var(--primary); font-weight: 600; font-size: 13px;">{{ evento_atleta.peso_oficial }} kg</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-sec);">
+                    Nenhum atleta encontrado
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if todos_pesados and not evento.pesagem_encerrada and not bloqueado %}
+<div style="margin-top: 30px; text-align: center;">
+    <button onclick="encerrarPesagem()" class="btn" style="background: var(--success);">
+        ✅ Encerrar Pesagem
+    </button>
+</div>
+{% endif %}
+
+<!-- Modal 1: Escolha (Remanejar / Desclassificar) -->
+<div id="modal-escolha" class="modal-overlay">
+    <div class="modal-content">
+        <h2 class="modal-title">⚠️ Atenção: Peso fora da categoria!</h2>
+        <div class="modal-body" id="modal-escolha-body">
+            <!-- Conteúdo será preenchido via JavaScript -->
+        </div>
+        <form id="form-escolha" class="modal-actions">
+            {% csrf_token %}
+            <input type="hidden" name="peso_oficial" id="modal-peso">
+            <input type="hidden" name="categoria_nova" id="modal-categoria-nova">
+            <input type="hidden" name="evento_atleta_id" id="modal-inscricao-id">
+            <button type="button" class="btn-modal btn-remanejar" onclick="confirmarAcao('remanejar')" {% if bloqueado %}disabled{% endif %}>
+                🔄 Remanejar
+            </button>
+            <button type="button" class="btn-modal btn-desclassificar" onclick="confirmarAcao('desclassificar')" {% if bloqueado %}disabled{% endif %}>
+                ❌ Desclassificar
+            </button>
+            <button type="button" class="btn-modal btn-cancelar" onclick="fecharModal('modal-escolha')">
+                🔙 Cancelar
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 2: Desclassificar Apenas -->
+<div id="modal-desc-only" class="modal-overlay">
+    <div class="modal-content">
+        <h2 class="modal-title">❌ Peso fora de todas as categorias</h2>
+        <div class="modal-body" id="modal-desc-only-body">
+            <!-- Conteúdo será preenchido via JavaScript -->
+        </div>
+        <form id="form-desc-only" class="modal-actions">
+            {% csrf_token %}
+            <input type="hidden" name="peso_oficial" id="modal-desc-peso">
+            <input type="hidden" name="evento_atleta_id" id="modal-desc-inscricao-id">
+            <button type="button" class="btn-modal btn-desclassificar" onclick="confirmarAcao('desclassificar')" {% if bloqueado %}disabled{% endif %}>
+                ❌ Desclassificar
+            </button>
+            <button type="button" class="btn-modal btn-cancelar" onclick="fecharModal('modal-desc-only')">
+                🔙 Cancelar
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+let eventoAtletaAtual = null;
+
+// Garantir que todos os inputs de peso estejam funcionais
+document.addEventListener('DOMContentLoaded', function() {
+    const pesoInputs = document.querySelectorAll('input[name="peso"], input[name="peso_oficial"], .peso-input');
+    pesoInputs.forEach(input => {
+        // Remover qualquer atributo que possa bloquear
+        input.removeAttribute('readonly');
+        input.removeAttribute('disabled');
+        input.style.pointerEvents = 'auto';
+        input.style.cursor = 'text';
+        input.style.opacity = '1';
+        input.style.zIndex = '10';
+        
+        // Garantir que o input pode receber foco
+        input.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.focus();
+        });
+        
+        // Garantir que eventos de teclado funcionem
+        input.addEventListener('keydown', function(e) {
+            e.stopPropagation();
+        });
+        
+        input.addEventListener('input', function(e) {
+            e.stopPropagation();
+        });
+        
+        input.addEventListener('focus', function(e) {
+            e.stopPropagation();
+            this.style.borderColor = 'var(--primary)';
+        });
+    });
+});
+
+function registrarPeso(event, eventoAtletaId) {
+    event.preventDefault();
+    
+    // ✅ BLOQUEIO: Verificar se pesagem está bloqueada
+    {% if bloqueado %}
+    mostrarMensagem('error', 'Pesagem encerrada. O evento já aconteceu.');
+    return;
+    {% endif %}
+    
+    eventoAtletaAtual = eventoAtletaId;
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Garantir que o valor do peso está sendo capturado corretamente
+    const pesoInput = form.querySelector('input[name="peso"]') || form.querySelector('input[name="peso_oficial"]');
+    if (!pesoInput) {
+        mostrarMensagem('error', 'Campo de peso não encontrado');
+        return;
+    }
+    
+    const pesoValue = pesoInput.value.trim();
+    if (!pesoValue || pesoValue === '' || isNaN(parseFloat(pesoValue))) {
+        mostrarMensagem('error', 'Por favor, informe um peso válido');
+        pesoInput.focus();
+        return;
+    }
+    
+    // Enviar como 'peso' (o backend aceita ambos)
+    formData.set('peso', pesoValue);
+    formData.set('peso_oficial', pesoValue);  // Compatibilidade
+    
+    fetch(`{% url 'eventos:registrar_peso_evento' evento.id 0 %}`.replace('0', eventoAtletaId), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.sucesso) {
+            // Pesagem OK, atualizar linha
+            atualizarLinhaPesagem(eventoAtletaId, data.status, formData.get('peso_oficial'));
+            mostrarMensagem('success', data.mensagem);
+        } else if (data.modal === 'ESCOLHA') {
+            // Abrir modal de escolha
+            mostrarModalEscolha(data);
+        } else if (data.modal === 'DESC_ONLY') {
+            // Abrir modal de desclassificação
+            mostrarModalDescOnly(data);
+        } else if (data.erro) {
+            mostrarMensagem('error', data.erro);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        mostrarMensagem('error', 'Erro ao processar pesagem');
+    });
+}
+
+function mostrarModalEscolha(data) {
+    const modal = document.getElementById('modal-escolha');
+    const body = document.getElementById('modal-escolha-body');
+    const form = document.getElementById('form-escolha');
+    
+    const eventoAtletaId = data.evento_atleta_id || eventoAtletaAtual;
+    form.action = `{% url 'eventos:confirmar_acao_pesagem' evento.id 0 %}`.replace('0', eventoAtletaId);
+    document.getElementById('modal-peso').value = data.peso;
+    document.getElementById('modal-categoria-nova').value = data.categoria_sugerida.nome;
+    document.getElementById('modal-inscricao-id').value = eventoAtletaId;
+    
+    // Usar limite já formatado do backend, ou calcular se não vier
+    const limiteAtual = data.categoria_atual.limite || 
+        (data.categoria_atual.limite_max >= 999.0 ? 
+            `${data.categoria_atual.limite_min} kg ou mais` : 
+            `${data.categoria_atual.limite_min} a ${data.categoria_atual.limite_max} kg`);
+    
+    const limiteNovo = data.categoria_sugerida.limite || 
+        (data.categoria_sugerida.limite_max >= 999.0 ? 
+            `${data.categoria_sugerida.limite_min} kg ou mais` : 
+            `${data.categoria_sugerida.limite_min} a ${data.categoria_sugerida.limite_max} kg`);
+    
+    body.innerHTML = `
+        <div class="modal-info">
+            <p><strong>Atleta:</strong> ${data.atleta_nome}</p>
+            <p><strong>Peso registrado:</strong> ${data.peso} kg</p>
+        </div>
+        <div class="modal-info">
+            <p><strong>Categoria atual:</strong> ${data.categoria_atual.classe || ''} - ${data.categoria_atual.nome} (${limiteAtual})</p>
+            <p><strong>Categoria sugerida:</strong> ${data.categoria_sugerida.classe || ''} - ${data.categoria_sugerida.nome} (${limiteNovo})</p>
+        </div>
+        <div style="padding: 15px; background: rgba(255, 193, 7, 0.1); border-radius: 8px; border-left: 4px solid #F57C00; margin-top: 15px;">
+            <p style="color: #F57C00; font-weight: 600; margin: 0;">⚠️ IMPORTANTE:</p>
+            <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                <li>Se <strong>Remanejar</strong>: O atleta será remanejado para a nova categoria e a academia <strong>perderá 1 ponto</strong>.</li>
+                <li>Se <strong>Desclassificar</strong>: O atleta será desclassificado por estar fora do peso da categoria.</li>
+            </ul>
+        </div>
+    `;
+    
+    modal.classList.add('active');
+}
+
+function mostrarModalDescOnly(data) {
+    const modal = document.getElementById('modal-desc-only');
+    const body = document.getElementById('modal-desc-only-body');
+    const form = document.getElementById('form-desc-only');
+    
+    const eventoAtletaId = data.evento_atleta_id || eventoAtletaAtual;
+    form.action = `{% url 'eventos:confirmar_acao_pesagem' evento.id 0 %}`.replace('0', eventoAtletaId);
+    document.getElementById('modal-desc-peso').value = data.peso;
+    document.getElementById('modal-desc-inscricao-id').value = eventoAtletaId;
+    
+    body.innerHTML = `
+        <div class="modal-info">
+            <p><strong>Atleta:</strong> ${data.atleta_nome}</p>
+            <p><strong>Peso registrado:</strong> ${data.peso} kg</p>
+        </div>
+        <div style="padding: 15px; background: rgba(211, 47, 47, 0.1); border-radius: 8px; border-left: 4px solid var(--danger); margin-top: 15px;">
+            <p style="color: var(--danger); font-weight: 600; margin: 0;">❌ Peso fora de todas as categorias permitidas para esta classe</p>
+        </div>
+    `;
+    
+    modal.classList.add('active');
+}
+
+function confirmarAcao(acao) {
+    let form, eventoAtletaId;
+    
+    if (document.getElementById('modal-escolha').classList.contains('active')) {
+        form = document.getElementById('form-escolha');
+        eventoAtletaId = document.getElementById('modal-inscricao-id').value;
+    } else {
+        form = document.getElementById('form-desc-only');
+        eventoAtletaId = document.getElementById('modal-desc-inscricao-id').value;
+    }
+    
+    const formData = new FormData(form);
+    formData.append('acao', acao);
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.sucesso) {
+            fecharModal('modal-escolha');
+            fecharModal('modal-desc-only');
+            atualizarLinhaPesagem(eventoAtletaId, data.status, formData.get('peso_oficial'));
+            mostrarMensagem('success', data.mensagem);
+        } else {
+            mostrarMensagem('error', data.erro || 'Erro ao processar ação');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        mostrarMensagem('error', 'Erro ao processar ação');
+    });
+}
+
+function atualizarLinhaPesagem(eventoAtletaId, status, peso) {
+    const linha = document.querySelector(`tr[data-evento-atleta-id="${eventoAtletaId}"]`);
+    if (!linha) return;
+    
+    // Atualizar peso
+    const pesoCell = linha.cells[4];
+    pesoCell.innerHTML = `<strong style="color: var(--primary);">${peso} kg</strong>`;
+    
+    // Atualizar status
+    const statusCell = linha.cells[5];
+    let badgeClass = 'status-pendente';
+    let badgeText = 'PENDENTE';
+    
+    if (status === 'OK') {
+        badgeClass = 'status-ok';
+        badgeText = 'OK';
+    } else if (status === 'REMANEJADO') {
+        badgeClass = 'status-remanejado';
+        badgeText = 'REMANEJADO';
+    } else if (status === 'DESC') {
+        badgeClass = 'status-desc';
+        badgeText = 'DESCLASSIFICADO';
+    }
+    
+    statusCell.innerHTML = `<span class="status-badge-pesagem ${badgeClass}">${badgeText}</span>`;
+    
+    // Atualizar ações
+    const acoesCell = linha.cells[6];
+    acoesCell.innerHTML = `<span style="color: var(--text-sec); font-size: 12px;">Pesado</span>`;
+}
+
+function fecharModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+function encerrarPesagem() {
+    if (!confirm('Tem certeza que deseja encerrar a pesagem? Esta ação não pode ser desfeita.')) {
+        return;
+    }
+    
+    fetch(`{% url 'eventos:encerrar_pesagem' evento.id %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.sucesso) {
+            mostrarMensagem('success', data.mensagem);
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            mostrarMensagem('error', data.mensagem || 'Erro ao encerrar pesagem');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        mostrarMensagem('error', 'Erro ao encerrar pesagem');
+    });
+}
+
+function mostrarMensagem(tipo, mensagem) {
+    // Criar elemento de mensagem
+    const msgDiv = document.createElement('div');
+    msgDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    if (tipo === 'success') {
+        msgDiv.style.background = 'var(--success)';
+    } else {
+        msgDiv.style.background = 'var(--danger)';
+    }
+    
+    msgDiv.textContent = mensagem;
+    document.body.appendChild(msgDiv);
+    
+    setTimeout(() => {
+        msgDiv.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => msgDiv.remove(), 300);
+    }, 3000);
+}
+
+// Fechar modal ao clicar fora
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal-overlay')) {
+        e.target.classList.remove('active');
+    }
+});
+</script>
+{% endblock %}
+

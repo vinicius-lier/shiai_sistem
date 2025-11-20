@@ -2,104 +2,279 @@
 
 {% block title %}Cadastrar Atleta{% endblock %}
 
+{% block extra_css %}
+<style>
+    .form-section {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px var(--shadow);
+    }
+    
+    .form-section-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--border);
+    }
+    
+    .radio-group {
+        display: flex;
+        gap: 20px;
+        margin: 15px 0;
+        flex-wrap: wrap;
+    }
+    
+    .radio-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: var(--card-bg);
+    }
+    
+    .radio-option:hover {
+        border-color: var(--primary);
+        background: var(--sidebar-hover);
+    }
+    
+    .radio-option input[type="radio"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+    
+    .radio-option input[type="radio"]:checked + label {
+        color: var(--corporate-blue);
+        font-weight: 600;
+    }
+    
+    .radio-option:has(input[type="radio"]:checked) {
+        border-color: var(--primary);
+        background: rgba(25, 118, 210, 0.1);
+    }
+    [data-theme="dark"] .radio-option:has(input[type="radio"]:checked) {
+        background: rgba(100, 181, 246, 0.15);
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text);
+        font-size: 14px;
+    }
+    
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        max-width: 500px;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 14px;
+        background: var(--card-bg);
+        color: var(--text);
+        transition: all 0.2s ease;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+    }
+    [data-theme="dark"] .form-group input:focus,
+    [data-theme="dark"] .form-group select:focus {
+        box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2);
+    }
+    
+    .form-group small {
+        display: block;
+        margin-top: 5px;
+        color: var(--text-sec);
+        font-size: 13px;
+    }
+    
+    .festival-info {
+        background: rgba(255, 193, 7, 0.1);
+        border: 1px solid rgba(255, 193, 7, 0.3);
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+        color: var(--text);
+        font-size: 14px;
+    }
+    
+    .btn-submit {
+        background: var(--corporate-blue);
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    [data-theme="dark"] .btn-submit {
+        background: var(--primary);
+    }
+    
+    .btn-submit:hover {
+        background: var(--corporate-blue-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px var(--shadow);
+    }
+    [data-theme="dark"] .btn-submit:hover {
+        background: var(--primary-hover);
+    }
+    
+    #categoria-group {
+        display: block;
+    }
+    
+    #categoria-group.festival-hidden {
+        display: none;
+    }
+    
+    #peso-group {
+        display: block;
+    }
+    
+    #peso-group.festival-hidden {
+        display: none;
+    }
+    
+    #zempo-group {
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: opacity 0.3s ease, max-height 0.3s ease, margin 0.3s ease;
+    }
+    
+    #zempo-group.show {
+        opacity: 1;
+        max-height: 200px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <h1>Cadastrar Atleta</h1>
 
 <form method="post">
     {% csrf_token %}
     
-    <label for="nome">Nome:</label>
-    <input type="text" id="nome" name="nome" required>
+    <div class="form-section">
+        <div class="form-section-title">Dados Pessoais</div>
+        
+        <div class="form-group">
+            <label for="nome">Nome Completo:</label>
+            <input type="text" id="nome" name="nome" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="ano_nasc">Ano de Nascimento:</label>
+            <input type="number" id="ano_nasc" name="ano_nasc" min="1900" max="2024" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="sexo">Sexo:</label>
+            <select id="sexo" name="sexo" required>
+                <option value="">Selecione</option>
+                <option value="M">Masculino</option>
+                <option value="F">Feminino</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="faixa">Faixa:</label>
+            <input type="text" id="faixa" name="faixa" placeholder="Ex: Branca, Amarela, Laranja..." required>
+        </div>
+        
+        <div class="form-group">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <input type="checkbox" id="federado" name="federado" onchange="toggleZempo()" style="width: 20px; height: 20px; cursor: pointer;">
+                <label for="federado" style="margin: 0; font-weight: 600; cursor: pointer;">É Federado?</label>
+            </div>
+            <small>Marque se o atleta possui registro na federação (CBJ/FJERJ)</small>
+        </div>
+        
+        <div class="form-group" id="zempo-group" style="display: none; transition: opacity 0.3s ease;">
+            <label for="zempo">Número ZEMPO <span style="color: var(--danger);">*</span>:</label>
+            <input type="text" id="zempo" name="zempo" placeholder="Ex: JU067540" maxlength="15" style="text-transform: uppercase;">
+            <small>Número de registro na federação (obrigatório para atletas federados)</small>
+        </div>
+        
+        {% if academia_logada %}
+        <div class="form-group">
+            <label>Academia:</label>
+            <input type="text" value="{% if academia_logada.sigla %}[{{ academia_logada.sigla }}] {% endif %}{{ academia_logada.nome }}" readonly style="background: var(--bg);">
+            <input type="hidden" name="academia" value="{{ academia_logada.id }}">
+        </div>
+        {% else %}
+        <div class="form-group">
+            <label for="academia">Academia:</label>
+            <select id="academia" name="academia" required>
+                <option value="">Selecione</option>
+                {% for academia in academias %}
+                <option value="{{ academia.id }}">{% if academia.sigla %}[{{ academia.sigla }}] {% endif %}{{ academia.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+    </div>
     
-    <label for="ano_nasc">Ano de Nascimento:</label>
-    <input type="number" id="ano_nasc" name="ano_nasc" min="1900" max="2024" required>
+    <!-- NOTA: Categoria e peso não são mais solicitados no cadastro base -->
+    <!-- Eles serão definidos apenas na inscrição do evento ou na pesagem -->
     
-    <label for="sexo">Sexo:</label>
-    <select id="sexo" name="sexo" required>
-        <option value="">Selecione</option>
-        <option value="M">Masculino</option>
-        <option value="F">Feminino</option>
-    </select>
-    
-    <label for="faixa">Faixa:</label>
-    <input type="text" id="faixa" name="faixa" placeholder="Ex: Branca, Amarela, Laranja..." required>
-    
-    <label for="academia">Academia:</label>
-    <select id="academia" name="academia" required>
-        <option value="">Selecione</option>
-        {% for academia in academias %}
-        <option value="{{ academia.id }}">{{ academia.nome }}</option>
-        {% endfor %}
-    </select>
-    
-    <label for="categoria">Categoria:</label>
-    <select id="categoria" name="categoria" required>
-        <option value="">Selecione primeiro o ano de nascimento e sexo</option>
-        {% for categoria in categorias %}
-        <option value="{{ categoria.id }}" data-classe="{{ categoria.classe }}" data-sexo="{{ categoria.sexo }}">
-            {{ categoria.label }}
-        </option>
-        {% endfor %}
-    </select>
-    
-    <label for="peso_previsto">Peso Previsto (kg):</label>
-    <input type="number" id="peso_previsto" name="peso_previsto" step="0.1" min="0">
-    
-    <button type="submit">Cadastrar Atleta</button>
+    <button type="submit" class="btn-submit">✓ Cadastrar Atleta</button>
 </form>
 
-<a href="{% url 'lista_atletas' %}" class="btn">Voltar para Lista</a>
+<div style="margin-top: 30px;">
+    <a href="{% url 'lista_atletas' %}" class="btn" style="background: var(--text-sec);">← Voltar para Lista</a>
+</div>
 
 <script>
-document.getElementById('ano_nasc').addEventListener('change', function() {
-    calcularClasse();
-});
-
-document.getElementById('sexo').addEventListener('change', function() {
-    calcularClasse();
-});
-
-function calcularClasse() {
-    const anoNasc = document.getElementById('ano_nasc').value;
-    const sexo = document.getElementById('sexo').value;
-    const categoriaSelect = document.getElementById('categoria');
+function toggleZempo() {
+    const federado = document.getElementById('federado').checked;
+    const zempoGroup = document.getElementById('zempo-group');
+    const zempoInput = document.getElementById('zempo');
     
-    if (!anoNasc || !sexo) {
-        return;
-    }
-    
-    // Calcular idade e classe
-    const hoje = new Date();
-    const idade = hoje.getFullYear() - parseInt(anoNasc);
-    
-    let classe = '';
-    if (idade <= 9) classe = 'SUB 9';
-    else if (idade <= 11) classe = 'SUB 11';
-    else if (idade <= 13) classe = 'SUB 13';
-    else if (idade <= 15) classe = 'SUB 15';
-    else if (idade <= 18) classe = 'SUB 18';
-    else if (idade <= 21) classe = 'SUB 21';
-    else classe = 'ADULTO';
-    
-    // Filtrar categorias
-    const options = categoriaSelect.options;
-    for (let i = 0; i < options.length; i++) {
-        const option = options[i];
-        if (option.value === '') {
-            option.style.display = '';
-            continue;
-        }
-        
-        const optionClasse = option.getAttribute('data-classe');
-        const optionSexo = option.getAttribute('data-sexo');
-        
-        if (optionClasse === classe && optionSexo === sexo) {
-            option.style.display = '';
-        } else {
-            option.style.display = 'none';
-        }
+    if (federado) {
+        zempoGroup.classList.add('show');
+        zempoGroup.style.display = 'block';
+        setTimeout(() => {
+            zempoGroup.style.opacity = '1';
+        }, 10);
+        zempoInput.required = true;
+    } else {
+        zempoGroup.style.opacity = '0';
+        setTimeout(() => {
+            if (!document.getElementById('federado').checked) {
+                zempoGroup.classList.remove('show');
+                zempoGroup.style.display = 'none';
+            }
+        }, 300);
+        zempoInput.required = false;
+        zempoInput.value = '';
     }
 }
+
+// Função removida: não há mais seleção de tipo de atleta no cadastro base
 </script>
 {% endblock %}
-

@@ -87,3 +87,4 @@ python manage.py runserver
 - Os relatórios são gerados em HTML simples
 - O sistema está pronto para uso em competições reais
 
+

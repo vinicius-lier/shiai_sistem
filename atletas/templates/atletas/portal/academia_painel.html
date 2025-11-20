@@ -1,0 +1,244 @@
+{% extends 'atletas/portal/public_base.html' %}
+{% load static %}
+
+{% block title %}Painel da Academia - {{ academia.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .painel-header {
+        background: var(--primary);
+        color: white;
+        padding: 40px;
+        margin-bottom: 30px;
+    }
+    
+    [data-theme="dark"] .painel-header {
+        background: #2A2A2A;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .painel-header-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    
+    .painel-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    .painel-subtitle {
+        font-size: 16px;
+        opacity: 0.9;
+        margin: 5px 0 0 0;
+    }
+    
+    .painel-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 40px 40px;
+    }
+    
+    .painel-section {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px var(--shadow);
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--border);
+    }
+    
+    .section-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text);
+        margin: 0;
+    }
+    
+    .eventos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    
+    .evento-card {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 20px;
+        background: var(--bg);
+    }
+    
+    .evento-nome {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 15px;
+    }
+    
+    .evento-info {
+        font-size: 14px;
+        color: var(--text-sec);
+        margin: 8px 0;
+    }
+    
+    .atletas-table-wrapper {
+        overflow-x: auto;
+    }
+    
+    @media (max-width: 768px) {
+        .painel-container {
+            padding: 0 20px 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="painel-header">
+    <div class="painel-header-content">
+        <div>
+            <h1 class="painel-title">🏫 Painel da Academia</h1>
+            <p class="painel-subtitle">
+                {% if academia.sigla %}{{ academia.sigla }} – {% endif %}{{ academia.nome }}
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'academia_logout' %}" class="btn" style="background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.3); color: white;">
+                Sair
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="painel-container">
+    <!-- Eventos Disponíveis -->
+    <div class="painel-section">
+        <div class="section-header">
+            <h2 class="section-title">📅 Eventos Disponíveis para Inscrição</h2>
+        </div>
+        <div class="eventos-grid">
+            {% for evento in eventos_publicos %}
+            <div class="evento-card">
+                <h3 class="evento-nome">{{ evento.nome }}</h3>
+                {% if evento.data_inicio %}
+                <div class="evento-info">📅 {{ evento.data_inicio|date:"d/m/Y" }}{% if evento.data_fim %} a {{ evento.data_fim|date:"d/m/Y" }}{% endif %}</div>
+                {% endif %}
+                {% if evento.local %}
+                <div class="evento-info">📍 {{ evento.local }}</div>
+                {% endif %}
+                {% if evento.prazo_inscricao %}
+                <div class="evento-info">⏰ Prazo: {{ evento.prazo_inscricao|date:"d/m/Y" }}</div>
+                {% endif %}
+                <div style="margin-top: 15px;">
+                    <a href="{% url 'cadastrar_atleta' %}" class="btn">✍️ Inscrever Atletas</a>
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-sec);">
+                Nenhum evento disponível no momento
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Meus Atletas -->
+    <div class="painel-section">
+        <div class="section-header">
+            <h2 class="section-title">👥 Meus Atletas ({{ atletas.count }})</h2>
+            <a href="{% url 'cadastrar_atleta' %}" class="btn">➕ Cadastrar Novo</a>
+        </div>
+        <div class="atletas-table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Classe</th>
+                        <th>Categoria</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for atleta in atletas %}
+                    <tr>
+                        <td><strong>{{ atleta.nome }}</strong></td>
+                        <td>{{ atleta.classe|default:"-" }}</td>
+                        <td>{{ atleta.categoria_ajustada|default:atleta.categoria_nome|default:"-" }}</td>
+                        <td>
+                            {% if atleta.status == 'OK' %}
+                                <span style="color: var(--success);">✓ OK</span>
+                            {% else %}
+                                <span style="color: var(--danger);">{{ atleta.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'lista_atletas' %}?id={{ atleta.id }}" class="btn" style="padding: 4px 8px; font-size: 12px;">Ver</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-sec);">
+                            Nenhum atleta cadastrado ainda
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Informações da Academia -->
+    <div class="painel-section">
+        <div class="section-header">
+            <h2 class="section-title">ℹ️ Informações da Academia</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+            <div>
+                <strong style="color: var(--text-sec);">Nome:</strong>
+                <p style="margin: 5px 0; color: var(--text);">{{ academia.nome }}</p>
+            </div>
+            {% if academia.sigla %}
+            <div>
+                <strong style="color: var(--text-sec);">Sigla:</strong>
+                <p style="margin: 5px 0; color: var(--text);">{{ academia.sigla }}</p>
+            </div>
+            {% endif %}
+            <div>
+                <strong style="color: var(--text-sec);">Cidade/Estado:</strong>
+                <p style="margin: 5px 0; color: var(--text);">{{ academia.cidade }}/{{ academia.estado }}</p>
+            </div>
+            {% if academia.telefone %}
+            <div>
+                <strong style="color: var(--text-sec);">Telefone:</strong>
+                <p style="margin: 5px 0; color: var(--text);">
+                    {{ academia.telefone }}
+                    {% if academia.get_whatsapp_url %}
+                    <a href="{{ academia.get_whatsapp_url }}" target="_blank" style="margin-left: 10px; color: #25D366;">📲 WhatsApp</a>
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
+            <div>
+                <strong style="color: var(--text-sec);">Pontos:</strong>
+                <p style="margin: 5px 0; color: var(--primary); font-size: 20px; font-weight: 700;">{{ academia.pontos }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

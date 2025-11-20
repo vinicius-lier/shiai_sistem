@@ -1,0 +1,33 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Excluir Academia{% endblock %}
+
+{% block content %}
+<h1>Excluir Academia</h1>
+
+<div class="card" style="max-width: 600px;">
+    <h2 style="color: var(--danger); margin-top: 0;">⚠️ Confirmar Exclusão</h2>
+    
+    <p style="margin: 20px 0; color: var(--text);">
+        Tem certeza que deseja excluir a academia <strong>{{ academia.nome }}</strong>?
+    </p>
+    
+    <div style="background: var(--bg); padding: 15px; border-radius: 4px; margin: 20px 0;">
+        <p style="margin: 5px 0;"><strong>Nome:</strong> {{ academia.nome }}</p>
+        <p style="margin: 5px 0;"><strong>Sigla:</strong> {{ academia.sigla }}</p>
+        <p style="margin: 5px 0;"><strong>Cidade:</strong> {{ academia.cidade }}/{{ academia.estado }}</p>
+        <p style="margin: 5px 0;"><strong>Pontos:</strong> {{ academia.pontos }}</p>
+    </div>
+    
+    <div class="alert alert-danger">
+        <strong>⚠️ Atenção:</strong> Esta ação não pode ser desfeita. Todos os atletas vinculados a esta academia também serão excluídos.
+    </div>
+    
+    <form method="post" style="margin-top: 20px;">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger">🗑️ Confirmar Exclusão</button>
+        <a href="{% url 'lista_academias' %}" class="btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
+

@@ -1,0 +1,132 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Inscritos - {{ evento.nome }}{% endblock %}
+
+{% block content %}
+{% if evento_expirado %}
+<div style="background: #E3F2FD; border: 1px solid #2196F3; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 24px;">ℹ️</span>
+        <div>
+            <strong style="color: #1976D2;">Evento Encerrado</strong>
+            <p style="margin: 5px 0 0 0; color: #424242; font-size: 14px;">
+                Este evento já foi realizado. As informações abaixo são somente para consulta.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div>
+        <h1 style="margin: 0;">👥 Atletas Inscritos</h1>
+        <p style="color: var(--text-sec); margin: 5px 0 0 0;">Evento: <strong>{{ evento.nome }}</strong></p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        {% if not bloqueado %}
+        <a href="{% url 'eventos:inscrever_atletas' evento.id %}" class="btn" style="background: var(--primary);">➕ Inscrever Novo Atleta</a>
+        {% endif %}
+        <a href="{% url 'eventos:lista_eventos' %}" class="btn btn-secondary">← Voltar</a>
+    </div>
+</div>
+
+{% if evento_atletas %}
+<div class="table-responsive">
+    <table style="width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 8px; overflow: hidden;">
+        <thead>
+            <tr style="background: var(--primary); color: white;">
+                <th style="padding: 12px; text-align: left;">Foto</th>
+                <th style="padding: 12px; text-align: left;">Nome</th>
+                <th style="padding: 12px; text-align: left;">Academia</th>
+                <th style="padding: 12px; text-align: left;">Federado / Zempo</th>
+                <th style="padding: 12px; text-align: left;">Classe</th>
+                <th style="padding: 12px; text-align: left;">Situação Pesagem</th>
+                <th style="padding: 12px; text-align: left;">Categoria Sugerida</th>
+                <th style="padding: 12px; text-align: left;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for evento_atleta in evento_atletas %}
+            <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 12px;">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        {% if evento_atleta.atleta.foto %}
+                        <img src="{{ evento_atleta.atleta.foto.url }}" alt="{{ evento_atleta.atleta.nome }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                        {% else %}
+                        🥋
+                        {% endif %}
+                    </div>
+                </td>
+                <td style="padding: 12px;">
+                    <strong>{{ evento_atleta.atleta.nome }}</strong>
+                </td>
+                <td style="padding: 12px;">
+                    {% if evento_atleta.academia.sigla %}[{{ evento_atleta.academia.sigla }}] {% endif %}
+                    {{ evento_atleta.academia.nome }}
+                </td>
+                <td style="padding: 12px;">
+                    {% if evento_atleta.federado %}
+                        <span style="color: var(--success); font-weight: 600;">✔ Federado</span>
+                        {% if evento_atleta.zempo %}
+                            <br><small style="color: var(--primary);">{{ evento_atleta.zempo }}</small>
+                        {% endif %}
+                    {% else %}
+                        <span style="color: #9E9E9E;">✘ Não Federado</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 12px;">{{ evento_atleta.classe|default:"-" }}</td>
+                <td style="padding: 12px;">
+                    {% if evento_atleta.status_pesagem == 'OK' %}
+                        <span style="background: var(--success); color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">✓ OK</span>
+                        {% if evento_atleta.peso_oficial %}
+                            <br><small style="color: var(--text-sec);">{{ evento_atleta.peso_oficial }} kg</small>
+                        {% endif %}
+                    {% elif evento_atleta.status_pesagem == 'PENDENTE' %}
+                        <span style="background: var(--warning); color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">⏳ Pendente</span>
+                    {% elif evento_atleta.status_pesagem == 'REMANEJADO' %}
+                        <span style="background: #FF9800; color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">🔄 Remanejado</span>
+                    {% elif evento_atleta.status_pesagem == 'DESC' %}
+                        <span style="background: #F44336; color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">❌ Desclassificado</span>
+                    {% else %}
+                        <span style="color: var(--text-sec);">-</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 12px;">
+                    {% if evento_atleta.categoria_final %}
+                        <strong>{{ evento_atleta.categoria_final.classe }} - {{ evento_atleta.categoria_final.get_sexo_display }} - {{ evento_atleta.categoria_final.categoria_nome }}</strong>
+                    {% elif evento_atleta.categoria_inicial %}
+                        <span style="color: var(--text-sec);">{{ evento_atleta.categoria_inicial.classe }} - {{ evento_atleta.categoria_inicial.get_sexo_display }} - {{ evento_atleta.categoria_inicial.categoria_nome }}</span>
+                        <br><small style="color: var(--text-sec);">(inicial - aguardando pesagem)</small>
+                    {% else %}
+                        <span style="color: var(--text-sec);">-</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 12px;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        {% if not bloqueado %}
+                        <a href="{% url 'eventos:pesagem_evento' evento.id %}?atleta={{ evento_atleta.id }}" class="btn" style="padding: 6px 12px; font-size: 12px; background: var(--primary);">⚖️ Registrar Peso</a>
+                        <form method="post" action="{% url 'eventos:remover_inscrito' evento.id evento_atleta.id %}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja remover este atleta do evento?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn" style="padding: 6px 12px; font-size: 12px; background: #F44336;">🗑️ Remover</button>
+                        </form>
+                        {% else %}
+                        <span style="color: var(--text-sec); font-size: 12px;">Somente leitura</span>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 60px 40px; text-align: center;">
+    <div style="font-size: 64px; margin-bottom: 20px; opacity: 0.5;">👥</div>
+    <h2 style="color: var(--text-sec); margin-bottom: 10px;">Nenhum atleta inscrito</h2>
+    <p style="color: var(--text-sec);">Inscreva atletas para este evento.</p>
+    {% if not bloqueado %}
+    <a href="{% url 'eventos:inscrever_atletas' evento.id %}" class="btn" style="margin-top: 20px; background: var(--primary);">➕ Inscrever Primeiro Atleta</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

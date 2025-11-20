@@ -42,7 +42,7 @@
         <select id="academia" name="academia" required style="width: 100%; padding: 10px;">
             <option value="">Selecione</option>
             {% for academia in academias %}
-            <option value="{{ academia.id }}">{{ academia.nome }}</option>
+            <option value="{{ academia.id }}">{% if academia.sigla %}[{{ academia.sigla }}] {% endif %}{{ academia.nome }}</option>
             {% endfor %}
         </select>
         <small>Ou <a href="{% url 'cadastrar_academia' %}">cadastre uma nova academia</a></small>

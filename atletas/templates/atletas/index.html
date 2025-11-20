@@ -1,40 +1,498 @@
 {% extends 'atletas/base.html' %}
 
-{% block title %}Início - Sistema de Gestão de Competições de Judô{% endblock %}
+{% block title %}5º Núcleo de Judô – Região Sul Fluminense{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Seções da Landing */
+    .landing-section {
+        margin-bottom: 40px;
+    }
+    
+    .section-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 24px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--corporate-blue);
+    }
+    [data-theme="dark"] .section-title {
+        border-bottom-color: var(--primary);
+    }
+    
+    /* Notícias */
+    .news-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+    
+    .news-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 1px 3px var(--shadow);
+        transition: all 0.2s ease;
+    }
+    
+    .news-card:hover {
+        box-shadow: 0 2px 8px var(--shadow);
+        border-color: var(--primary);
+    }
+    
+    .news-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .news-card-badge {
+        background: var(--corporate-blue);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .news-card-date {
+        color: var(--text-sec);
+        font-size: 13px;
+    }
+    
+    .news-card-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 10px;
+    }
+    
+    .news-card-content {
+        font-size: 14px;
+        color: var(--text-sec);
+        line-height: 1.6;
+    }
+    
+    /* Dashboard Cards */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+    
+    .dashboard-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 1px 3px var(--shadow);
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .dashboard-card:hover {
+        box-shadow: 0 2px 8px var(--shadow);
+        border-color: var(--primary);
+    }
+    
+    .dashboard-card-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+        opacity: 0.9;
+    }
+    
+    .dashboard-card-number {
+        font-size: 42px;
+        font-weight: 700;
+        color: var(--corporate-blue);
+        margin: 10px 0;
+        line-height: 1;
+    }
+    
+    [data-theme="dark"] .dashboard-card-number {
+        color: var(--primary);
+    }
+    
+    .dashboard-card-label {
+        font-size: 16px;
+        color: var(--text);
+        font-weight: 500;
+        margin-top: 5px;
+    }
+    
+    .dashboard-card-description {
+        font-size: 13px;
+        color: var(--text-sec);
+        margin-top: 8px;
+        line-height: 1.4;
+    }
+    
+    /* Ranking Resumido */
+    .ranking-summary {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 1px 3px var(--shadow);
+        margin-bottom: 40px;
+    }
+    
+    .ranking-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .ranking-table th {
+        background: var(--corporate-blue);
+        color: white;
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 14px;
+    }
+    
+    .ranking-table td {
+        padding: 15px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+    }
+    
+    .ranking-table tr:hover {
+        background: var(--bg);
+    }
+    
+    .ranking-position {
+        font-weight: 700;
+        color: var(--corporate-blue);
+        font-size: 18px;
+    }
+    
+    /* Ações Rápidas */
+    .quick-actions {
+        margin: 40px 0;
+    }
+    
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    .quick-action-btn {
+        background: var(--corporate-blue);
+        color: white;
+        padding: 16px 24px;
+        border: none;
+        border-radius: 4px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.2s ease;
+    }
+    [data-theme="dark"] .quick-action-btn {
+        background: var(--primary);
+    }
+    
+    .quick-action-btn:hover {
+        background: var(--corporate-blue-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px var(--shadow);
+        color: white;
+        text-decoration: none;
+    }
+    [data-theme="dark"] .quick-action-btn:hover {
+        background: var(--primary-hover);
+    }
+    
+    .quick-action-btn-icon {
+        font-size: 24px;
+    }
+    
+    /* Informativos */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 40px;
+    }
+    
+    .info-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 1px 3px var(--shadow);
+    }
+    
+    .info-card-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .info-card-content {
+        font-size: 14px;
+        color: var(--text-sec);
+        line-height: 1.6;
+    }
+    
+    .info-card-content a {
+        color: var(--corporate-blue);
+        text-decoration: none;
+    }
+    
+    .info-card-content a:hover {
+        text-decoration: underline;
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .section-title {
+            font-size: 20px;
+        }
+        
+        .dashboard-grid,
+        .news-grid,
+        .info-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        
+        .quick-actions-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .dashboard-card,
+        .news-card,
+        .info-card {
+            padding: 20px;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1>Sistema de Gestão de Competições de Judô</h1>
-
-<div class="stats">
-    <div class="stat-card">
-        <h3>Total de Atletas</h3>
-        <div class="number">{{ total_atletas }}</div>
-    </div>
-    <div class="stat-card">
-        <h3>Total de Academias</h3>
-        <div class="number">{{ total_academias }}</div>
-    </div>
-    <div class="stat-card">
-        <h3>Total de Categorias</h3>
-        <div class="number">{{ total_categorias }}</div>
-    </div>
-    <div class="stat-card">
-        <h3>Total de Chaves</h3>
-        <div class="number">{{ total_chaves }}</div>
+<!-- Seção de Notícias -->
+<div class="landing-section">
+    <h2 class="section-title">📰 Notícias e Informações</h2>
+    <div class="news-grid">
+        <div class="news-card">
+            <div class="news-card-header">
+                <span class="news-card-badge">CBJ</span>
+                <span class="news-card-date">Novembro 2024</span>
+            </div>
+            <div class="news-card-title">Confederação Brasileira de Judô</div>
+            <div class="news-card-content">
+                Acompanhe as últimas atualizações e regulamentos oficiais da CBJ. 
+                Acesse o site oficial para mais informações sobre competições nacionais.
+            </div>
+        </div>
+        
+        <div class="news-card">
+            <div class="news-card-header">
+                <span class="news-card-badge">FJERJ</span>
+                <span class="news-card-date">Novembro 2024</span>
+            </div>
+            <div class="news-card-title">Federação de Judô do Estado do Rio de Janeiro</div>
+            <div class="news-card-content">
+                Fique por dentro das competições estaduais e calendário oficial da FJERJ. 
+                Consulte regulamentos e atualizações do calendário competitivo.
+            </div>
+        </div>
+        
+        <div class="news-card">
+            <div class="news-card-header">
+                <span class="news-card-badge">Núcleo</span>
+                <span class="news-card-date">Atual</span>
+            </div>
+            <div class="news-card-title">5º Núcleo - Região Sul Fluminense</div>
+            <div class="news-card-content">
+                {% if evento_atual %}
+                <strong>Evento Atual:</strong> {{ evento_atual.nome }}
+                {% if evento_atual.data_evento %}
+                <br>Data: {{ evento_atual.data_evento|date:"d/m/Y" }}
+                {% endif %}
+                {% else %}
+                Nenhum evento ativo no momento.
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 
-<h2>Menu Principal</h2>
-<ul style="list-style: none; padding: 0;">
-    <li style="margin: 10px 0;"><a href="{% url 'cadastrar_atleta' %}" class="btn">Cadastrar Atleta</a></li>
-    <li style="margin: 10px 0;"><a href="{% url 'cadastrar_festival' %}" class="btn">🏅 Cadastrar Festival</a></li>
-    <li style="margin: 10px 0;"><a href="{% url 'lista_atletas' %}" class="btn">Listar Atletas</a></li>
-    <li style="margin: 10px 0;"><a href="{% url 'lista_academias' %}" class="btn">Gerenciar Academias</a></li>
-    <li style="margin: 10px 0;"><a href="{% url 'lista_categorias' %}" class="btn">Gerenciar Categorias</a></li>
-    <li style="margin: 10px 0;"><a href="{% url 'pesagem' %}" class="btn">Pesagem</a></li>
-    <li style="margin: 10px 0;"><a href="{% url 'lista_chaves' %}" class="btn">Gerenciar Chaves</a></li>
-    <li style="margin: 10px 0;"><a href="{% url 'ranking_academias' %}" class="btn">Ranking de Academias</a></li>
-    <li style="margin: 10px 0;"><a href="{% url 'dashboard' %}" class="btn">📊 Dashboard</a></li>
-    <li style="margin: 10px 0;"><a href="{% url 'relatorio_atletas_inscritos' %}" class="btn">Relatórios</a></li>
-</ul>
+<!-- Dashboard Rápido -->
+<div class="landing-section" style="background: var(--bg);">
+    <h2 class="section-title">📊 Estatísticas do Sistema</h2>
+    <div class="dashboard-grid">
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">👥</div>
+            <div class="dashboard-card-number">{{ total_atletas|default:0 }}</div>
+            <div class="dashboard-card-label">Total de Atletas</div>
+            <div class="dashboard-card-description">Atletas cadastrados no sistema</div>
+        </div>
+        
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">✓</div>
+            <div class="dashboard-card-number">{{ total_atletas_ok|default:0 }}</div>
+            <div class="dashboard-card-label">Atletas OK</div>
+            <div class="dashboard-card-description">Atletas aptos para competir</div>
+        </div>
+        
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">🏫</div>
+            <div class="dashboard-card-number">{{ total_academias|default:0 }}</div>
+            <div class="dashboard-card-label">Academias</div>
+            <div class="dashboard-card-description">Academias participantes</div>
+        </div>
+        
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">📋</div>
+            <div class="dashboard-card-number">{{ total_categorias|default:0 }}</div>
+            <div class="dashboard-card-label">Categorias</div>
+            <div class="dashboard-card-description">Categorias configuradas</div>
+        </div>
+        
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">⚖️</div>
+            <div class="dashboard-card-number">{{ pesagens_realizadas|default:0 }}</div>
+            <div class="dashboard-card-label">Pesagens</div>
+            <div class="dashboard-card-description">Pesagens realizadas</div>
+        </div>
+        
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">🥋</div>
+            <div class="dashboard-card-number">{{ total_chaves|default:0 }}</div>
+            <div class="dashboard-card-label">Chaves</div>
+            <div class="dashboard-card-description">Chaves geradas</div>
+        </div>
+    </div>
+</div>
+
+<!-- Ranking Resumido -->
+{% if top_academias %}
+<div class="landing-section">
+    <h2 class="section-title">🏆 Ranking das Academias</h2>
+    <div class="ranking-summary">
+        <table class="ranking-table">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">Pos.</th>
+                    <th>Academia</th>
+                    <th style="text-align: right;">Pontos</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for academia in top_academias %}
+                <tr>
+                    <td><span class="ranking-position">{{ forloop.counter }}º</span></td>
+                    <td><strong>{{ academia.nome }}</strong></td>
+                    <td style="text-align: right; font-weight: 600;">{{ academia.pontos|default:0 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="margin-top: 20px; text-align: center;">
+            <a href="{% url 'ranking_academias' %}" class="quick-action-btn" style="display: inline-flex; padding: 12px 25px; font-size: 16px;">
+                Ver Ranking Completo
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Ações Rápidas -->
+<div class="landing-section" style="background: var(--bg);">
+    <h2 class="section-title">⚡ Ações Rápidas</h2>
+    <div class="quick-actions">
+        <div class="quick-actions-grid">
+            {% if evento_atual %}
+            <a href="{% url 'eventos:pesagem_evento' evento_atual.id %}" class="quick-action-btn">
+                <span class="quick-action-btn-icon">⚖️</span>
+                <span>Pesagem</span>
+            </a>
+            {% else %}
+            <a href="{% url 'eventos:lista_eventos' %}" class="quick-action-btn">
+                <span class="quick-action-btn-icon">⚖️</span>
+                <span>Pesagem</span>
+            </a>
+            {% endif %}
+            <a href="{% url 'lista_chaves' %}" class="quick-action-btn">
+                <span class="quick-action-btn-icon">🥋</span>
+                <span>Chaves</span>
+            </a>
+            <a href="{% url 'ranking_academias' %}" class="quick-action-btn">
+                <span class="quick-action-btn-icon">🏆</span>
+                <span>Ranking</span>
+            </a>
+            <a href="{% url 'relatorio_atletas_inscritos' %}" class="quick-action-btn">
+                <span class="quick-action-btn-icon">📄</span>
+                <span>Relatórios</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Informativos -->
+<div class="landing-section">
+    <h2 class="section-title">ℹ️ Informações e Links</h2>
+    <div class="info-grid">
+        <div class="info-card">
+            <div class="info-card-title">
+                📜 Regulamentos
+            </div>
+            <div class="info-card-content">
+                Consulte os regulamentos oficiais da CBJ e FJERJ para competições de judô. 
+                Mantenha-se atualizado com as regras e normas vigentes.
+            </div>
+        </div>
+        
+        <div class="info-card">
+            <div class="info-card-title">
+                📅 Calendário
+            </div>
+            <div class="info-card-content">
+                Acompanhe o calendário oficial de competições do 5º Núcleo e da FJERJ. 
+                Fique por dentro das datas importantes.
+            </div>
+        </div>
+        
+        <div class="info-card">
+            <div class="info-card-title">
+                🔗 Links Oficiais
+            </div>
+            <div class="info-card-content">
+                <a href="https://www.cbj.com.br" target="_blank">CBJ - Confederação Brasileira de Judô</a><br>
+                <a href="https://www.fjerj.org.br" target="_blank">FJERJ - Federação de Judô do Estado do Rio</a>
+            </div>
+        </div>
+        
+        <div class="info-card">
+            <div class="info-card-title">
+                📞 Contato
+            </div>
+            <div class="info-card-content">
+                Para mais informações sobre o 5º Núcleo de Judô – Região Sul Fluminense, 
+                entre em contato através dos canais oficiais.
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

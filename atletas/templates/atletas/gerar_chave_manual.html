@@ -36,7 +36,7 @@
             <select id="academia" name="academia" style="width: 100%;">
                 <option value="">Todas</option>
                 {% for acad in academias %}
-                <option value="{{ acad.id }}" {% if acad.id|stringformat:"s" == academia_filtro|stringformat:"s" %}selected{% endif %}>{{ acad.nome }}</option>
+                <option value="{{ acad.id }}" {% if acad.id|stringformat:"s" == academia_filtro|stringformat:"s" %}selected{% endif %}>{% if acad.sigla %}[{{ acad.sigla }}] {% endif %}{{ acad.nome }}</option>
                 {% endfor %}
             </select>
         </div>

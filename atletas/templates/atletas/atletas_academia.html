@@ -1,0 +1,80 @@
+{% extends 'atletas/base.html' %}
+{% load static %}
+
+{% block title %}Atletas da Academia - {{ academia.nome }}{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 24px;">
+    <div class="header-content">
+        <h1 class="header-title">👥 Atletas da Academia</h1>
+        <div class="header-divider"></div>
+        <p class="header-subtitle">
+            {% if academia.sigla %}{{ academia.sigla }} – {% endif %}{{ academia.nome }}
+        </p>
+    </div>
+    <a href="{% url 'lista_academias' %}" class="btn-secondary" style="background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.3); color: white;">
+        ← Voltar
+    </a>
+</div>
+
+<div class="table-responsive">
+    <div class="academias-table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Sexo</th>
+                    <th>Classe</th>
+                    <th>Categoria</th>
+                    <th>Faixa</th>
+                    <th>Peso</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for atleta in atletas %}
+                <tr>
+                    <td><strong>{{ atleta.nome }}</strong></td>
+                    <td>{{ atleta.get_sexo_display }}</td>
+                    <td>{{ atleta.classe }}</td>
+                    <td>{{ atleta.categoria_ajustada|default:atleta.categoria_nome }}</td>
+                    <td>{{ atleta.faixa }}</td>
+                    <td>
+                        {% if atleta.peso_oficial %}
+                            {{ atleta.peso_oficial }} kg
+                        {% else %}
+                            <span style="color: var(--text-sec);">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if atleta.classe == 'Festival' %}
+                            <span class="status-badge badge-festival">🏅 Festival</span>
+                        {% elif atleta.status == 'OK' %}
+                            <span class="status-badge badge-ok">✓ OK</span>
+                        {% else %}
+                            <span class="status-badge badge-eliminado">✗ {{ atleta.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👥</div>
+                            <div style="font-size: 18px; color: var(--text-sec);">
+                                Nenhum atleta cadastrado nesta academia
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div style="margin-top: 20px; padding: 15px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;">
+    <strong>Total de atletas:</strong> {{ atletas.count }}
+</div>
+{% endblock %}
+

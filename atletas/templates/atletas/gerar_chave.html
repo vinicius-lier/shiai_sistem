@@ -5,7 +5,7 @@
 {% block content %}
 <h1>Gerar Chave</h1>
 
-<form method="post">
+<form method="post" id="formGerarChave">
     {% csrf_token %}
     
     <label for="classe">Classe:</label>
@@ -31,10 +31,75 @@
         {% endfor %}
     </select>
     
-    <button type="submit">Gerar Chave</button>
+    <button type="button" id="btnGerarChave">Gerar Chave</button>
+    <input type="hidden" name="tipo_chave" id="tipoChaveSelecionado" value="">
 </form>
 
+<!-- Modal de Seleção de Tipo de Chave -->
+<div id="modalTipoChave" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+        <h2 style="margin-top: 0; color: #dc3545;">📝 Qual tipo de chave deseja gerar para esta categoria?</h2>
+        
+        <div id="infoAtletas" style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+            <strong>Atletas na categoria:</strong> <span id="numAtletas">-</span>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0;">
+            <button class="opcao-chave" data-tipo="MELHOR_DE_3" style="padding: 15px; border: 2px solid #ddd; border-radius: 5px; background: white; cursor: pointer; text-align: left;">
+                <strong>Melhor de 3</strong><br>
+                <small>(2 atletas)</small>
+            </button>
+            
+            <button class="opcao-chave" data-tipo="CASADA_3" style="padding: 15px; border: 2px solid #ddd; border-radius: 5px; background: white; cursor: pointer; text-align: left;">
+                <strong>Lutas casadas 3</strong><br>
+                <small>(A x B → Perdedor x C → Final)</small>
+            </button>
+            
+            <button class="opcao-chave" data-tipo="RODIZIO" style="padding: 15px; border: 2px solid #ddd; border-radius: 5px; background: white; cursor: pointer; text-align: left;">
+                <strong>Rodízio</strong><br>
+                <small>(3 a 5 atletas)</small>
+            </button>
+            
+            <button class="opcao-chave" data-tipo="ELIMINATORIA_SIMPLES" style="padding: 15px; border: 2px solid #ddd; border-radius: 5px; background: white; cursor: pointer; text-align: left;">
+                <strong>Eliminatória Simples</strong><br>
+                <small>Mata-mata</small>
+            </button>
+            
+            <button class="opcao-chave" data-tipo="ELIMINATORIA_REPESCAGEM" style="padding: 15px; border: 2px solid #ddd; border-radius: 5px; background: white; cursor: pointer; text-align: left;">
+                <strong>Eliminatória + Repescagem</strong><br>
+                <small>(modelo CBJ)</small>
+            </button>
+            
+            <button class="opcao-chave" data-tipo="OLIMPICA" style="padding: 15px; border: 2px solid #ddd; border-radius: 5px; background: white; cursor: pointer; text-align: left;">
+                <strong>Chave Olímpica</strong><br>
+                <small>(IJF)</small>
+            </button>
+            
+            <button class="opcao-chave" data-tipo="LIGA" style="padding: 15px; border: 2px solid #ddd; border-radius: 5px; background: white; cursor: pointer; text-align: left;">
+                <strong>Chave Liga</strong><br>
+                <small>(rodízio + semifinais)</small>
+            </button>
+            
+            <button class="opcao-chave" data-tipo="GRUPOS" style="padding: 15px; border: 2px solid #ddd; border-radius: 5px; background: white; cursor: pointer; text-align: left;">
+                <strong>Chave em Grupos</strong><br>
+                <small>(pools)</small>
+            </button>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 10px; background: #fff3cd; border-radius: 5px; font-size: 0.9em;">
+            <strong>💡 Dica:</strong> Se não escolher, o sistema usará a lógica automática baseada no número de atletas.
+        </div>
+        
+        <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="button" id="btnConfirmarTipo" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Confirmar</button>
+            <button type="button" id="btnCancelarTipo" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <script>
+let tipoChaveEscolhido = null;
+
 function filtrarCategorias() {
     const sexo = document.getElementById('sexo').value;
     const classe = document.getElementById('classe').value;
@@ -82,6 +147,75 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Botão Gerar Chave - abrir modal
+    document.getElementById('btnGerarChave').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const classe = document.getElementById('classe').value;
+        const sexo = document.getElementById('sexo').value;
+        const categoria = document.getElementById('categoria').value;
+        
+        if (!classe || !sexo || !categoria) {
+            alert('Preencha todos os campos (Classe, Sexo e Categoria) antes de gerar a chave.');
+            return;
+        }
+        
+        // Verificar número de atletas antes de abrir modal
+        fetch('{% url "verificar_atletas_categoria" %}?classe=' + classe + '&sexo=' + sexo + '&categoria=' + categoria)
+            .then(response => response.json())
+            .then(data => {
+                if (data.erro) {
+                    alert(data.erro);
+                    return;
+                }
+                
+                document.getElementById('numAtletas').textContent = data.num_atletas;
+                
+                // Resetar seleção
+                tipoChaveEscolhido = null;
+                document.querySelectorAll('.opcao-chave').forEach(btn => {
+                    btn.style.border = '2px solid #ddd';
+                    btn.style.background = 'white';
+                });
+                
+                // Mostrar modal
+                document.getElementById('modalTipoChave').style.display = 'flex';
+            })
+            .catch(error => {
+                console.error('Erro ao verificar atletas:', error);
+                alert('Erro ao verificar atletas da categoria. Tente novamente.');
+            });
+    });
+    
+    // Seleção de tipo de chave
+    document.querySelectorAll('.opcao-chave').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Resetar seleções
+            document.querySelectorAll('.opcao-chave').forEach(b => {
+                b.style.border = '2px solid #ddd';
+                b.style.background = 'white';
+            });
+            
+            // Marcar selecionado
+            this.style.border = '3px solid #dc3545';
+            this.style.background = '#ffe0e0';
+            tipoChaveEscolhido = this.dataset.tipo;
+        });
+    });
+    
+    // Confirmar tipo
+    document.getElementById('btnConfirmarTipo').addEventListener('click', function() {
+        document.getElementById('tipoChaveSelecionado').value = tipoChaveEscolhido || '';
+        document.getElementById('modalTipoChave').style.display = 'none';
+        document.getElementById('formGerarChave').submit();
+    });
+    
+    // Cancelar
+    document.getElementById('btnCancelarTipo').addEventListener('click', function() {
+        document.getElementById('modalTipoChave').style.display = 'none';
+        tipoChaveEscolhido = null;
+    });
 });
 </script>
 

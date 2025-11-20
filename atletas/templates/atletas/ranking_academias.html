@@ -19,13 +19,23 @@
             </tr>
         </thead>
         <tbody>
-            {% for academia in academias %}
+            {% for item in academias %}
             <tr>
                 <td><strong>{{ forloop.counter }}º</strong></td>
-                <td>{{ academia.nome }}</td>
-                <td>{{ academia.cidade }}</td>
-                <td>{{ academia.estado }}</td>
-                <td><strong style="font-size: 18px;">{{ academia.pontos }}</strong></td>
+                <td>
+                    {% if item.academia.sigla %}[{{ item.academia.sigla }}] {% endif %}{{ item.academia.nome }}
+                </td>
+                <td>{{ item.academia.cidade }}</td>
+                <td>{{ item.academia.estado }}</td>
+                <td>
+                    <strong style="font-size: 18px;">{{ item.pontos }}</strong>
+                    {% if item.ouro > 0 or item.prata > 0 or item.bronze > 0 %}
+                    <br>
+                    <small style="color: var(--text-sec);">
+                        🥇 {{ item.ouro }} 🥈 {{ item.prata }} 🥉 {{ item.bronze }}
+                    </small>
+                    {% endif %}
+                </td>
             </tr>
             {% empty %}
             <tr>

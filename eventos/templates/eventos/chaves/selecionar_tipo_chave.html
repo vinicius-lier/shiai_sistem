@@ -1,0 +1,263 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Selecionar Tipo de Chave - {{ evento.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tipo-chave-option {
+        background: var(--card-bg);
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-bottom: 12px;
+    }
+    
+    .tipo-chave-option:hover {
+        border-color: var(--primary);
+        box-shadow: 0 2px 8px var(--shadow);
+        transform: translateY(-2px);
+    }
+    
+    .tipo-chave-option.selected {
+        border-color: var(--primary);
+        background: rgba(25, 118, 210, 0.05);
+    }
+    
+    .tipo-chave-option input[type="radio"] {
+        margin-right: 12px;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+    
+    .tipo-chave-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+    
+    .tipo-chave-nome {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text);
+        margin: 0;
+    }
+    
+    .tipo-chave-descricao {
+        font-size: 14px;
+        color: var(--text-sec);
+        margin: 0;
+    }
+    
+    .badge-automatico {
+        background: var(--success);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div>
+        <h1 style="margin: 0;">📝 Selecionar Tipo de Chave</h1>
+        <p style="color: var(--text-sec); margin: 5px 0 0 0;">
+            Categoria: <strong>{{ categoria.classe }} - {{ categoria.get_sexo_display }} - {{ categoria.categoria_nome }}</strong>
+        </p>
+        <p style="color: var(--text-sec); margin: 5px 0 0 0;">
+            Total de atletas: <strong>{{ num_atletas }}</strong>
+        </p>
+    </div>
+    <a href="{% url 'eventos:listar_categorias' evento.id %}" class="btn" style="background: var(--text-sec);">← Voltar</a>
+</div>
+
+{% if chave_existente %}
+<div style="background: rgba(255, 193, 7, 0.1); border: 1px solid var(--warning); border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+    <p style="margin: 0; color: var(--warning); font-weight: 600;">
+        ⚠️ Já existe uma chave para esta categoria. Ao selecionar um tipo, a chave será recalculada.
+    </p>
+</div>
+{% endif %}
+
+<form method="post" id="form-tipo-chave">
+    {% csrf_token %}
+    
+    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 30px; margin-bottom: 24px;">
+        <h2 style="margin: 0 0 24px 0; color: var(--text); font-size: 24px;">
+            Qual tipo de chave deseja gerar para esta categoria?
+        </h2>
+        
+        <div style="margin-bottom: 20px;">
+            <label class="tipo-chave-option {% if tipo_automatico == 'MELHOR_DE_3' %}selected{% endif %}" onclick="selectTipo('MELHOR_DE_3')">
+                <input type="radio" name="tipo_chave" value="MELHOR_DE_3" 
+                       {% if tipo_automatico == 'MELHOR_DE_3' %}checked{% endif %} required>
+                <div>
+                    <div class="tipo-chave-header">
+                        <span class="tipo-chave-nome">Melhor de 3 (2 atletas)</span>
+                        {% if tipo_automatico == 'MELHOR_DE_3' %}
+                        <span class="badge-automatico">Sugerido</span>
+                        {% endif %}
+                    </div>
+                    <p class="tipo-chave-descricao">
+                        O primeiro atleta a vencer 2 lutas ganha. Máximo de 3 lutas.
+                    </p>
+                </div>
+            </label>
+            
+            <label class="tipo-chave-option {% if tipo_automatico == 'CASADA_3' %}selected{% endif %}" onclick="selectTipo('CASADA_3')">
+                <input type="radio" name="tipo_chave" value="CASADA_3" 
+                       {% if tipo_automatico == 'CASADA_3' %}checked{% endif %} required>
+                <div>
+                    <div class="tipo-chave-header">
+                        <span class="tipo-chave-nome">Lutas casadas para 3 atletas (A x B → Perdedor x C → Final)</span>
+                        {% if tipo_automatico == 'CASADA_3' %}
+                        <span class="badge-automatico">Sugerido</span>
+                        {% endif %}
+                    </div>
+                    <p class="tipo-chave-descricao">
+                        Luta 1: A vs B. Luta 2: Perdedor de Luta 1 vs C. Luta 3: Final (Vencedor Luta 1 vs Vencedor Luta 2).
+                    </p>
+                </div>
+            </label>
+            
+            <label class="tipo-chave-option {% if tipo_automatico == 'RODIZIO' %}selected{% endif %}" onclick="selectTipo('RODIZIO')">
+                <input type="radio" name="tipo_chave" value="RODIZIO" 
+                       {% if tipo_automatico == 'RODIZIO' %}checked{% endif %} required>
+                <div>
+                    <div class="tipo-chave-header">
+                        <span class="tipo-chave-nome">Rodízio (3 a 5 atletas)</span>
+                        {% if tipo_automatico == 'RODIZIO' %}
+                        <span class="badge-automatico">Sugerido</span>
+                        {% endif %}
+                    </div>
+                    <p class="tipo-chave-descricao">
+                        Todos lutam contra todos. Vence quem tiver mais vitórias.
+                    </p>
+                </div>
+            </label>
+            
+            <label class="tipo-chave-option {% if tipo_automatico == 'ELIMINATORIA_SIMPLES' %}selected{% endif %}" onclick="selectTipo('ELIMINATORIA_SIMPLES')">
+                <input type="radio" name="tipo_chave" value="ELIMINATORIA_SIMPLES" 
+                       {% if tipo_automatico == 'ELIMINATORIA_SIMPLES' %}checked{% endif %} required>
+                <div>
+                    <div class="tipo-chave-header">
+                        <span class="tipo-chave-nome">Eliminatória Simples</span>
+                        {% if tipo_automatico == 'ELIMINATORIA_SIMPLES' %}
+                        <span class="badge-automatico">Sugerido</span>
+                        {% endif %}
+                    </div>
+                    <p class="tipo-chave-descricao">
+                        Chave eliminatória sem repescagem. Apenas 1º e 2º lugar.
+                    </p>
+                </div>
+            </label>
+            
+            <label class="tipo-chave-option {% if tipo_automatico == 'ELIMINATORIA_REPESCAGEM' %}selected{% endif %}" onclick="selectTipo('ELIMINATORIA_REPESCAGEM')">
+                <input type="radio" name="tipo_chave" value="ELIMINATORIA_REPESCAGEM" 
+                       {% if tipo_automatico == 'ELIMINATORIA_REPESCAGEM' %}checked{% endif %} required>
+                <div>
+                    <div class="tipo-chave-header">
+                        <span class="tipo-chave-nome">Eliminatória com Repescagem (modelo CBJ)</span>
+                        {% if tipo_automatico == 'ELIMINATORIA_REPESCAGEM' %}
+                        <span class="badge-automatico">Sugerido</span>
+                        {% endif %}
+                    </div>
+                    <p class="tipo-chave-descricao">
+                        Chave eliminatória com disputa de bronze. Perdedores das semifinais disputam 3º lugar.
+                    </p>
+                </div>
+            </label>
+            
+            <label class="tipo-chave-option" onclick="selectTipo('OLIMPICA')">
+                <input type="radio" name="tipo_chave" value="OLIMPICA" required>
+                <div>
+                    <div class="tipo-chave-header">
+                        <span class="tipo-chave-nome">Chave Olímpica (IJF)</span>
+                    </div>
+                    <p class="tipo-chave-descricao">
+                        Formato oficial da Federação Internacional de Judô. Similar à eliminatória com repescagem.
+                    </p>
+                </div>
+            </label>
+            
+            <label class="tipo-chave-option" onclick="selectTipo('LIGA')">
+                <input type="radio" name="tipo_chave" value="LIGA" required>
+                <div>
+                    <div class="tipo-chave-header">
+                        <span class="tipo-chave-nome">Chave Liga (rodízio + semifinais)</span>
+                    </div>
+                    <p class="tipo-chave-descricao">
+                        Fase 1: Rodízio (todos contra todos). Fase 2: Semifinais com top 4. Fase 3: Final.
+                    </p>
+                </div>
+            </label>
+            
+            <label class="tipo-chave-option" onclick="selectTipo('GRUPOS')">
+                <input type="radio" name="tipo_chave" value="GRUPOS" required>
+                <div>
+                    <div class="tipo-chave-header">
+                        <span class="tipo-chave-nome">Chave em Grupos (pools)</span>
+                    </div>
+                    <p class="tipo-chave-descricao">
+                        Divide atletas em grupos, faz rodízio em cada grupo, depois mata-mata entre vencedores.
+                    </p>
+                </div>
+            </label>
+        </div>
+    </div>
+    
+    <!-- Lista de Atletas -->
+    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+        <h3 style="margin: 0 0 20px 0; color: var(--text);">Atletas da Categoria ({{ num_atletas }})</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;">
+            {% for atleta in atletas %}
+            <div style="padding: 12px; background: var(--bg); border-radius: 6px; border: 1px solid var(--border);">
+                <strong style="color: var(--text);">{{ atleta.nome }}</strong>
+                <div style="font-size: 12px; color: var(--text-sec); margin-top: 4px;">
+                    {% if atleta.academia.sigla %}[{{ atleta.academia.sigla }}] {% endif %}{{ atleta.academia.nome }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <a href="{% url 'eventos:listar_categorias' evento.id %}" class="btn" style="background: var(--text-sec);">Cancelar</a>
+        <button type="submit" class="btn" style="background: var(--primary);">
+            ✅ Gerar Chave
+        </button>
+    </div>
+</form>
+
+<script>
+function selectTipo(tipo) {
+    // Remover seleção anterior
+    document.querySelectorAll('.tipo-chave-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    
+    // Selecionar opção clicada
+    const radio = document.querySelector(`input[value="${tipo}"]`);
+    if (radio) {
+        radio.checked = true;
+        radio.closest('.tipo-chave-option').classList.add('selected');
+    }
+}
+
+// Manter seleção ao carregar
+document.addEventListener('DOMContentLoaded', function() {
+    const checked = document.querySelector('input[name="tipo_chave"]:checked');
+    if (checked) {
+        selectTipo(checked.value);
+    }
+});
+</script>
+{% endblock %}
+
+

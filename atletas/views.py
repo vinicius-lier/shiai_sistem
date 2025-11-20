@@ -5,6 +5,8 @@ import io
 from datetime import date
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
@@ -12,9 +14,10 @@ from django.views.decorators.http import require_http_methods
 from django.core.cache import cache
 from django.utils import timezone
 from django.conf import settings
-from atletas.models import Academia, Categoria, Atleta, Chave, Luta, AdminLog, AcademiaPontuacao
+from atletas.models import Academia, Categoria, Atleta, Chave, Luta, AdminLog, AcademiaPontuacao, Campeonato, UserProfile
 from atletas.utils import calcular_classe, get_categorias_disponiveis, ajustar_categoria_por_peso, gerar_chave, get_resultados_chave, calcular_pontuacao_academias, atualizar_proxima_luta, registrar_remanejamento
-from django.db.models import Q, Count
+from atletas.decorators import academia_required, operacional_required, admin_required
+from django.db.models import Q, Count, Sum
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -23,8 +26,41 @@ from rest_framework import status
 # ========== PÁGINA INICIAL ==========
 
 def index(request):
-    """Página inicial"""
-    return render(request, 'atletas/index.html')
+    """Página inicial institucional com landing completa"""
+    from django.db.models import Count
+    
+    # Estatísticas principais
+    total_atletas = Atleta.objects.count()
+    total_atletas_ok = Atleta.objects.filter(status='OK').count()
+    total_academias = Academia.objects.count()
+    total_categorias = Categoria.objects.count()
+    # ✅ CORRIGIDO: Contar apenas chaves com evento vinculado
+    total_chaves = Chave.objects.filter(evento__isnull=False).count()
+    
+    # Pesagens realizadas (atletas com peso oficial)
+    pesagens_realizadas = Atleta.objects.filter(peso_oficial__isnull=False).count()
+    
+    # Ranking resumido (top 5 academias)
+    top_academias = Academia.objects.order_by('-pontos')[:5]
+    
+    # ✅ CORRIGIDO: Usar apenas Evento (deprecar Campeonato)
+    from eventos.models import Evento
+    evento_atual = Evento.objects.filter(ativo=True).order_by('-data_evento').first()
+    if not evento_atual:
+        evento_atual = Evento.objects.order_by('-data_evento').first()
+    
+    context = {
+        'total_atletas': total_atletas,
+        'total_atletas_ok': total_atletas_ok,
+        'total_academias': total_academias,
+        'total_categorias': total_categorias,
+        'total_chaves': total_chaves,
+        'pesagens_realizadas': pesagens_realizadas,
+        'top_academias': top_academias,
+        'evento_atual': evento_atual,  # Evento atual para ações rápidas
+    }
+    
+    return render(request, 'atletas/index.html', context)
 
 
 # ========== CADASTRO DE ACADEMIAS ==========
@@ -39,14 +75,107 @@ def cadastrar_academia(request):
     """Cadastra uma nova academia"""
     if request.method == 'POST':
         nome = request.POST.get('nome')
+        sigla = request.POST.get('sigla', '')
         cidade = request.POST.get('cidade', '')
         estado = request.POST.get('estado', '')
+        telefone = request.POST.get('telefone', '')
         
-        Academia.objects.create(nome=nome, cidade=cidade, estado=estado)
+        academia = Academia.objects.create(
+            nome=nome,
+            sigla=sigla or '',
+            cidade=cidade,
+            estado=estado,
+            telefone=telefone
+        )
+        
+        # Upload do logo se fornecido
+        if 'logo' in request.FILES:
+            academia.logo = request.FILES['logo']
+            academia.save()
+        
         messages.success(request, f'Academia "{nome}" cadastrada com sucesso!')
         return redirect('lista_academias')
     
     return render(request, 'atletas/cadastrar_academia.html')
+
+
+def editar_academia(request, academia_id):
+    """Edita uma academia existente"""
+    from django.contrib.auth.hashers import make_password
+    
+    academia = get_object_or_404(Academia, id=academia_id)
+    
+    if request.method == 'POST':
+        academia.nome = request.POST.get('nome')
+        academia.sigla = request.POST.get('sigla', '')
+        academia.cidade = request.POST.get('cidade', '')
+        academia.estado = request.POST.get('estado', '')
+        academia.telefone = request.POST.get('telefone', '')
+        
+        # ✅ NOVO: Campos de login e senha
+        usuario_acesso = request.POST.get('usuario_acesso', '').strip()
+        senha_acesso = request.POST.get('senha_acesso', '').strip()
+        senha_acesso_confirmar = request.POST.get('senha_acesso_confirmar', '').strip()
+        
+        # Validar usuário de acesso
+        if usuario_acesso:
+            # Verificar se o usuário já existe em outra academia
+            academia_existente = Academia.objects.filter(
+                usuario_acesso=usuario_acesso
+            ).exclude(id=academia.id).first()
+            
+            if academia_existente:
+                messages.error(request, f'O usuário "{usuario_acesso}" já está em uso por outra academia.')
+                return render(request, 'atletas/editar_academia.html', {'academia': academia})
+            
+            academia.usuario_acesso = usuario_acesso
+        
+        # Validar e atualizar senha
+        if senha_acesso:
+            if senha_acesso != senha_acesso_confirmar:
+                messages.error(request, 'As senhas não coincidem.')
+                return render(request, 'atletas/editar_academia.html', {'academia': academia})
+            
+            if len(senha_acesso) < 6:
+                messages.error(request, 'A senha deve ter pelo menos 6 caracteres.')
+                return render(request, 'atletas/editar_academia.html', {'academia': academia})
+            
+            # Hash da senha
+            academia.senha_acesso = make_password(senha_acesso)
+        
+        # Upload do logo se fornecido
+        if 'logo' in request.FILES:
+            academia.logo = request.FILES['logo']
+        
+        academia.save()
+        messages.success(request, f'Academia "{academia.nome}" atualizada com sucesso!')
+        return redirect('lista_academias')
+    
+    return render(request, 'atletas/editar_academia.html', {'academia': academia})
+
+
+def excluir_academia(request, academia_id):
+    """Exclui uma academia"""
+    academia = get_object_or_404(Academia, id=academia_id)
+    
+    if request.method == 'POST':
+        nome = academia.nome
+        academia.delete()
+        messages.success(request, f'Academia "{nome}" excluída com sucesso!')
+        return redirect('lista_academias')
+    
+    return render(request, 'atletas/excluir_academia.html', {'academia': academia})
+
+
+def atletas_academia(request, academia_id):
+    """Lista os atletas de uma academia específica"""
+    academia = get_object_or_404(Academia, id=academia_id)
+    atletas = academia.atletas.all().order_by('nome')
+    
+    return render(request, 'atletas/atletas_academia.html', {
+        'academia': academia,
+        'atletas': atletas
+    })
 
 
 # ========== CADASTRO DE CATEGORIAS ==========
@@ -174,6 +303,12 @@ def lista_atletas(request):
     academias = Academia.objects.all().order_by('nome')
     faixas = Atleta.objects.values_list('faixa', flat=True).distinct().order_by('faixa')
     
+    # Buscar evento atual para ações rápidas
+    from eventos.models import Evento
+    evento_atual = Evento.objects.filter(ativo=True).order_by('-data_evento').first()
+    if not evento_atual:
+        evento_atual = Evento.objects.order_by('-data_evento').first()
+    
     context = {
         'atletas': atletas,
         'classes': classes,
@@ -189,6 +324,7 @@ def lista_atletas(request):
         'faixa_filtro': faixa_filtro,
         'ordenacao': ordenacao,
         'total_encontrados': atletas.count(),
+        'evento_atual': evento_atual,  # Novo: evento atual para ações rápidas
     }
 
     # Modo de impressão: usa outro template, com a mesma lista filtrada
@@ -198,49 +334,168 @@ def lista_atletas(request):
     return render(request, 'atletas/lista_atletas.html', context)
 
 
+def detalhe_atleta(request, id):
+    """Mostra detalhes completos de um atleta"""
+    atleta = get_object_or_404(Atleta, id=id)
+    
+    # Buscar evento atual para ações rápidas
+    from eventos.models import Evento
+    evento_atual = Evento.objects.filter(ativo=True).order_by('-data_evento').first()
+    if not evento_atual:
+        evento_atual = Evento.objects.order_by('-data_evento').first()
+    
+    context = {
+        'atleta': atleta,
+        'evento_atual': evento_atual,  # Novo: evento atual para ações rápidas
+    }
+    
+    return render(request, 'atletas/detalhe_atleta.html', context)
+
+
+@login_required
 def cadastrar_atleta(request):
-    """Cadastra um novo atleta"""
+    """Cadastra um novo atleta (apenas dados base - sem categoria/peso)"""
+    # Verificar se usuário é academia e pegar sua academia
+    academia_logada = None
+    if request.user.is_authenticated and hasattr(request.user, 'profile'):
+        if request.user.profile.tipo_usuario == 'academia' and request.user.profile.academia:
+            academia_logada = request.user.profile.academia
+    
     if request.method == 'POST':
         nome = request.POST.get('nome')
         ano_nasc = int(request.POST.get('ano_nasc'))
         sexo = request.POST.get('sexo')
         faixa = request.POST.get('faixa')
-        academia_id = int(request.POST.get('academia'))
-        categoria_id = int(request.POST.get('categoria'))
-        peso_previsto = request.POST.get('peso_previsto')
+        
+        # Se há academia logada, usar ela; senão, pegar do formulário
+        if academia_logada:
+            academia_id = academia_logada.id
+        else:
+            # Verificar permissão para cadastrar atletas de outras academias
+            if request.user.is_authenticated and hasattr(request.user, 'profile'):
+                if request.user.profile.tipo_usuario == 'academia':
+                    messages.error(request, 'Você só pode cadastrar atletas da sua academia.')
+                    return redirect('academia_painel')
+            academia_id = int(request.POST.get('academia'))
         
         academia = get_object_or_404(Academia, id=academia_id)
-        categoria = get_object_or_404(Categoria, id=categoria_id)
         
+        # Campos de federação
+        federado = request.POST.get('federado') == 'on'
+        zempo = request.POST.get('zempo', '').strip() if federado else None
+        
+        # Validação: se federado, zempo é obrigatório
+        if federado and not zempo:
+            messages.error(request, 'Número ZEMPO é obrigatório para atletas federados.')
+            academias = Academia.objects.all().order_by('nome') if not academia_logada else None
+            return render(request, 'atletas/cadastrar_atleta.html', {
+                'academias': academias,
+                'academia_logada': academia_logada
+            })
+        
+        # Calcular classe automaticamente (mas não salvar categoria ainda)
         classe = calcular_classe(ano_nasc)
         
-        # Corrigir limite para categorias "acima de"
-        if categoria.limite_max and categoria.limite_max < 999.0:
-            categoria_limite = f"{categoria.limite_min} a {categoria.limite_max} kg"
-        else:
-            categoria_limite = f"{categoria.limite_min} kg ou mais"
-        
+        # Criar atleta apenas com dados base (sem categoria/peso)
         atleta = Atleta.objects.create(
             nome=nome,
             ano_nasc=ano_nasc,
             sexo=sexo,
             faixa=faixa,
             academia=academia,
-            classe=classe,
-            categoria_nome=categoria.categoria_nome,
-            categoria_limite=categoria_limite,
-            peso_previsto=float(peso_previsto) if peso_previsto else None
+            classe=classe,  # Classe calculada automaticamente
+            categoria_nome='',  # Vazio - será definido na inscrição
+            categoria_limite='',  # Vazio
+            peso_previsto=None,  # Não solicitado no cadastro base
+            federado=federado,
+            zempo=zempo if federado else None
         )
         
+        messages.success(request, f'Atleta "{nome}" cadastrado com sucesso!')
+        
+        # Se é academia, redirecionar para o painel
+        if academia_logada:
+            return redirect('academia_painel')
         return redirect('lista_atletas')
     
     academias = Academia.objects.all().order_by('nome')
-    # Buscar categorias para SUB 11 como exemplo inicial (pode ser ajustado)
-    categorias = Categoria.objects.all().order_by('classe', 'limite_min')
     
     return render(request, 'atletas/cadastrar_atleta.html', {
         'academias': academias,
-        'categorias': categorias
+        'academia_logada': academia_logada
+    })
+
+
+@login_required
+def editar_atleta(request, id):
+    """Edita um atleta existente (apenas dados básicos, não pesagem)"""
+    atleta = get_object_or_404(Atleta, id=id)
+    
+    # Verificar permissões
+    if request.user.is_authenticated and hasattr(request.user, 'profile'):
+        if request.user.profile.tipo_usuario == 'academia':
+            # Academia só pode editar seus próprios atletas
+            if atleta.academia != request.user.profile.academia:
+                messages.error(request, 'Você só pode editar atletas da sua academia.')
+                return redirect('academia_painel')
+            academia_logada = request.user.profile.academia
+        else:
+            academia_logada = None
+    else:
+        academia_logada = None
+    
+    if request.method == 'POST':
+        atleta.nome = request.POST.get('nome')
+        atleta.ano_nasc = int(request.POST.get('ano_nasc'))
+        atleta.sexo = request.POST.get('sexo')
+        atleta.faixa = request.POST.get('faixa')
+        
+        # Academia (só operacional pode alterar)
+        if not academia_logada:
+            academia_id = int(request.POST.get('academia'))
+            atleta.academia = get_object_or_404(Academia, id=academia_id)
+        
+        # Campos de federação
+        federado = request.POST.get('federado') == 'on'
+        zempo = request.POST.get('zempo', '').strip() if federado else None
+        
+        # Validação: se federado, zempo é obrigatório
+        if federado and not zempo:
+            messages.error(request, 'Número ZEMPO é obrigatório para atletas federados.')
+            academias = Academia.objects.all().order_by('nome') if not academia_logada else None
+            return render(request, 'atletas/editar_atleta.html', {
+                'atleta': atleta,
+                'academias': academias,
+                'academia_logada': academia_logada
+            })
+        
+        atleta.federado = federado
+        atleta.zempo = zempo if federado else None
+        
+        # Recalcular classe baseado no ano de nascimento
+        from datetime import date
+        ano_atual = date.today().year
+        idade = ano_atual - atleta.ano_nasc
+        atleta.classe = calcular_classe(atleta.ano_nasc)
+        
+        # Upload de foto se fornecido
+        if 'foto' in request.FILES:
+            atleta.foto = request.FILES['foto']
+        
+        atleta.save()
+        messages.success(request, f'Atleta "{atleta.nome}" atualizado com sucesso!')
+        
+        # Redirecionar
+        if academia_logada:
+            return redirect('academia_painel')
+        return redirect('lista_atletas')
+    
+    academias = Academia.objects.all().order_by('nome') if not academia_logada else None
+    
+    return render(request, 'atletas/editar_atleta.html', {
+        'atleta': atleta,
+        'academias': academias,
+        'academia_logada': academia_logada
     })
 
 
@@ -473,36 +728,28 @@ def importar_atletas(request):
 # ========== PESAGEM ==========
 
 def pesagem(request):
-    """Tela de pesagem com filtros"""
-    classe_filtro = request.GET.get('classe', '')
-    sexo_filtro = request.GET.get('sexo', '')
-    categoria_filtro = request.GET.get('categoria', '')
+    """
+    ⚠️ DESATIVADO: Pesagem agora está dentro de eventos.
+    Redireciona para view de eventos.
+    """
+    from eventos.models import Evento
+    from django.contrib import messages
     
-    atletas = Atleta.objects.all().select_related('academia')
+    evento_id = request.GET.get('evento_id') or request.POST.get('evento_id')
     
-    if classe_filtro:
-        atletas = atletas.filter(classe=classe_filtro)
-    if sexo_filtro:
-        atletas = atletas.filter(sexo=sexo_filtro)
-    if categoria_filtro:
-        atletas = atletas.filter(
-            Q(categoria_nome=categoria_filtro) | Q(categoria_ajustada=categoria_filtro)
-        )
+    if evento_id:
+        return redirect('eventos:pesagem_evento', evento_id=evento_id)
     
-    # Buscar opções para filtros
-    classes = Atleta.objects.values_list('classe', flat=True).distinct().order_by('classe')
-    categorias = Atleta.objects.values_list('categoria_nome', flat=True).distinct().order_by('categoria_nome')
+    # Sem evento_id, buscar evento ativo
+    evento_ativo = Evento.objects.filter(ativo=True).order_by('-data_evento').first()
     
-    context = {
-        'atletas': atletas,
-        'classes': classes,
-        'categorias': categorias,
-        'classe_filtro': classe_filtro,
-        'sexo_filtro': sexo_filtro,
-        'categoria_filtro': categoria_filtro,
-    }
+    if evento_ativo:
+        messages.info(request, f'Redirecionando para pesagem do evento: {evento_ativo.nome}')
+        return redirect('eventos:pesagem_evento', evento_id=evento_ativo.id)
     
-    return render(request, 'atletas/pesagem.html', context)
+    # Sem evento ativo, redirecionar para lista de eventos
+    messages.info(request, 'Acesse a pesagem através de um evento específico.')
+    return redirect('eventos:lista_eventos')
 
 
 def pesagem_mobile_view(request):
@@ -536,126 +783,204 @@ def pesagem_mobile_view(request):
     return render(request, 'atletas/pesagem_mobile.html', context)
 
 
+@require_http_methods(["POST"])
 def registrar_peso(request, atleta_id):
-    """Registra o peso oficial de um atleta e verifica se precisa remanejamento"""
-    if request.method == 'POST':
-        atleta = get_object_or_404(Atleta, id=atleta_id)
-        peso_oficial = float(request.POST.get('peso_oficial'))
-        
-        # Buscar categoria atual
-        categoria_atual = Categoria.objects.filter(
-            classe=atleta.classe,
-            sexo=atleta.sexo,
-            categoria_nome=atleta.categoria_nome
-        ).first()
-        
-        if not categoria_atual:
-            messages.error(request, 'Categoria atual não encontrada.')
-            if 'mobile' in request.META.get('HTTP_REFERER', ''):
-                return redirect('pesagem_mobile')
-            return redirect('pesagem')
-        
-        # Verificar se peso está dentro dos limites
-        limite_max_real = categoria_atual.limite_max if categoria_atual.limite_max < 999.0 else 999999.0
-        
-        if categoria_atual.limite_min <= peso_oficial <= limite_max_real:
-            # Peso OK, salvar normalmente
-            atleta.peso_oficial = peso_oficial
-            atleta.status = "OK"
-            atleta.motivo_ajuste = ""
-            atleta.save()
-            messages.success(request, f'Peso registrado com sucesso: {peso_oficial}kg')
-            if 'mobile' in request.META.get('HTTP_REFERER', ''):
-                return redirect('pesagem_mobile')
-            return redirect('pesagem')
-        
-        # Peso fora dos limites - precisa verificar se pode remanejar
-        categoria_ajustada, motivo = ajustar_categoria_por_peso(atleta, peso_oficial)
-        
-        if categoria_ajustada:
-            # Retornar JSON com informações para diálogo de confirmação
-            return JsonResponse({
-                'precisa_confirmacao': True,
-                'peso': peso_oficial,
-                'categoria_atual': categoria_atual.categoria_nome,
-                'limite_atual_min': categoria_atual.limite_min,
-                'limite_atual_max': limite_max_real,
-                'categoria_nova': categoria_ajustada.categoria_nome,
-                'limite_novo_min': categoria_ajustada.limite_min,
-                'limite_novo_max': categoria_ajustada.limite_max if categoria_ajustada.limite_max < 999.0 else None,
-                'motivo': motivo,
-                'atleta_id': atleta_id,
-                'atleta_nome': atleta.nome
-            })
-        else:
-            # Não pode remanejar - desclassificar
-            atleta.peso_oficial = peso_oficial
-            atleta.status = "Eliminado Peso"
-            atleta.motivo_ajuste = motivo
-            atleta.save()
-            messages.warning(request, f'Atleta desclassificado: {motivo}')
-            if 'mobile' in request.META.get('HTTP_REFERER', ''):
-                return redirect('pesagem_mobile')
-            return redirect('pesagem')
+    """
+    Registra o peso oficial de um atleta.
+    NUNCA salva automaticamente quando o peso está fora da categoria.
+    Retorna JSON indicando se precisa mostrar modal de confirmação.
+    """
+    atleta = get_object_or_404(Atleta, id=atleta_id)
     
-    if 'mobile' in request.META.get('HTTP_REFERER', ''):
-        return redirect('pesagem_mobile')
-    return redirect('pesagem')
-
-
-def confirmar_remanejamento(request, atleta_id):
-    """Confirma ou rejeita remanejamento de categoria"""
-    if request.method == 'POST':
-        atleta = get_object_or_404(Atleta, id=atleta_id)
-        acao = request.POST.get('acao')  # 'remanejar' ou 'desclassificar'
+    try:
         peso_oficial = float(request.POST.get('peso_oficial'))
-        categoria_nova = request.POST.get('categoria_nova')
-        
+    except (ValueError, TypeError):
+        return JsonResponse({'erro': 'Peso inválido'}, status=400)
+    
+    # Buscar categoria atual
+    categoria_atual = Categoria.objects.filter(
+        classe=atleta.classe,
+        sexo=atleta.sexo,
+        categoria_nome=atleta.categoria_nome
+    ).first()
+    
+    if not categoria_atual:
+        return JsonResponse({'erro': 'Categoria atual não encontrada'}, status=400)
+    
+    # Verificar se peso está dentro dos limites
+    limite_max_real = categoria_atual.limite_max if categoria_atual.limite_max < 999.0 else 999999.0
+    
+    # SITUAÇÃO A: Peso dentro da categoria atual - SALVAR DIRETAMENTE
+    if categoria_atual.limite_min <= peso_oficial <= limite_max_real:
         atleta.peso_oficial = peso_oficial
-        
-        if acao == 'remanejar':
-            # Remanejar para nova categoria
-            categoria = Categoria.objects.filter(
-                classe=atleta.classe,
-                sexo=atleta.sexo,
-                categoria_nome=categoria_nova
-            ).first()
-            
-            if categoria:
-                atleta.categoria_ajustada = categoria.categoria_nome
-                limite_max = categoria.limite_max if categoria.limite_max < 999.0 else None
-                if limite_max:
-                    atleta.categoria_limite = f"{categoria.limite_min} a {limite_max} kg"
-                else:
-                    atleta.categoria_limite = f"{categoria.limite_min} kg ou mais"
-                atleta.status = "OK"
-                atleta.remanejado = True  # Marcar como remanejado
-                atleta.motivo_ajuste = f"Remanejado de {atleta.categoria_nome} para {categoria_nova} (peso {peso_oficial}kg)"
-                atleta.save()
-                
-                # Descontar 1 ponto da academia
-                academia = atleta.academia
-                academia.pontos = max(0, academia.pontos - 1)  # Não deixar ficar negativo
-                academia.save()
-                
-                messages.success(request, f'Atleta remanejado para {categoria_nova}. Academia perdeu 1 ponto.')
-            else:
-                messages.error(request, 'Categoria não encontrada.')
-        else:
-            # Desclassificar
-            atleta.status = "Eliminado Peso"
-            atleta.motivo_ajuste = f"Desclassificado por peso {peso_oficial}kg fora da categoria {atleta.categoria_nome}"
-            atleta.save()
-            messages.warning(request, 'Atleta desclassificado.')
-        
-        # Verificar se veio da versão mobile
-        referer = request.META.get('HTTP_REFERER', '')
-        if 'mobile' in referer:
-            return redirect('pesagem_mobile')
-        
-        return redirect('pesagem')
+        atleta.status = "OK"
+        atleta.motivo_ajuste = ""
+        atleta.save()
+        return JsonResponse({
+            'sucesso': True,
+            'mensagem': f'Peso registrado com sucesso: {peso_oficial}kg',
+            'status': 'OK'
+        })
     
-    return redirect('pesagem')
+    # SITUAÇÃO B: Peso fora dos limites - BUSCAR CATEGORIA SUGERIDA (SEM SALVAR)
+    # Usar função utilitária que segue as regras corretas
+    from atletas.utils import categoria_por_peso
+    categoria_sugerida = categoria_por_peso(atleta.classe, atleta.sexo, peso_oficial)
+    
+    # Se encontrou categoria sugerida, verificar se é diferente da atual
+    if categoria_sugerida and categoria_sugerida.id == categoria_atual.id:
+        # A categoria sugerida é a mesma da atual - isso não deveria acontecer
+        # mas se acontecer, não mostrar modal (já está na categoria correta)
+        categoria_sugerida = None
+    
+    # Preparar resposta para modal
+    limite_atual_str = f"{categoria_atual.limite_min} a {limite_max_real} kg" if limite_max_real < 999999.0 else f"{categoria_atual.limite_min} kg ou mais"
+    
+    if categoria_sugerida:
+        # Existe categoria sugerida - mostrar modal com opção de remanejar
+        # Garantir que a categoria sugerida é da mesma classe
+        if categoria_sugerida.classe != atleta.classe:
+            # ERRO: Categoria sugerida de classe diferente - não permitir
+            categoria_sugerida = None
+        else:
+            # Calcular limite da categoria sugerida
+            limite_sugerido_max = categoria_sugerida.limite_max if categoria_sugerida.limite_max < 999.0 else None
+            limite_sugerido_str = f"{categoria_sugerida.limite_min} a {limite_sugerido_max} kg" if limite_sugerido_max else f"{categoria_sugerida.limite_min} kg ou mais"
+            
+            return JsonResponse({
+                'show_modal': True,
+                'peso': peso_oficial,
+                'atleta_id': atleta_id,
+                'atleta_nome': atleta.nome,
+                'categoria_atual': {
+                    'nome': categoria_atual.categoria_nome,
+                    'classe': categoria_atual.classe,  # Adicionar classe para validação
+                    'limite': limite_atual_str,
+                    'limite_min': categoria_atual.limite_min,
+                    'limite_max': limite_max_real
+                },
+                'categoria_sugerida': {
+                    'nome': categoria_sugerida.categoria_nome,
+                    'classe': categoria_sugerida.classe,  # Adicionar classe para validação
+                    'limite': limite_sugerido_str,
+                    'limite_min': categoria_sugerida.limite_min,
+                    'limite_max': limite_sugerido_max if limite_sugerido_max else 999999.0
+                },
+                'pode_remanejar': True
+            })
+    
+    # Não existe categoria sugerida - mostrar modal apenas com opção de desclassificar
+    return JsonResponse({
+        'show_modal': True,
+        'peso': peso_oficial,
+        'atleta_id': atleta_id,
+        'atleta_nome': atleta.nome,
+        'categoria_atual': {
+            'nome': categoria_atual.categoria_nome,
+            'classe': categoria_atual.classe,  # Adicionar classe para validação
+            'limite': limite_atual_str,
+            'limite_min': categoria_atual.limite_min,
+            'limite_max': limite_max_real
+        },
+        'categoria_sugerida': None,
+        'pode_remanejar': False
+    })
+
+
+@require_http_methods(["POST"])
+def remanejar_peso(request, atleta_id):
+    """
+    Remaneja atleta para nova categoria após confirmação no modal.
+    Grava peso, atualiza categoria, marca remanejado=True, reduz 1 ponto da academia.
+    """
+    atleta = get_object_or_404(Atleta, id=atleta_id)
+    
+    try:
+        peso_oficial = float(request.POST.get('peso_oficial'))
+        categoria_nova_nome = request.POST.get('categoria_nova')
+    except (ValueError, TypeError, AttributeError):
+        return JsonResponse({'erro': 'Dados inválidos'}, status=400)
+    
+    if not categoria_nova_nome:
+        return JsonResponse({'erro': 'Categoria nova não informada'}, status=400)
+    
+    # Buscar categoria nova
+    categoria_nova = Categoria.objects.filter(
+        classe=atleta.classe,
+        sexo=atleta.sexo,
+        categoria_nome=categoria_nova_nome
+    ).first()
+    
+    if not categoria_nova:
+        return JsonResponse({'erro': 'Categoria não encontrada'}, status=400)
+    
+    # Atualizar atleta
+    atleta.peso_oficial = peso_oficial
+    atleta.categoria_ajustada = categoria_nova.categoria_nome
+    limite_max = categoria_nova.limite_max if categoria_nova.limite_max < 999.0 else None
+    if limite_max:
+        atleta.categoria_limite = f"{categoria_nova.limite_min} a {limite_max} kg"
+    else:
+        atleta.categoria_limite = f"{categoria_nova.limite_min} kg ou mais"
+    atleta.status = "OK"
+    atleta.remanejado = True
+    atleta.motivo_ajuste = f"Remanejado de {atleta.categoria_nome} para {categoria_nova_nome} (peso {peso_oficial}kg)"
+    atleta.save()
+    
+    # Descontar 1 ponto da academia
+    academia = atleta.academia
+    academia.pontos = max(0, academia.pontos - 1)
+    academia.save()
+    
+    # Criar log
+    AdminLog.objects.create(
+        tipo='REMANEJAMENTO',
+        acao=f'Remanejamento - {atleta.nome}',
+        atleta=atleta,
+        academia=academia,
+        detalhes=f'De {atleta.categoria_nome} para {categoria_nova_nome}. Peso: {peso_oficial} kg. Penalidade: -1 ponto(s).'
+    )
+    
+    return JsonResponse({
+        'sucesso': True,
+        'mensagem': f'Atleta remanejado para {categoria_nova_nome}. Academia perdeu 1 ponto.',
+        'status': 'REMANEJADO'
+    })
+
+
+@require_http_methods(["POST"])
+def desclassificar_peso(request, atleta_id):
+    """
+    Desclassifica atleta por peso após confirmação no modal.
+    Grava peso, marca status = "Eliminado Peso", categoria não muda.
+    """
+    atleta = get_object_or_404(Atleta, id=atleta_id)
+    
+    try:
+        peso_oficial = float(request.POST.get('peso_oficial'))
+    except (ValueError, TypeError):
+        return JsonResponse({'erro': 'Peso inválido'}, status=400)
+    
+    # Atualizar atleta
+    atleta.peso_oficial = peso_oficial
+    atleta.status = "Eliminado Peso"
+    atleta.motivo_ajuste = f"Desclassificado por peso {peso_oficial}kg fora da categoria {atleta.categoria_nome}"
+    atleta.save()
+    
+    # Criar log
+    AdminLog.objects.create(
+        tipo='DESCLASSIFICACAO',
+        acao=f'Desclassificação - {atleta.nome}',
+        atleta=atleta,
+        academia=atleta.academia,
+        detalhes=f'Peso fora do limite: {peso_oficial} kg. Motivo: Peso fora do limite permitido.'
+    )
+    
+    return JsonResponse({
+        'sucesso': True,
+        'mensagem': 'Atleta desclassificado por peso.',
+        'status': 'DESCLASSIFICADO'
+    })
 
 
 def rebaixar_categoria(request, atleta_id):
@@ -687,18 +1012,51 @@ def rebaixar_categoria(request, atleta_id):
             atleta.status = "OK"
             atleta.save()
     
-    return redirect('pesagem')
+    # ✅ CORRIGIDO: Não redirecionar para pesagem, apenas listar atletas
+    return redirect('lista_atletas')
 
 
 # ========== GERAÇÃO DE CHAVES ==========
 
 def lista_chaves(request):
-    """Lista todas as chaves com filtros"""
-    chaves = Chave.objects.all().order_by('classe', 'sexo', 'categoria')
+    """
+    ⚠️ DESATIVADO: Lista de chaves agora está dentro de eventos.
+    Redireciona para lista de eventos ou exige evento_id.
+    """
+    from eventos.models import Evento
+    from django.contrib import messages
+    
+    # Verificar se tem evento_id na URL
+    evento_id = request.GET.get('evento_id') or request.POST.get('evento_id')
+    
+    if evento_id:
+        # Redirecionar para view de eventos
+        return redirect('eventos:listar_chaves_evento', evento_id=evento_id)
+    
+    # Sem evento_id, buscar evento mais recente ou listar eventos
+    evento_ativo = Evento.objects.filter(ativo=True).order_by('-data_evento').first()
+    
+    if evento_ativo:
+        messages.info(request, f'Redirecionando para chaves do evento: {evento_ativo.nome}')
+        return redirect('eventos:listar_chaves_evento', evento_id=evento_ativo.id)
+    
+    # Sem evento ativo, redirecionar para lista de eventos
+    messages.info(request, 'Acesse as chaves através de um evento específico.')
+    return redirect('eventos:lista_eventos')
+
+
+def lista_chaves_legacy(request):
+    """⚠️ LEGADO: Mantido apenas para compatibilidade. Use eventos."""
+    chaves = Chave.objects.filter(evento__isnull=False).order_by('-evento__data_evento', 'classe', 'sexo', 'categoria')
 
     classe_filtro = request.GET.get('classe', '').strip()
     sexo_filtro = request.GET.get('sexo', '').strip()
     categoria_filtro = request.GET.get('categoria', '').strip()
+    evento_id = request.GET.get('evento_id')
+
+    # Filtrar por evento se fornecido
+    if evento_id:
+        chaves = chaves.filter(evento_id=evento_id)
 
     if classe_filtro:
         chaves = chaves.filter(classe__icontains=classe_filtro)
@@ -707,132 +1065,104 @@ def lista_chaves(request):
     if categoria_filtro:
         chaves = chaves.filter(categoria__icontains=categoria_filtro)
 
-    classes = (
-        Chave.objects.values_list('classe', flat=True)
-        .distinct()
-        .order_by('classe')
-    )
-    categorias = (
-        Chave.objects.values_list('categoria', flat=True)
-        .distinct()
-        .order_by('categoria')
-    )
+    # Código legado removido - redireciona para eventos
 
-    context = {
-        'chaves': chaves,
-        'classes': classes,
-        'categorias': categorias,
-        'classe_filtro': classe_filtro,
-        'sexo_filtro': sexo_filtro,
-        'categoria_filtro': categoria_filtro,
-        'total_chaves': chaves.count(),
-    }
 
-    return render(request, 'atletas/lista_chaves.html', context)
+def verificar_atletas_categoria(request):
+    """Verifica quantos atletas existem na categoria e se todos foram pesados"""
+    from django.http import JsonResponse
+    
+    classe = request.GET.get('classe')
+    sexo = request.GET.get('sexo')
+    categoria = request.GET.get('categoria')
+    
+    if not classe or not sexo or not categoria:
+        return JsonResponse({'erro': 'Parâmetros incompletos'}, status=400)
+    
+    # Buscar atletas aptos (status OK) da categoria
+    atletas = Atleta.objects.filter(
+        classe=classe,
+        sexo=sexo,
+        status='OK'
+    ).exclude(
+        classe='Festival'  # Festival não entra em chaves
+    ).filter(
+        Q(categoria_nome=categoria) | Q(categoria_ajustada=categoria)
+    )
+    
+    num_atletas = atletas.count()
+    
+    # Verificar se todos têm peso validado
+    pendentes = []
+    for atleta in atletas:
+        if not atleta.peso_oficial:
+            pendentes.append(atleta.nome)
+    
+    if pendentes:
+        mensagem = f"Ainda há {len(pendentes)} atleta(s) sem peso validado: {', '.join(pendentes[:3])}{'...' if len(pendentes) > 3 else ''}"
+        return JsonResponse({
+            'erro': mensagem,
+            'num_atletas': num_atletas,
+            'pendentes': pendentes
+        })
+    
+    return JsonResponse({
+        'sucesso': True,
+        'num_atletas': num_atletas
+    })
 
 
 def gerar_chave_view(request):
-    """Gera uma nova chave"""
-    if request.method == 'POST':
-        classe = request.POST.get('classe')
-        sexo = request.POST.get('sexo')
-        categoria = request.POST.get('categoria')
-        
-        chave = gerar_chave(categoria, classe, sexo)
-        return redirect('detalhe_chave', chave_id=chave.id)
+    """
+    ⚠️ DESATIVADO: Geração de chaves agora está dentro de eventos.
+    Redireciona para view de eventos.
+    """
+    from eventos.models import Evento
+    from django.contrib import messages
     
-    # Buscar opções
-    classes = Atleta.objects.values_list('classe', flat=True).distinct().order_by('classe')
+    evento_id = request.GET.get('evento_id') or request.POST.get('evento_id')
     
-    # Filtrar categorias por sexo se selecionado via GET (para atualizar dropdown via AJAX)
-    sexo_filtro = request.GET.get('sexo', '')
-    if sexo_filtro:
-        categorias = Categoria.objects.filter(sexo=sexo_filtro).order_by('classe', 'categoria_nome')
-    else:
-        categorias = Categoria.objects.all().order_by('classe', 'categoria_nome')
+    if evento_id:
+        # Redirecionar para listar categorias do evento
+        return redirect('eventos:listar_categorias', evento_id=evento_id)
     
-    return render(request, 'atletas/gerar_chave.html', {
-        'classes': classes,
-        'categorias': categorias,
-        'sexo_selecionado': sexo_filtro
-    })
+    # Sem evento_id, buscar evento ativo ou listar eventos
+    evento_ativo = Evento.objects.filter(ativo=True).order_by('-data_evento').first()
+    
+    if evento_ativo:
+        messages.info(request, f'Redirecionando para geração de chaves do evento: {evento_ativo.nome}')
+        return redirect('eventos:listar_categorias', evento_id=evento_ativo.id)
+    
+    # Sem evento ativo, redirecionar para lista de eventos
+    messages.info(request, 'Acesse a geração de chaves através de um evento específico.')
+    return redirect('eventos:lista_eventos')
 
 
 def gerar_chave_manual(request):
     """
-    Gera uma chave manual de lutas casadas:
-    - Usuário seleciona atletas (de qualquer classe/categoria)
-    - Sistema cria uma chave com lutas 1x1 na ordem selecionada
-    - Não conta para ranking (tipo lutas_casadas)
+    ⚠️ DESATIVADO: Chaves manuais agora precisam estar vinculadas a um evento.
+    Redireciona para view de eventos ou exige evento_id.
     """
-    # Filtros para facilitar seleção dos atletas
-    nome_filtro = request.GET.get('nome', '').strip()
-    classe_filtro = request.GET.get('classe', '')
-    sexo_filtro = request.GET.get('sexo', '')
-    academia_filtro = request.GET.get('academia', '')
-
-    atletas = Atleta.objects.all().select_related('academia').order_by('classe', 'sexo', 'categoria_nome', 'nome')
-
-    if nome_filtro:
-        atletas = atletas.filter(nome__icontains=nome_filtro)
-    if classe_filtro:
-        atletas = atletas.filter(classe=classe_filtro)
-    if sexo_filtro:
-        atletas = atletas.filter(sexo=sexo_filtro)
-    if academia_filtro:
-        try:
-            atletas = atletas.filter(academia_id=int(academia_filtro))
-        except (ValueError, TypeError):
-            pass
-
-    classes = Atleta.objects.values_list('classe', flat=True).distinct().order_by('classe')
-    academias = Academia.objects.all().order_by('nome')
-
-    if request.method == 'POST':
-        selecionados = request.POST.getlist('atletas')
-        nome_chave = request.POST.get('nome_chave', '').strip() or 'Lutas casadas'
-        classe = request.POST.get('classe_chave', '').strip() or 'Livre'
-        sexo = request.POST.get('sexo_chave', '').strip() or 'M'
-
-        if len(selecionados) < 2:
-            messages.error(request, 'Selecione pelo menos 2 atletas para gerar lutas casadas.')
-        else:
-            atletas_sel = list(Atleta.objects.filter(id__in=selecionados).order_by('nome'))
-
-            # Criar chave manual
-            chave = Chave.objects.create(
-                classe=classe,
-                sexo=sexo,
-                categoria=nome_chave,
-                estrutura={}
-            )
-            chave.atletas.set(atletas_sel)
-
-            # Criar lutas 1x1 na ordem
-            from atletas.models import Luta  # evitar import circular
-
-            lutas_ids = []
-            for i in range(0, len(atletas_sel), 2):
-                atleta_a = atletas_sel[i]
-                atleta_b = atletas_sel[i + 1] if i + 1 < len(atletas_sel) else None
-                luta = Luta.objects.create(
-                    chave=chave,
-                    atleta_a=atleta_a,
-                    atleta_b=atleta_b,
-                    round=1,
-                    proxima_luta=None
-                )
-                lutas_ids.append(luta.id)
-
-            # Estrutura simples apenas para identificar que é chave manual
-            chave.estrutura = {
-                "tipo": "lutas_casadas",
-                "lutas": lutas_ids,
-            }
-            chave.save()
-
-            messages.success(request, f'Chave manual "{nome_chave}" criada com {len(lutas_ids)} luta(s).')
-            return redirect('detalhe_chave', chave_id=chave.id)
+    from eventos.models import Evento
+    from django.contrib import messages
+    
+    evento_id = request.GET.get('evento_id') or request.POST.get('evento_id')
+    
+    if evento_id:
+        # Para chaves manuais, usar view de eventos ou criar uma nova rota
+        messages.info(request, 'Chaves manuais devem ser criadas através de um evento específico.')
+        return redirect('eventos:listar_categorias', evento_id=evento_id)
+    
+    # Sem evento_id, buscar evento ativo
+    evento_ativo = Evento.objects.filter(ativo=True).order_by('-data_evento').first()
+    
+    if evento_ativo:
+        messages.info(request, f'Redirecionando para criação de chaves do evento: {evento_ativo.nome}')
+        return redirect('eventos:listar_categorias', evento_id=evento_ativo.id)
+    
+    # Sem evento ativo, redirecionar para lista de eventos
+    messages.info(request, 'Acesse a criação de chaves através de um evento específico.')
+    return redirect('eventos:lista_eventos')
 
     context = {
         'atletas': atletas,
@@ -848,27 +1178,20 @@ def gerar_chave_manual(request):
 
 
 def detalhe_chave(request, chave_id):
-    """Mostra detalhes de uma chave"""
+    """
+    ⚠️ DESATIVADO: Detalhe de chave agora está dentro de eventos.
+    Redireciona para view de eventos.
+    """
+    from django.contrib import messages
+    
     chave = get_object_or_404(Chave, id=chave_id)
-    lutas = chave.lutas.all().order_by('round', 'id')
-    resultados_ids = get_resultados_chave(chave)
     
-    # Buscar atletas dos resultados
-    resultados_atletas = []
-    for resultado_id in resultados_ids:
-        try:
-            atleta = Atleta.objects.get(id=resultado_id)
-            resultados_atletas.append(atleta)
-        except Atleta.DoesNotExist:
-            pass
+    if not chave.evento:
+        messages.error(request, 'Esta chave não está vinculada a nenhum evento. Use o comando de migração.')
+        return redirect('eventos:lista_eventos')
     
-    context = {
-        'chave': chave,
-        'lutas': lutas,
-        'resultados': resultados_atletas
-    }
-    
-    return render(request, 'atletas/detalhe_chave.html', context)
+    # Redirecionar para view de eventos
+    return redirect('eventos:detalhe_chave_evento', evento_id=chave.evento.id, chave_id=chave.id)
 
 
 def chave_mobile_view(request, chave_id):
@@ -920,36 +1243,28 @@ def luta_mobile_view(request, luta_id):
 def registrar_vencedor(request, luta_id):
     """Registra o vencedor de uma luta"""
     if request.method == 'POST':
+        from atletas.services.luta_services import atualizar_vencedor_luta, recalcular_chave
+        
         luta = get_object_or_404(Luta, id=luta_id)
+        
+        # ✅ BLOQUEIO: Não permitir editar resultados após o evento
+        if luta.evento and luta.evento.is_expired:
+            return JsonResponse({"error": "Resultados não podem ser modificados após o evento."}, status=403)
+        
         vencedor_id = int(request.POST.get('vencedor'))
         tipo_vitoria = request.POST.get('tipo_vitoria', 'IPPON')
+        wo_atleta_a = request.POST.get('wo_atleta_a') == 'on'
+        wo_atleta_b = request.POST.get('wo_atleta_b') == 'on'
         
         vencedor = get_object_or_404(Atleta, id=vencedor_id)
-        luta.vencedor = vencedor
-        luta.tipo_vitoria = tipo_vitoria
-        luta.pontos_perdedor = 0
         
-        # Calcular pontos conforme tipo de vitória
-        if tipo_vitoria == "IPPON":
-            luta.pontos_vencedor = 10
-            luta.ippon_count = 1
-            luta.wazari_count = 0
-            luta.yuko_count = 0
-        elif tipo_vitoria in ["WAZARI", "WAZARI_WAZARI"]:
-            luta.pontos_vencedor = 7
-            luta.ippon_count = 0
-            luta.wazari_count = 1
-            luta.yuko_count = 0
-        elif tipo_vitoria == "YUKO":
-            luta.pontos_vencedor = 1
-            luta.ippon_count = 0
-            luta.wazari_count = 0
-            luta.yuko_count = 1
+        # ✅ USAR SERVIÇO DE ATUALIZAÇÃO
+        atualizar_vencedor_luta(luta, vencedor, tipo_vitoria, wo_atleta_a, wo_atleta_b)
         
-        luta.concluida = True
-        luta.save()
+        # Recalcular chave para atualizar todas as próximas lutas
+        recalcular_chave(luta.chave)
         
-        # Atualizar estrutura JSON da chave
+        # Atualizar estrutura JSON da chave (compatibilidade)
         estrutura = luta.chave.estrutura
         if isinstance(estrutura, dict):
             # Buscar informações da luta no JSON
@@ -981,14 +1296,30 @@ def registrar_vencedor(request, luta_id):
             
             luta.chave.estrutura = estrutura
             luta.chave.save()
-        
-        # Atualizar próxima luta
-        atualizar_proxima_luta(luta)
 
-        # Reprocessar pontuação de academias
-        calcular_pontuacao_academias()
+        # Reprocessar pontuação de academias (se chave finalizada)
+        if luta.chave.finalizada:
+            calcular_pontuacao_academias()
         
-        # Verificar se veio da versão mobile (check header ou referrer)
+        # ✅ CORRIGIDO: Redirecionar para view de eventos se a chave tem evento
+        if luta.chave.evento:
+            # Verificar se veio da versão mobile (check header ou referrer)
+            referer = request.META.get('HTTP_REFERER', '')
+            if 'mobile' in referer:
+                # Buscar próxima luta
+                proxima_luta = None
+                if luta.proxima_luta:
+                    try:
+                        proxima_luta = Luta.objects.get(id=luta.proxima_luta, chave=luta.chave)
+                        return redirect('eventos:detalhe_chave_evento', evento_id=luta.chave.evento.id, chave_id=luta.chave.id)
+                    except Luta.DoesNotExist:
+                        pass
+                # Se não há próxima luta, voltar para a chave do evento
+                return redirect('eventos:detalhe_chave_evento', evento_id=luta.chave.evento.id, chave_id=luta.chave.id)
+            
+            return redirect('eventos:detalhe_chave_evento', evento_id=luta.chave.evento.id, chave_id=luta.chave.id)
+        
+        # ✅ LEGADO: Manter compatibilidade com chaves antigas sem evento
         referer = request.META.get('HTTP_REFERER', '')
         if 'mobile' in referer:
             # Buscar próxima luta
@@ -1016,36 +1347,127 @@ def calcular_pontuacao(request):
 
 
 def ranking_academias(request):
-    """Ranking final das academias"""
-    academias = Academia.objects.all().order_by('-pontos', 'nome')
-    return render(request, 'atletas/ranking_academias.html', {'academias': academias})
+    """Ranking final das academias baseado em Evento"""
+    # ✅ CORRIGIDO: Usar Evento ao invés de Campeonato
+    from eventos.models import Evento, EventoAtleta
+    from django.db.models import Sum
+    
+    # Buscar evento ativo ou mais recente
+    evento = Evento.objects.filter(ativo=True).order_by('-data_evento').first()
+    if not evento:
+        evento = Evento.objects.order_by('-data_evento').first()
+    
+    if not evento:
+        return render(request, 'atletas/ranking_academias.html', {
+            'academias': [],
+            'evento': None
+        })
+    
+    # Calcular pontuação por academia baseado em EventoAtleta
+    from atletas.models import Academia
+    academias_com_pontos = []
+    
+    for academia in Academia.objects.all():
+        evento_atletas = EventoAtleta.objects.filter(evento=evento, academia=academia)
+        pontos_totais = evento_atletas.aggregate(total=Sum('pontos'))['total'] or 0
+        
+        # Contar medalhas (1º, 2º, 3º lugar)
+        from atletas.models import Chave
+        from atletas.services.luta_services import obter_resultados_chave
+        
+        ouro = prata = bronze = 0
+        for chave in Chave.objects.filter(evento=evento):
+            resultados = obter_resultados_chave(chave)
+            if resultados:
+                for pos, atleta_id in enumerate(resultados[:3], 1):
+                    if evento_atletas.filter(atleta_id=atleta_id).exists():
+                        if pos == 1:
+                            ouro += 1
+                        elif pos == 2:
+                            prata += 1
+                        elif pos == 3:
+                            bronze += 1
+        
+        if pontos_totais > 0 or ouro > 0 or prata > 0 or bronze > 0:
+            academias_com_pontos.append({
+                'academia': academia,
+                'pontos': pontos_totais,
+                'ouro': ouro,
+                'prata': prata,
+                'bronze': bronze,
+            })
+    
+    # Ordenar por pontos totais
+    academias_ordenadas = sorted(academias_com_pontos, key=lambda x: x['pontos'], reverse=True)
+    
+    return render(request, 'atletas/ranking_academias.html', {
+        'academias': academias_ordenadas,
+        'evento': evento
+    })
 
 
 @require_http_methods(["GET"])
 def api_ranking_academias(request):
-    """API JSON com ranking de academias"""
-    # Usar campeonato ativo ou padrão
-    from atletas.models import Campeonato
-    campeonato = Campeonato.objects.filter(ativo=True).first()
-    if not campeonato:
-        campeonato = Campeonato.objects.order_by('-id').first()
-    if not campeonato:
+    """API JSON com ranking de academias baseado em Evento"""
+    # ✅ CORRIGIDO: Usar Evento ao invés de Campeonato
+    from eventos.models import Evento, EventoAtleta
+    from django.db.models import Sum
+    
+    # Buscar evento ativo ou mais recente
+    evento = Evento.objects.filter(ativo=True).order_by('-data_evento').first()
+    if not evento:
+        evento = Evento.objects.order_by('-data_evento').first()
+    
+    if not evento:
         return JsonResponse([], safe=False)
     
-    registros = AcademiaPontuacao.objects.filter(campeonato=campeonato).select_related('academia').order_by('-pontos_totais', 'academia__nome')
+    # Calcular pontuação por academia baseado em EventoAtleta
+    from atletas.models import Academia
+    from atletas.models import Chave
+    from atletas.services.luta_services import obter_resultados_chave
+    
     data = []
-    for reg in registros:
-        data.append({
-            "academia": reg.academia.nome,
-            "ouro": reg.ouro,
-            "prata": reg.prata,
-            "bronze": reg.bronze,
-            "quarto": reg.quarto,
-            "quinto": reg.quinto,
-            "festival": reg.festival,
-            "remanejamento": reg.remanejamento,
-            "pontos_total": reg.pontos_totais,
-        })
+    for academia in Academia.objects.all():
+        evento_atletas = EventoAtleta.objects.filter(evento=evento, academia=academia)
+        pontos_total = evento_atletas.aggregate(total=Sum('pontos'))['total'] or 0
+        
+        # Contar medalhas
+        ouro = prata = bronze = quarto = quinto = festival = remanejamento = 0
+        for chave in Chave.objects.filter(evento=evento):
+            resultados = obter_resultados_chave(chave)
+            if resultados:
+                for pos, atleta_id in enumerate(resultados[:5], 1):
+                    if evento_atletas.filter(atleta_id=atleta_id).exists():
+                        if pos == 1:
+                            ouro += 1
+                        elif pos == 2:
+                            prata += 1
+                        elif pos == 3:
+                            bronze += 1
+                        elif pos == 4:
+                            quarto += 1
+                        elif pos == 5:
+                            quinto += 1
+        
+        # Contar festival e remanejamento
+        festival = evento_atletas.filter(atleta__classe='Festival').count()
+        remanejamento = evento_atletas.filter(remanejado=True).count()
+        
+        if pontos_total > 0 or ouro > 0 or prata > 0 or bronze > 0:
+            data.append({
+                "academia": academia.nome,
+                "ouro": ouro,
+                "prata": prata,
+                "bronze": bronze,
+                "quarto": quarto,
+                "quinto": quinto,
+                "festival": festival,
+                "remanejamento": remanejamento,
+                "pontos_total": pontos_total,
+            })
+    
+    # Ordenar por pontos totais
+    data.sort(key=lambda x: x['pontos_total'], reverse=True)
     return JsonResponse(data, safe=False)
 
 
@@ -1178,6 +1600,268 @@ def dashboard(request):
     }
     
     return render(request, 'atletas/relatorios/dashboard.html', context)
+
+
+# ========== MÓDULO DE COMPETIÇÃO ==========
+
+def lista_competicoes(request):
+    """
+    DESATIVADO: Esta view foi desativada.
+    Use o módulo Eventos: /eventos/
+    """
+    from django.shortcuts import redirect
+    from django.contrib import messages
+    messages.info(request, 'O módulo de Competições foi desativado. Use o módulo Eventos.')
+    return redirect('eventos:lista_eventos')
+
+
+def nova_competicao(request):
+    """
+    DESATIVADO: Esta view foi desativada.
+    Use o módulo Eventos: /eventos/criar/
+    """
+    from django.shortcuts import redirect
+    from django.contrib import messages
+    messages.info(request, 'O módulo de Competições foi desativado. Use o módulo Eventos.')
+    return redirect('eventos:criar_evento')
+
+
+def competicao_atual(request):
+    """
+    DESATIVADO: Esta view foi desativada.
+    Use o módulo Eventos: /eventos/<id>/
+    """
+    from django.shortcuts import redirect
+    from django.contrib import messages
+    from eventos.models import Evento
+    # Redirecionar para o primeiro evento encerrado (histórico)
+    evento = Evento.objects.filter(status='ENCERRADO').first()
+    if evento:
+        return redirect('eventos:ver_inscritos', evento_id=evento.id)
+    messages.info(request, 'O módulo de Competições foi desativado. Use o módulo Eventos.')
+    return redirect('eventos:lista_eventos')
+
+
+def configurar_competicao(request, competicao_id):
+    """
+    DESATIVADO: Esta view foi desativada.
+    Use o módulo Eventos: /eventos/<id>/configurar/
+    """
+    from django.shortcuts import redirect
+    from django.contrib import messages
+    from eventos.models import Evento
+    # Tentar redirecionar para evento equivalente
+    evento = Evento.objects.filter(status='ENCERRADO').first()
+    if evento:
+        return redirect('eventos:configurar_evento', evento_id=evento.id)
+    messages.info(request, 'O módulo de Competições foi desativado. Use o módulo Eventos.')
+    return redirect('eventos:lista_eventos')
+
+
+# ========== SISTEMA DE LOGIN ==========
+
+def login_tipo(request):
+    """Tela intermediária de escolha do tipo de login"""
+    if request.user.is_authenticated:
+        # Se já está logado, redirecionar baseado no tipo
+        if hasattr(request.user, 'profile'):
+            if request.user.profile.tipo_usuario == 'academia':
+                return redirect('academia_painel')
+            elif request.user.profile.tipo_usuario in ['operacional', 'admin']:
+                return redirect('index')
+        # Superusers também vão para o sistema, não para o admin
+        if request.user.is_superuser:
+            return redirect('index')
+    
+    return render(request, 'atletas/login/login_tipo.html')
+
+
+def login_academia(request):
+    """Login para academias"""
+    if request.user.is_authenticated:
+        if hasattr(request.user, 'profile') and request.user.profile.tipo_usuario == 'academia':
+            return redirect('academia_painel')
+        else:
+            logout(request)
+    
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            # Verificar se tem perfil e se é academia
+            if hasattr(user, 'profile'):
+                if user.profile.tipo_usuario == 'academia':
+                    login(request, user)
+                    messages.success(request, f'Bem-vindo, {user.get_full_name() or user.username}!')
+                    return redirect('academia_painel')
+                else:
+                    messages.error(request, 'Este login é apenas para academias. Use o login operacional.')
+            else:
+                messages.error(request, 'Perfil de usuário não encontrado. Entre em contato com o administrador.')
+        else:
+            messages.error(request, 'Usuário ou senha incorretos.')
+    
+    return render(request, 'atletas/login/login_academia.html')
+
+
+def login_operacional(request):
+    """Login para usuários operacionais/gestão"""
+    if request.user.is_authenticated:
+        if hasattr(request.user, 'profile') and request.user.profile.tipo_usuario in ['operacional', 'admin']:
+            return redirect('index')
+        elif request.user.is_superuser:
+            return redirect('index')
+        else:
+            logout(request)
+    
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            # Verificar se é superuser ou tem perfil operacional/admin
+            if user.is_superuser:
+                login(request, user)
+                messages.success(request, f'Bem-vindo, {user.get_full_name() or user.username}!')
+                return redirect('index')
+            elif hasattr(user, 'profile'):
+                if user.profile.tipo_usuario in ['operacional', 'admin']:
+                    login(request, user)
+                    messages.success(request, f'Bem-vindo, {user.get_full_name() or user.username}!')
+                    return redirect('index')
+                else:
+                    messages.error(request, 'Este login é apenas para usuários operacionais. Use o login da academia.')
+            else:
+                messages.error(request, 'Perfil de usuário não encontrado. Entre em contato com o administrador.')
+        else:
+            messages.error(request, 'Usuário ou senha incorretos.')
+    
+    return render(request, 'atletas/login/login_operacional.html')
+
+
+def user_logout(request):
+    """Logout do usuário"""
+    logout(request)
+    messages.success(request, 'Logout realizado com sucesso.')
+    return redirect('portal_publico')
+
+
+# ========== PORTAL PÚBLICO ==========
+
+def portal_publico(request):
+    """
+    Landing page pública do portal de inscrições.
+    Lista eventos de forma organizada:
+    - Eventos abertos para inscrição
+    - Eventos futuros
+    - Eventos em andamento (com chaves)
+    - Eventos encerrados (com ranking final)
+    """
+    from eventos.models import Evento
+    from atletas.models import Chave
+    from datetime import date
+    
+    hoje = date.today()
+    
+    # 1. Eventos abertos para inscrição (status INSCRICOES e data_limite >= hoje)
+    eventos_inscricao_aberta = Evento.objects.filter(
+        ativo=True,
+        status='INSCRICOES',
+        data_limite_inscricao__gte=hoje
+    ).order_by('data_evento')
+    # ✅ NOVO: Filtrar eventos expirados
+    eventos_inscricao_aberta = [e for e in eventos_inscricao_aberta if not e.is_expired]
+    
+    # 2. Eventos em pesagem (status PESAGEM)
+    eventos_pesagem = Evento.objects.filter(
+        ativo=True,
+        status='PESAGEM'
+    ).order_by('data_evento')
+    # ✅ NOVO: Filtrar eventos expirados
+    eventos_pesagem = [e for e in eventos_pesagem if not e.is_expired]
+    
+    # 3. Eventos em andamento (status ANDAMENTO e com chaves geradas)
+    from django.db.models import Count as CountModel
+    eventos_andamento = Evento.objects.filter(
+        ativo=True,
+        status='ANDAMENTO'
+    ).annotate(
+        total_chaves=CountModel('chaves')
+    ).filter(total_chaves__gt=0).order_by('-data_evento')
+    # ✅ NOVO: Filtrar eventos expirados
+    eventos_andamento = [e for e in eventos_andamento if not e.is_expired]
+    
+    # 4. Eventos futuros (data_evento > hoje e ainda não começaram)
+    eventos_futuros = Evento.objects.filter(
+        ativo=True,
+        data_evento__gt=hoje,
+        status__in=['RASCUNHO', 'INSCRICOES']
+    ).order_by('data_evento')
+    # ✅ NOVO: Filtrar eventos expirados
+    eventos_futuros = [e for e in eventos_futuros if not e.is_expired]
+    
+    # 5. Eventos encerrados (status ENCERRADO e com ranking final OU is_expired=True)
+    eventos_encerrados = Evento.objects.filter(
+        ativo=True,
+        status='ENCERRADO'
+    ).annotate(
+        total_chaves=CountModel('chaves')
+    ).filter(total_chaves__gt=0).order_by('-data_evento')[:10]  # Últimos 10
+    # ✅ NOVO: Incluir eventos expirados mesmo que não tenham status ENCERRADO
+    eventos_expirados_extra = Evento.objects.filter(
+        ativo=True
+    ).annotate(
+        total_chaves=CountModel('chaves')
+    ).filter(total_chaves__gt=0).exclude(id__in=[e.id for e in eventos_encerrados])
+    eventos_expirados_extra = [e for e in eventos_expirados_extra if e.is_expired][:10]
+    eventos_encerrados = list(eventos_encerrados) + eventos_expirados_extra
+    eventos_encerrados = sorted(eventos_encerrados, key=lambda x: x.data_evento, reverse=True)[:10]
+    
+    context = {
+        'eventos_inscricao_aberta': eventos_inscricao_aberta,
+        'eventos_pesagem': eventos_pesagem,
+        'eventos_andamento': eventos_andamento,
+        'eventos_futuros': eventos_futuros,
+        'eventos_encerrados': eventos_encerrados,
+    }
+    
+    return render(request, 'atletas/portal/index.html', context)
+
+
+@academia_required
+def academia_painel(request):
+    """Painel de inscrições da academia (após login)"""
+    if not hasattr(request.user, 'profile') or not request.user.profile.academia:
+        messages.error(request, 'Academia não vinculada ao seu perfil.')
+        return redirect('login_tipo')
+    
+    academia = request.user.profile.academia
+    
+    # ✅ CORRIGIDO: Usar Evento ao invés de Campeonato
+    from eventos.models import Evento
+    from datetime import date
+    hoje = date.today()
+    eventos_publicos = Evento.objects.filter(
+        ativo=True,
+        status='INSCRICOES',
+        data_limite_inscricao__gte=hoje
+    ).order_by('data_evento')
+    
+    # Buscar atletas da academia (filtrado automaticamente)
+    atletas = academia.atletas.all().order_by('nome')
+    
+    context = {
+        'academia': academia,
+        'eventos_publicos': eventos_publicos,
+        'atletas': atletas,
+    }
+    
+    return render(request, 'atletas/portal/academia_painel.html', context)
 
 
 # ========== ADMIN - RESET CAMPEONATO ==========

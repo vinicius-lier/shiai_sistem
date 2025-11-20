@@ -1,0 +1,85 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Meus Inscritos - {{ evento.nome }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div>
+        <h1 style="margin: 0;">👥 Meus Atletas Inscritos</h1>
+        <p style="color: var(--text-sec); margin: 5px 0 0 0;">Evento: <strong>{{ evento.nome }}</strong></p>
+    </div>
+    <a href="{% url 'eventos:eventos_disponiveis' %}" class="btn btn-secondary">← Voltar</a>
+</div>
+
+<div class="table-responsive">
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                {% if is_operacional %}
+                <th>Academia</th>
+                {% endif %}
+                <th>Classe</th>
+                <th>Sexo</th>
+                <th>Faixa</th>
+                <th>Federado</th>
+                <th>Status</th>
+                <th>Peso Oficial</th>
+                <th>Valor</th>
+                <th>Data Inscrição</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inscricao in inscricoes %}
+            <tr>
+                <td><strong>{{ inscricao.atleta.nome }}</strong></td>
+                {% if is_operacional %}
+                <td>
+                    {% if inscricao.academia.sigla %}[{{ inscricao.academia.sigla }}] {% endif %}
+                    {{ inscricao.academia.nome }}
+                </td>
+                {% endif %}
+                <td>{{ inscricao.atleta.classe|default:"-" }}</td>
+                <td>{{ inscricao.atleta.get_sexo_display }}</td>
+                <td>{{ inscricao.atleta.faixa }}</td>
+                <td>
+                    {% if inscricao.atleta.federado %}
+                        <span style="color: var(--success); font-weight: 600;" title="Federado">✔</span>
+                        {% if inscricao.atleta.zempo %}
+                            <span style="font-size: 11px; color: var(--primary);">{{ inscricao.atleta.zempo }}</span>
+                        {% endif %}
+                    {% else %}
+                        <span style="color: #9E9E9E;" title="Não Federado">✘</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="status-ok">{{ inscricao.status }}</span>
+                </td>
+                <td>
+                    {% if inscricao.peso_oficial %}
+                        <strong style="color: var(--primary);">{{ inscricao.peso_oficial }} kg</strong>
+                    {% else %}
+                        <span style="color: var(--text-sec);">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if inscricao.valor_inscricao %}
+                        <strong style="color: var(--primary);">R$ {{ inscricao.valor_inscricao|floatformat:2 }}</strong>
+                    {% else %}
+                        <span style="color: var(--text-sec);">-</span>
+                    {% endif %}
+                </td>
+                <td>{{ inscricao.data_inscricao|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{% if is_operacional %}9{% else %}8{% endif %}" style="text-align: center; padding: 40px; color: var(--text-sec);">
+                    Nenhum atleta inscrito neste evento
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

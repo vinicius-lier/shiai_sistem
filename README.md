@@ -72,7 +72,15 @@ O projeto pode ser empacotado com [PyInstaller](https://pyinstaller.org/) para d
    pip install pyinstaller
    ```
 
-2. Gere o executável apontando para `launcher.py` (o script que inicia o servidor):
+2. Use o script auxiliar `package_app.py` para gerar o binário. Ele monta automaticamente os parâmetros `--add-data` corretos para Linux/Windows e inclui o banco `db.sqlite3` (se existir) no binário:
+
+   ```bash
+   python package_app.py
+   ```
+
+   O resultado ficará em `dist/shiai` (Linux/macOS) ou `dist/shiai.exe` (Windows). Execute o arquivo gerado e acesse `http://127.0.0.1:8000/`.
+
+3. Caso prefira executar o PyInstaller manualmente, o script usa a mesma configuração que os comandos abaixo (note o uso de `:` no Linux/macOS e `;` no Windows para `--add-data`):
 
    - **Linux/macOS**
 
@@ -81,6 +89,7 @@ O projeto pode ser empacotado com [PyInstaller](https://pyinstaller.org/) para d
        --add-data "judocomp:judocomp" \
        --add-data "atletas:atletas" \
        --add-data "categorias_oficiais_judo.json:categorias_oficiais_judo.json" \
+       --add-data "db.sqlite3:db.sqlite3" \
        launcher.py
      ```
 
@@ -91,10 +100,11 @@ O projeto pode ser empacotado com [PyInstaller](https://pyinstaller.org/) para d
        --add-data "judocomp;judocomp" `
        --add-data "atletas;atletas" `
        --add-data "categorias_oficiais_judo.json;categorias_oficiais_judo.json" `
+       --add-data "db.sqlite3;db.sqlite3" `
        launcher.py
      ```
 
-3. O binário ficará em `dist/shiai` (Linux/macOS) ou `dist/shiai.exe` (Windows). Ao executar, o servidor iniciará em `http://127.0.0.1:8000/`.
+   Inclua o `db.sqlite3` apenas se quiser empacotar um banco inicial junto ao executável.
 
 ## Resetar dados para uma nova competição
 

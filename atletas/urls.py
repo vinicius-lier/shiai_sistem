@@ -51,5 +51,5 @@ urlpatterns = [
     path('relatorios/chaves/', views.relatorio_chaves, name='relatorio_chaves'),
     path('relatorios/resultados-categoria/', views.relatorio_resultados_categoria, name='relatorio_resultados_categoria'),
     # Admin / API
-    path('api/admin/reset/', views.ResetCompeticaoAPIView.as_view(), name='reset_campeonato'),
+    path('api/admin/reset/', views.reset_competicao_api, name='reset_campeonato'),
 ]

@@ -5,7 +5,7 @@ import io
 from datetime import date
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse
 from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -15,9 +15,6 @@ from django.conf import settings
 from atletas.models import Academia, Categoria, Atleta, Chave, Luta, AdminLog, AcademiaPontuacao
 from atletas.utils import calcular_classe, get_categorias_disponiveis, ajustar_categoria_por_peso, gerar_chave, get_resultados_chave, calcular_pontuacao_academias, atualizar_proxima_luta, registrar_remanejamento
 from django.db.models import Q, Count
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 
 
 # ========== PÁGINA INICIAL ==========
@@ -1182,79 +1179,87 @@ def dashboard(request):
 
 # ========== ADMIN - RESET CAMPEONATO ==========
 
-class ResetCompeticaoAPIView(APIView):
-    """API REST para resetar toda a competição"""
-    authentication_classes = []
-    permission_classes = []
+@csrf_exempt
+@require_http_methods(["POST"])
+def reset_competicao_api(request):
+    """API REST para resetar toda a competição sem depender do DRF."""
 
-    def post(self, request, *args, **kwargs):
-        data = request.data or {}
-        senha = data.get('senha', '')
-
-        # Obter IP do usuário
-        usuario_ip = request.META.get('REMOTE_ADDR', None)
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            usuario_ip = x_forwarded_for.split(',')[0].strip()
-
-        # Verificar tentativas (throttling)
-        cache_key = f'reset_attempts_{usuario_ip}'
-        attempts = cache.get(cache_key, 0)
-
-        if attempts >= 5:
-            AdminLog.objects.create(
-                acao=f"TENTATIVA RESET BLOQUEADA - Muitas tentativas (IP: {usuario_ip})",
-                usuario_ip=usuario_ip
-            )
-            return Response({"detail": "Senha incorreta. Ação não autorizada."}, status=status.HTTP_403_FORBIDDEN)
-
-        senha_correta = os.environ.get('RESET_ADMIN_PASSWORD')
-
-        if not senha_correta or senha != senha_correta:
-            attempts += 1
-            cache.set(cache_key, attempts, 300)
-
-            AdminLog.objects.create(
-                acao=f"TENTATIVA RESET FALHADA - Senha incorreta (IP: {usuario_ip})",
-                usuario_ip=usuario_ip
-            )
-            return Response({"detail": "Senha incorreta. Ação não autorizada."}, status=status.HTTP_403_FORBIDDEN)
-
+    data = {}
+    if request.body:
         try:
-            with transaction.atomic():
-                # Limpar pontuações agregadas de academias
-                AcademiaPontuacao.objects.all().delete()
+            data = json.loads(request.body.decode("utf-8"))
+        except json.JSONDecodeError:
+            data = {}
 
-                # Resetar pontos das academias
-                Academia.objects.all().update(pontos=0)
+    if not data:
+        data = request.POST
 
-                # Apagar TODAS as chaves e lutas da competição
-                # (Lutas são apagadas em cascata ao remover chaves, mas
-                # manter a ordem deixa a intenção explícita.)
-                Luta.objects.all().delete()
-                Chave.objects.all().delete()
+    senha = data.get('senha', '')
 
-                # Resetar atletas (remanejamento, pesagem, status)
-                Atleta.objects.all().update(
-                    peso_oficial=None,
-                    categoria_ajustada='',
-                    motivo_ajuste='',
-                    status='OK',
-                    remanejado=False
-                )
+    # Obter IP do usuário
+    usuario_ip = request.META.get('REMOTE_ADDR', None)
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        usuario_ip = x_forwarded_for.split(',')[0].strip()
 
-                AdminLog.objects.create(
-                    acao=f"RESET CAMPEONATO COMPLETO (IP: {usuario_ip})",
-                    usuario_ip=usuario_ip
-                )
+    # Verificar tentativas (throttling)
+    cache_key = f'reset_attempts_{usuario_ip}'
+    attempts = cache.get(cache_key, 0)
 
-                cache.delete(cache_key)
+    if attempts >= 5:
+        AdminLog.objects.create(
+            acao=f"TENTATIVA RESET BLOQUEADA - Muitas tentativas (IP: {usuario_ip})",
+            usuario_ip=usuario_ip
+        )
+        return JsonResponse({"detail": "Senha incorreta. Ação não autorizada."}, status=403)
 
-                return Response({"detail": "Sistema resetado com sucesso."}, status=status.HTTP_200_OK)
+    senha_correta = os.environ.get('RESET_ADMIN_PASSWORD')
 
-        except Exception as e:
+    if not senha_correta or senha != senha_correta:
+        attempts += 1
+        cache.set(cache_key, attempts, 300)
+
+        AdminLog.objects.create(
+            acao=f"TENTATIVA RESET FALHADA - Senha incorreta (IP: {usuario_ip})",
+            usuario_ip=usuario_ip
+        )
+        return JsonResponse({"detail": "Senha incorreta. Ação não autorizada."}, status=403)
+
+    try:
+        with transaction.atomic():
+            # Limpar pontuações agregadas de academias
+            AcademiaPontuacao.objects.all().delete()
+
+            # Resetar pontos das academias
+            Academia.objects.all().update(pontos=0)
+
+            # Apagar TODAS as chaves e lutas da competição
+            # (Lutas são apagadas em cascata ao remover chaves, mas
+            # manter a ordem deixa a intenção explícita.)
+            Luta.objects.all().delete()
+            Chave.objects.all().delete()
+
+            # Resetar atletas (remanejamento, pesagem, status)
+            Atleta.objects.all().update(
+                peso_oficial=None,
+                categoria_ajustada='',
+                motivo_ajuste='',
+                status='OK',
+                remanejado=False
+            )
+
             AdminLog.objects.create(
-                acao=f"ERRO NO RESET: {str(e)} (IP: {usuario_ip})",
+                acao=f"RESET CAMPEONATO COMPLETO (IP: {usuario_ip})",
                 usuario_ip=usuario_ip
             )
-            return Response({"detail": "Erro ao resetar campeonato."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            cache.delete(cache_key)
+
+            return JsonResponse({"detail": "Sistema resetado com sucesso."}, status=200)
+
+    except Exception as e:
+        AdminLog.objects.create(
+            acao=f"ERRO NO RESET: {str(e)} (IP: {usuario_ip})",
+            usuario_ip=usuario_ip
+        )
+        return JsonResponse({"detail": "Erro ao resetar campeonato."}, status=500)

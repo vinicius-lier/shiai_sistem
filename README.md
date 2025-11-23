@@ -20,14 +20,14 @@ Sistema Django completo para gestão de competições de Judô, replicando a ló
 
 ### Requisitos
 - Python 3.8+
-- Django 5.2+
+- Django 5.2+ (única dependência externa)
 
 ### Instalação
 
 1. Clone ou baixe o projeto
-2. Instale o Django:
+2. Instale as dependências (apenas Django):
 ```bash
-pip install django
+pip install -r requirements.txt
 ```
 
 3. Execute as migrations:

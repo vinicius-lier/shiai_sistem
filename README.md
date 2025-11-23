@@ -59,6 +59,59 @@ python manage.py runserver
 8. **Ver Ranking** - Acesse "Ranking" para ver o ranking final das academias
 9. **Gerar Relatórios** - Acesse "Relatórios" para ver os relatórios
 
+## Gerar executável (Linux e Windows)
+
+O projeto pode ser empacotado com [PyInstaller](https://pyinstaller.org/) para distribuir um binário simples que já inicia o servidor Django.
+
+1. Crie um ambiente virtual e instale as dependências:
+
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # No Windows use: .venv\\Scripts\\activate
+   pip install -r requirements.txt
+   pip install pyinstaller
+   ```
+
+2. Gere o executável apontando para `launcher.py` (o script que inicia o servidor):
+
+   - **Linux/macOS**
+
+     ```bash
+     pyinstaller --onefile --name shiai \
+       --add-data "judocomp:judocomp" \
+       --add-data "atletas:atletas" \
+       --add-data "categorias_oficiais_judo.json:categorias_oficiais_judo.json" \
+       launcher.py
+     ```
+
+   - **Windows (PowerShell)**
+
+     ```powershell
+     pyinstaller --onefile --name shiai `
+       --add-data "judocomp;judocomp" `
+       --add-data "atletas;atletas" `
+       --add-data "categorias_oficiais_judo.json;categorias_oficiais_judo.json" `
+       launcher.py
+     ```
+
+3. O binário ficará em `dist/shiai` (Linux/macOS) ou `dist/shiai.exe` (Windows). Ao executar, o servidor iniciará em `http://127.0.0.1:8000/`.
+
+## Resetar dados para uma nova competição
+
+Para limpar lutas, chaves, atletas e pontuações antes de começar um novo evento, use o comando de gerenciamento `reset_competition`:
+
+```bash
+python manage.py reset_competition
+```
+
+O comando pedirá confirmação (digite `SIM`). Para uso automático (por exemplo, em scripts), utilize a flag `--force`:
+
+```bash
+python manage.py reset_competition --force
+```
+
+Categorias e academias são preservadas; apenas os dados da competição atual são removidos.
+
 ## Estrutura do Projeto
 
 - `atletas/models.py` - Modelos (Academia, Categoria, Atleta, Chave, Luta)

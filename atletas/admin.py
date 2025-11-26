@@ -3,6 +3,7 @@ from django.utils.html import format_html
 from django.urls import path
 from django.shortcuts import render
 from django.http import JsonResponse
+from .models import Academia, Categoria, Atleta, Chave, Luta, AdminLog, Inscricao, Campeonato
 
 
 @admin.register(Academia)
@@ -21,6 +22,61 @@ class CategoriaAdmin(admin.ModelAdmin):
 
 @admin.register(Atleta)
 class AtletaAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'idade', 'sexo', 'data_nascimento', 'academia', 'status_ativo', 'tem_documento_display')
+    list_filter = ('sexo', 'status_ativo', 'federado', 'academia')
+    search_fields = ('nome', 'academia__nome', 'numero_zempo')
+    readonly_fields = ('idade', 'data_cadastro', 'data_atualizacao', 'documento_preview')
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('nome', 'data_nascimento', 'sexo', 'academia', 'classe_inicial')
+        }),
+        ('Documento', {
+            'fields': ('documento_oficial', 'documento_preview')
+        }),
+        ('Informações Adicionais', {
+            'fields': ('federado', 'numero_zempo')
+        }),
+        ('Status', {
+            'fields': ('status_ativo',)
+        }),
+        ('Auditoria', {
+            'fields': ('data_cadastro', 'data_atualizacao', 'idade'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def tem_documento_display(self, obj):
+        if obj.tem_documento():
+            return format_html('<span style="color: green;">✓ Documento</span>')
+        return format_html('<span style="color: red;">✗ Sem documento</span>')
+    tem_documento_display.short_description = 'Documento'
+    
+    def documento_preview(self, obj):
+        if obj.documento_oficial:
+            url = obj.documento_oficial.url
+            return format_html('<a href="{}" target="_blank">Ver documento</a>', url)
+        return "Nenhum documento"
+    documento_preview.short_description = 'Visualizar'
+
+
+@admin.register(Inscricao)
+class InscricaoAdmin(admin.ModelAdmin):
+    list_display = ('atleta', 'campeonato', 'classe_escolhida', 'categoria_escolhida', 'status_inscricao', 'peso', 'data_inscricao')
+    list_filter = ('campeonato', 'classe_escolhida', 'status_inscricao', 'remanejado')
+    search_fields = ('atleta__nome', 'campeonato__nome')
+    readonly_fields = ('data_inscricao', 'data_pesagem')
+    date_hierarchy = 'data_inscricao'
+
+
+@admin.register(Campeonato)
+class CampeonatoAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'data_competicao', 'data_limite_inscricao', 'ativo', 'get_total_inscricoes')
+    list_filter = ('ativo',)
+    search_fields = ('nome',)
+    
+    def get_total_inscricoes(self, obj):
+        return obj.inscricoes.count()
+    get_total_inscricoes.short_description = 'Total de Inscrições'
 
 
 @admin.register(Chave)

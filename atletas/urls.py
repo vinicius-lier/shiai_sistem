@@ -10,9 +10,23 @@ urlpatterns = [
     path('login/academia/', views.academia_login, name='academia_login'),
     path('login/operacional/', views.login_operacional, name='login_operacional'),
     path('logout/', views.logout_geral, name='logout_geral'),
+    path('academia/logout/', views.academia_logout, name='academia_logout'),
     
     # Dashboard operacional
     path('dashboard/', views.index, name='index'),
+    
+    # Módulo Academia
+    path('academia/painel/', views.academia_painel, name='academia_painel'),
+    path('academia/evento/<int:campeonato_id>/', views.academia_evento, name='academia_evento'),
+    path('academia/evento/<int:campeonato_id>/atletas/', views.academia_lista_atletas, name='academia_lista_atletas_evento'),
+    path('academia/atletas/', views.academia_lista_atletas, name='academia_lista_atletas'),
+    path('academia/evento/<int:campeonato_id>/inscrever/', views.academia_inscrever_atletas, name='academia_inscrever_atletas'),
+    path('academia/evento/<int:campeonato_id>/novo-atleta/', views.academia_cadastrar_atleta, name='academia_evento_novo_atleta'),
+    path('academia/novo-atleta/', views.academia_cadastrar_atleta, name='academia_cadastrar_atleta'),
+    path('academia/evento/<int:campeonato_id>/chaves/', views.academia_ver_chaves, name='academia_ver_chaves'),
+    path('academia/evento/<int:campeonato_id>/chave/<int:chave_id>/', views.academia_detalhe_chave, name='academia_detalhe_chave'),
+    path('academia/evento/<int:campeonato_id>/regulamento/', views.academia_baixar_regulamento, name='academia_baixar_regulamento'),
+    path('academia/evento/<int:campeonato_id>/enviar-comprovante/', views.academia_enviar_comprovante, name='academia_enviar_comprovante'),
     
     # Academias
     path('academias/', views.lista_academias, name='lista_academias'),
@@ -56,6 +70,35 @@ urlpatterns = [
     path('relatorios/pesagem-final/', views.relatorio_pesagem_final, name='relatorio_pesagem_final'),
     path('relatorios/chaves/', views.relatorio_chaves, name='relatorio_chaves'),
     path('relatorios/resultados-categoria/', views.relatorio_resultados_categoria, name='relatorio_resultados_categoria'),
+    
+    # Campeonatos
+    path('campeonatos/', views.lista_campeonatos, name='lista_campeonatos'),
+    path('campeonatos/cadastrar/', views.cadastrar_campeonato, name='cadastrar_campeonato'),
+    path('campeonatos/<int:campeonato_id>/editar/', views.editar_campeonato, name='editar_campeonato'),
+    path('campeonatos/<int:campeonato_id>/senhas/', views.gerenciar_senhas_campeonato, name='gerenciar_senhas_campeonato'),
+    path('campeonatos/<int:campeonato_id>/ativar/', views.definir_campeonato_ativo, name='definir_campeonato_ativo'),
+    
+    # Administração
+    path('administracao/', views.administracao_painel, name='administracao_painel'),
+    path('administracao/financeiro/', views.administracao_financeiro, name='administracao_financeiro'),
+    path('administracao/despesas/', views.administracao_despesas, name='administracao_despesas'),
+    path('administracao/equipe/', views.administracao_equipe, name='administracao_equipe'),
+    path('administracao/insumos/', views.administracao_insumos, name='administracao_insumos'),
+    path('administracao/patrocinios/', views.administracao_patrocinios, name='administracao_patrocinios'),
+    path('administracao/relatorios/', views.administracao_relatorios, name='administracao_relatorios'),
+    path('administracao/conferencia-inscricoes/', views.administracao_conferencia_inscricoes, name='administracao_conferencia_inscricoes'),
+    path('administracao/confirmar-inscricoes/', views.administracao_confirmar_inscricoes, name='administracao_confirmar_inscricoes'),
+    path('administracao/banco-operacional/<str:tipo>/', views.administracao_cadastros_operacionais, name='administracao_cadastros_operacionais'),
+    path('administracao/usuarios-operacionais/', views.gerenciar_usuarios_operacionais, name='gerenciar_usuarios_operacionais'),
+    path('administracao/pagamentos/', views.validacao_pagamentos, name='validacao_pagamentos'),
+    path('administracao/pagamentos/<int:pagamento_id>/validar/', views.validar_pagamento, name='validar_pagamento'),
+    path('administracao/pagamentos/<int:pagamento_id>/rejeitar/', views.rejeitar_pagamento, name='rejeitar_pagamento'),
+    
+    # Ajuda e Manuais
+    path('ajuda/', views.ajuda_manual, name='ajuda_manual'),
+    path('ajuda/manual/<str:tipo>/', views.ajuda_manual_web, name='ajuda_manual_web'),
+    path('ajuda/documentacao-tecnica/', views.ajuda_documentacao_tecnica, name='ajuda_documentacao_tecnica'),
+    
     # Admin / API
     path('api/admin/reset/', views.ResetCompeticaoAPIView.as_view(), name='reset_campeonato'),
 ]

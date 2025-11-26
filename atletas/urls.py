@@ -2,6 +2,17 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Página inicial - redireciona para login se não autenticado
+    path('', views.selecionar_tipo_login, name='root'),
+    path('login/', views.selecionar_tipo_login, name='selecionar_tipo_login'),
+    
+    # Login e autenticação
+    path('login/academia/', views.academia_login, name='academia_login'),
+    path('login/operacional/', views.login_operacional, name='login_operacional'),
+    path('logout/', views.logout_geral, name='logout_geral'),
+    
+    # Dashboard operacional
+    path('dashboard/', views.index, name='index'),
     
     # Academias
     path('academias/', views.lista_academias, name='lista_academias'),

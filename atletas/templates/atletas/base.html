@@ -1,13 +1,9 @@
-<<<<<<< HEAD
 {% load static %}
-=======
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<<<<<<< HEAD
     <title>{% block title %}SHIAI SISTEM - Gestão de Competições de Judô{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -84,16 +80,13 @@
             --transition-slow: 300ms ease;
         }
 
-=======
     <title>{% block title %}Sistema de Gestão de Competições de Judô{% endblock %}</title>
     <style>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-<<<<<<< HEAD
 
         body {
             font-family: var(--font-family);
@@ -869,8 +862,7 @@
             display: none;
         }
 
-        /* ========================================
-           MOBILE FIRST - BREAKPOINTS
+        /* =================================           MOBILE FIRST - BREAKPOINTS
            ======================================== */
         
         /* Mobile First Base Styles (< 480px) */
@@ -1112,8 +1104,7 @@
             }
         }
 
-        /* ========================================
-           TABLET (481px - 767px)
+        /* =================================           TABLET (481px - 767px)
            ======================================== */
         @media (min-width: 481px) {
             .content-wrapper {
@@ -1131,8 +1122,7 @@
             }
         }
 
-        /* ========================================
-           DESKTOP (768px+)
+        /* =================================           DESKTOP (768px+)
            ======================================== */
         @media (min-width: 768px) {
             .content-wrapper {
@@ -1185,8 +1175,7 @@
             }
         }
 
-        /* ========================================
-           DESKTOP WIDE (1024px+)
+        /* =================================           DESKTOP WIDE (1024px+)
            ======================================== */
         @media (min-width: 1024px) {
             .content-wrapper {
@@ -1198,8 +1187,7 @@
             }
         }
 
-        /* ========================================
-           DESKTOP LARGE (1280px+)
+        /* =================================           DESKTOP LARGE (1280px+)
            ======================================== */
         @media (min-width: 1280px) {
             .content-wrapper {
@@ -1219,8 +1207,7 @@
         .mt-4 { margin-top: var(--spacing-4); }
         .mt-6 { margin-top: var(--spacing-6); }
         .mt-8 { margin-top: var(--spacing-8); }
-        /* ========================================
-           CLASSES UTILITÁRIAS - PADRÃO SHIAI
+        /* =================================           CLASSES UTILITÁRIAS - PADRÃO SHIAI
            ======================================== */
         
         /* Flexbox Utilities */
@@ -1347,7 +1334,6 @@
             .grid-3,
             .grid-4 {
                 grid-template-columns: 1fr;
-=======
         body {
             font-family: Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1572,14 +1558,12 @@
             }
             .container {
                 padding: 20px;
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
             }
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-<<<<<<< HEAD
     <div class="app-container">
         <!-- Sidebar Overlay (mobile) -->
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -1844,7 +1828,6 @@
             <div class="modal-body">
                 <p style="margin-bottom: var(--spacing-4); color: var(--color-gray-700);">Esta ação irá:</p>
                 <ul style="margin-left: var(--spacing-6); margin-bottom: var(--spacing-4); color: var(--color-gray-700);">
-=======
     <div class="container">
         <nav>
             <a href="{% url 'index' %}">Início</a>
@@ -1869,13 +1852,11 @@
                 <h2 style="margin-top: 0; color: #dc3545;">⚠️ Resetar Campeonato</h2>
                 <p style="margin: 20px 0; color: #666;">Esta ação irá:</p>
                 <ul style="margin: 20px 0; padding-left: 30px; color: #666;">
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                     <li>Zerar TODAS as lutas</li>
                     <li>Zerar pontuações e rankings</li>
                     <li>Resetar pesagens e remanejamentos</li>
                     <li>Manter atletas, academias e categorias</li>
                 </ul>
-<<<<<<< HEAD
                 <p style="margin-bottom: var(--spacing-4); color: var(--color-danger); font-weight: 600;">⚠️ Esta ação não pode ser desfeita!</p>
                 <form id="form-reset">
                     {% csrf_token %}
@@ -1983,7 +1964,6 @@
         // Modal functions
             function abrirModalReset() {
             document.getElementById('modal-reset').classList.add('active');
-=======
                 <p style="margin: 20px 0; color: #dc3545; font-weight: bold;">⚠️ Esta ação não pode ser desfeita!</p>
                 <form id="form-reset" style="margin-top: 20px;">
                     {% csrf_token %}
@@ -2028,16 +2008,12 @@
 
             function abrirModalReset() {
                 document.getElementById('modal-reset').style.display = 'flex';
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                 document.getElementById('senha-reset').focus();
             }
 
             function fecharModalReset() {
-<<<<<<< HEAD
             document.getElementById('modal-reset').classList.remove('active');
-=======
                 document.getElementById('modal-reset').style.display = 'none';
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                 document.getElementById('form-reset').reset();
                 document.getElementById('mensagem-reset').style.display = 'none';
             }
@@ -2045,10 +2021,7 @@
             window.abrirModalReset = abrirModalReset;
             window.fecharModalReset = fecharModalReset;
 
-<<<<<<< HEAD
         // Modal reset form handler
-=======
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
             const formReset = document.getElementById('form-reset');
             if (formReset) {
                 formReset.addEventListener('submit', function(e) {
@@ -2070,55 +2043,42 @@
                         const data = await response.json().catch(() => ({}));
                         mensagem.style.display = 'block';
                         if (response.ok && data.detail) {
-<<<<<<< HEAD
                         mensagem.style.background = 'var(--color-success-light)';
                         mensagem.style.color = '#065F46';
-=======
                             mensagem.style.background = '#d4edda';
                             mensagem.style.color = '#155724';
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                             mensagem.textContent = data.detail;
                             setTimeout(() => {
                                 window.location.reload();
                             }, 2000);
                         } else {
-<<<<<<< HEAD
                         mensagem.style.background = 'var(--color-danger-light)';
                         mensagem.style.color = '#991B1B';
-=======
                             mensagem.style.background = '#f8d7da';
                             mensagem.style.color = '#721c24';
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                             mensagem.textContent = data.detail || 'Senha incorreta. Ação não autorizada.';
                         }
                     })
                     .catch(error => {
                         mensagem.style.display = 'block';
-<<<<<<< HEAD
                     mensagem.style.background = 'var(--color-danger-light)';
                     mensagem.style.color = '#991B1B';
-=======
                         mensagem.style.background = '#f8d7da';
                         mensagem.style.color = '#721c24';
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                         mensagem.textContent = 'Erro ao processar requisição';
                     });
                 });
             }
 
-<<<<<<< HEAD
         // Close modal on overlay click
         document.getElementById('modal-reset')?.addEventListener('click', function(e) {
-=======
             const modalReset = document.getElementById('modal-reset');
             if (modalReset) {
                 modalReset.addEventListener('click', function(e) {
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                     if (e.target === this) {
                         fecharModalReset();
                     }
                 });
-<<<<<<< HEAD
 
         // Auto-close alerts
         function closeAlert(button) {
@@ -2157,7 +2117,6 @@
         window.closeAlert = closeAlert;
         </script>
     {% block extra_js %}{% endblock %}
-=======
             }
 
             window.addEventListener('resize', function () {
@@ -2165,6 +2124,5 @@
             });
         });
         </script>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     </body>
 </html>

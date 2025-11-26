@@ -47,7 +47,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -107,6 +106,15 @@ else:
         }
     }
 
+# Adicionar WhiteNoise apenas em produção (Heroku)
+# WhiteNoise só é necessário no Heroku, não em desenvolvimento local
+if DATABASE_URL or not DEBUG:
+    try:
+        import whitenoise
+        MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    except ImportError:
+        pass  # whitenoise não instalado localmente, não é problema em dev
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -148,8 +156,13 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# WhiteNoise para servir arquivos estáticos em produção
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# WhiteNoise para servir arquivos estáticos em produção (apenas no Heroku)
+# Em desenvolvimento local, o Django usa seu próprio servidor de arquivos estáticos
+if DATABASE_URL or not DEBUG:
+    try:
+        STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    except:
+        pass  # Em desenvolvimento local, usa o servidor padrão do Django
 
 # Media files (uploads)
 MEDIA_URL = '/media/'

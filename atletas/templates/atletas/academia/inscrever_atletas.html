@@ -1,0 +1,675 @@
+{% extends 'atletas/academia/base_academia.html' %}
+
+{% block title %}Inscrever Atletas - {{ campeonato.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        color: var(--color-primary);
+        text-decoration: none;
+        font-size: var(--font-size-sm);
+        margin-bottom: var(--spacing-4);
+        font-weight: 500;
+    }
+
+    .btn-back:hover {
+        color: var(--color-primary-hover);
+    }
+
+    /* Resumo Financeiro */
+    .resumo-financeiro-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-4);
+    }
+
+    @media (min-width: 480px) {
+        .resumo-financeiro-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .resumo-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .resumo-label {
+        font-size: var(--font-size-xs);
+        color: var(--color-gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: var(--spacing-1);
+        font-weight: 500;
+    }
+
+    .resumo-value {
+        font-size: var(--font-size-xl);
+        font-weight: 700;
+        color: var(--color-gray-900);
+    }
+
+    @media (min-width: 768px) {
+        .resumo-value {
+            font-size: var(--font-size-2xl);
+        }
+    }
+
+    .resumo-value.success {
+        color: var(--color-success);
+        font-size: var(--font-size-lg);
+        font-weight: 600;
+    }
+
+    @media (min-width: 768px) {
+        .resumo-value.success {
+            font-size: var(--font-size-xl);
+        }
+    }
+
+    .resumo-value.warning {
+        color: var(--color-warning);
+        font-size: var(--font-size-lg);
+        font-weight: 600;
+    }
+
+    @media (min-width: 768px) {
+        .resumo-value.warning {
+            font-size: var(--font-size-xl);
+        }
+    }
+
+    /* Filtros Grid */
+    .filtros-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-4);
+    }
+
+    @media (min-width: 768px) {
+        .filtros-grid {
+            grid-template-columns: 2fr 1fr;
+        }
+    }
+
+    /* Atleta Item */
+    .atleta-item {
+        background: var(--color-white);
+        border: 1px solid var(--color-gray-200);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-sm);
+        padding: var(--spacing-4);
+        margin-bottom: var(--spacing-4);
+        border-left: 4px solid var(--color-primary);
+        transition: all var(--transition-base);
+    }
+
+    @media (min-width: 768px) {
+        .atleta-item {
+            padding: var(--spacing-6);
+        }
+    }
+
+    .atleta-item:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+
+    .atleta-item.inscrito {
+        border-left-color: var(--color-success);
+        opacity: 0.9;
+    }
+
+    .atleta-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: var(--spacing-4);
+        flex-wrap: wrap;
+    }
+
+    .atleta-nome {
+        font-size: var(--font-size-lg);
+        font-weight: 600;
+        color: var(--color-gray-900);
+        margin-bottom: var(--spacing-2);
+    }
+
+    .atleta-info {
+        font-size: var(--font-size-sm);
+        color: var(--color-gray-600);
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-1);
+    }
+
+    .atleta-info-item {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-2);
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: var(--spacing-4);
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal {
+        background: var(--color-white);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-xl);
+        max-width: 500px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        padding: var(--spacing-4);
+        border-bottom: 1px solid var(--color-gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    @media (min-width: 768px) {
+        .modal-header {
+            padding: var(--spacing-6);
+        }
+    }
+
+    .modal-title {
+        font-size: var(--font-size-xl);
+        font-weight: 600;
+        color: var(--color-gray-900);
+        margin: 0;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: var(--font-size-2xl);
+        cursor: pointer;
+        color: var(--color-gray-500);
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--border-radius-sm);
+        transition: all var(--transition-base);
+    }
+
+    .modal-close:hover {
+        background: var(--color-gray-100);
+        color: var(--color-gray-900);
+    }
+
+    .modal-body {
+        padding: var(--spacing-4);
+    }
+
+    @media (min-width: 768px) {
+        .modal-body {
+            padding: var(--spacing-6);
+        }
+    }
+
+    .modal-footer {
+        padding: var(--spacing-4);
+        border-top: 1px solid var(--color-gray-200);
+        display: flex;
+        gap: var(--spacing-3);
+        flex-direction: column;
+    }
+
+    @media (min-width: 480px) {
+        .modal-footer {
+            flex-direction: row;
+            justify-content: flex-end;
+        }
+    }
+
+    @media (min-width: 768px) {
+        .modal-footer {
+            padding: var(--spacing-6);
+        }
+    }
+
+    .atleta-preview {
+        padding: var(--spacing-4);
+        background: var(--color-gray-50);
+        border-radius: var(--border-radius-md);
+        border: 1px solid var(--color-gray-200);
+    }
+
+    .atleta-preview strong {
+        display: block;
+        font-size: var(--font-size-base);
+        color: var(--color-gray-900);
+        margin-bottom: var(--spacing-2);
+    }
+
+    .atleta-preview-info {
+        font-size: var(--font-size-sm);
+        color: var(--color-gray-600);
+        margin-bottom: var(--spacing-2);
+    }
+
+    .atleta-preview-valor {
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        color: var(--color-primary);
+        margin-top: var(--spacing-2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="{% url 'academia_evento' campeonato.id %}" class="btn-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Voltar para evento
+    </a>
+    
+    <h1 class="page-title">Inscrever Atletas</h1>
+    <p class="page-description">{{ campeonato.nome }}</p>
+</div>
+
+{% if resumo_financeiro %}
+<div class="card mb-6">
+    <div class="card-body">
+        <div class="resumo-financeiro-grid">
+            <div class="resumo-item">
+                <span class="resumo-label">Total Previsto</span>
+                <div class="resumo-value">R$ {{ resumo_financeiro.valor_previsto|floatformat:2 }}</div>
+            </div>
+            <div class="resumo-item">
+                <span class="resumo-label">Confirmado</span>
+                <div class="resumo-value success">R$ {{ resumo_financeiro.valor_confirmado|floatformat:2 }}</div>
+            </div>
+            <div class="resumo-item">
+                <span class="resumo-label">A pagar</span>
+                <div class="resumo-value warning">R$ {{ resumo_financeiro.valor_pendente|floatformat:2 }}</div>
+            </div>
+        </div>
+        <div class="mt-4" style="font-size: var(--font-size-sm); color: var(--color-gray-500); padding-top: var(--spacing-4); border-top: 1px solid var(--color-gray-200);">
+            Federado: R$ {{ valor_inscricao_federado|floatformat:2 }} • Não federado: R$ {{ valor_inscricao_nao_federado|floatformat:2 }}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Filtros -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h2 class="card-title">Filtros</h2>
+    </div>
+    <div class="card-body">
+        <form method="get">
+            <div class="filtros-grid">
+                <div class="form-group">
+                    <label class="form-label" for="nome">Nome</label>
+                    <input type="text" id="nome" name="nome" class="form-input" value="{{ nome_filtro }}" placeholder="Buscar por nome">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="sexo">Sexo</label>
+                    <select id="sexo" name="sexo" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex gap-3 mt-4" style="flex-wrap: wrap;">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a href="{% url 'academia_inscrever_atletas' campeonato.id %}" class="btn btn-secondary" style="text-decoration: none;">Limpar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Atletas -->
+{% if atletas %}
+<div class="mb-4">
+    <p class="text-gray-600" style="font-size: var(--font-size-sm);">Total: {{ atletas|length }} atleta(s)</p>
+</div>
+
+<div class="grid grid-cols-1 gap-4">
+    {% for item in atletas %}
+    <div class="atleta-item {% if item.total_inscricoes > 0 %}inscrito{% endif %}">
+        <div class="atleta-header">
+            <div style="flex: 1; min-width: 0;">
+                <div class="atleta-nome">{{ item.atleta.nome }}</div>
+                <div class="atleta-info">
+                    <div class="atleta-info-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; color: var(--color-gray-400);">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>{{ item.atleta.get_sexo_display }} | {{ item.atleta.idade }} anos</span>
+                    </div>
+                    <div class="atleta-info-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; color: var(--color-gray-400);">
+                            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                            <path d="M4 22h16"></path>
+                            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+                            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+                            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+                        </svg>
+                        <span>Classe: {{ item.atleta.get_classe_atual }}</span>
+                    </div>
+                    <div class="atleta-info-item" style="font-size: var(--font-size-xs); color: var(--color-gray-500); margin-top: var(--spacing-1);">
+                        <span>Valor da inscrição: </span>
+                        {% if item.atleta.federado %}
+                            <strong>R$ {{ valor_inscricao_federado|floatformat:2 }}</strong>
+                            <span class="badge badge-info">Federado</span>
+                        {% else %}
+                            <strong>R$ {{ valor_inscricao_nao_federado|floatformat:2 }}</strong>
+                            <span class="badge">Não federado</span>
+                        {% endif %}
+                    </div>
+                    {% if item.total_inscricoes > 0 %}
+                    <div style="margin-top: var(--spacing-3); padding-top: var(--spacing-3); border-top: 1px solid var(--color-gray-200);">
+                        <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-2); margin-bottom: var(--spacing-2);">
+                            {% for insc in item.inscricoes %}
+                            <span class="badge {% if insc.status_inscricao == 'aprovado' %}badge-success{% elif insc.status_inscricao == 'pendente' %}badge-warning{% else %}" style="background: var(--color-danger-light); color: #991B1B;{% endif %}">
+                                {{ insc.classe_escolhida }} - {{ insc.categoria_escolhida }}
+                                {% if insc.status_inscricao == 'aprovado' %}✓{% elif insc.status_inscricao == 'pendente' %}⏳{% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        <small class="text-gray-500" style="font-size: var(--font-size-xs);">
+                            {{ item.total_inscricoes }} inscrição(ões)
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <button type="button"
+                    class="btn btn-primary"
+                    data-atleta-id="{{ item.atleta.id }}"
+                    onclick="abrirModalInscricao({{ item.atleta.id }}, '{{ item.atleta.nome|escapejs }}', '{{ item.atleta.get_classe_atual|escapejs }}', '{{ item.atleta.sexo }}', {{ item.atleta.federado|yesno:'true,false' }})"
+                    style="width: 100%; min-width: 120px;">
+                {% if item.total_inscricoes > 0 %}Adicionar{% else %}Inscrever{% endif %}
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 64px; height: 64px; color: var(--color-gray-400); margin: 0 auto var(--spacing-4);">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <p class="text-gray-500" style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-4);">
+                Nenhum atleta encontrado.
+            </p>
+            <a href="{% url 'academia_cadastrar_atleta_evento' campeonato.id %}" class="btn btn-primary" style="text-decoration: none; max-width: 300px; margin: 0 auto;">
+                Cadastrar Novo Atleta
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal de Inscrição -->
+<div class="modal-overlay" id="modal-inscricao">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Inscrever Atleta</h3>
+            <button class="modal-close" onclick="fecharModalInscricao()" aria-label="Fechar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <form id="form-inscricao" method="post" action="{% url 'academia_inscrever_atletas' campeonato.id %}">
+            {% csrf_token %}
+            <input type="hidden" id="atleta_id_inscricao" name="atleta_id">
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Atleta</label>
+                    <div class="atleta-preview">
+                        <strong id="atleta_nome_inscricao"></strong>
+                        <div class="atleta-preview-info">
+                            Classe Atual: <span id="atleta_classe_inscricao"></span> | 
+                            Sexo: <span id="atleta_sexo_inscricao"></span>
+                        </div>
+                        <div id="valor_inscricao_preview" class="atleta-preview-valor"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="classe_escolhida">
+                        Classe para Participação
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <select id="classe_escolhida" name="classe_escolhida" class="form-select" required>
+                        <option value="">Selecione a classe</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="categoria_escolhida">
+                        Categoria
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <select id="categoria_escolhida" name="categoria_escolhida" class="form-select" required disabled>
+                        <option value="">Selecione primeiro a classe</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalInscricao()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Confirmar Inscrição</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Dados das categorias
+const categorias = [
+    {% for cat in categorias %}
+    {
+        id: {{ cat.id }},
+        classe: "{{ cat.classe }}",
+        sexo: "{{ cat.sexo }}",
+        label: "{{ cat.label }}",
+        categoria_nome: "{{ cat.categoria_nome }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+let atletaAtual = null;
+let classeAtleta = '';
+let sexoAtleta = '';
+let atletaFederado = false;
+
+const VALOR_FEDERADO = parseFloat("{{ valor_inscricao_federado|default:0 }}") || 0;
+const VALOR_NAO_FEDERADO = parseFloat("{{ valor_inscricao_nao_federado|default:0 }}") || 0;
+const NOVO_ATLETA_ID = "{{ novo_atleta_id|default:'' }}";
+
+function formatarValorBR(valor) {
+    return valor.toFixed(2).replace('.', ',');
+}
+
+function categoriasPermitidas(classeAtleta) {
+    // Normalizar classe do atleta para comparação
+    const classeNormalizada = classeAtleta.toUpperCase().trim();
+    
+    // Obter classes existentes normalizadas (mantendo original para retorno)
+    const classesExistentesMap = new Map();
+    categorias.forEach(cat => {
+        const classeNormal = cat.classe.toUpperCase().trim();
+        if (!classesExistentesMap.has(classeNormal)) {
+            classesExistentesMap.set(classeNormal, cat.classe); // Guarda o valor original
+        }
+    });
+    const classesExistentesNormalizadas = Array.from(classesExistentesMap.keys());
+    
+    // Determinar classes permitidas baseado na classe do atleta
+    let classesPermitidasNormalizadas = [];
+    
+    if (classeNormalizada.includes('VETERANO')) {
+        classesPermitidasNormalizadas = ['VETERANOS', 'SÊNIOR'];
+    } else if (classeNormalizada.includes('SUB18') || classeNormalizada.includes('SUB 18')) {
+        classesPermitidasNormalizadas = ['SUB 18', 'SUB21', 'SÊNIOR'];
+    } else {
+        // Tentar encontrar a classe exata
+        classesPermitidasNormalizadas = [classeNormalizada];
+    }
+    
+    // Filtrar apenas classes que existem no banco e retornar valores originais
+    const classesFinais = [];
+    classesPermitidasNormalizadas.forEach(classePermitida => {
+        const classePermitidaNormal = classePermitida.toUpperCase().trim();
+        if (classesExistentesNormalizadas.includes(classePermitidaNormal)) {
+            // Encontrar o valor original (com capitalização correta)
+            classesExistentesMap.forEach((valorOriginal, chaveNormal) => {
+                if (chaveNormal === classePermitidaNormal && !classesFinais.includes(valorOriginal)) {
+                    classesFinais.push(valorOriginal);
+                }
+            });
+        }
+    });
+    
+    return classesFinais;
+}
+
+function atualizarValorPreview() {
+    const valor = atletaFederado ? VALOR_FEDERADO : VALOR_NAO_FEDERADO;
+    const preview = document.getElementById('valor_inscricao_preview');
+    if (preview) {
+        const tipo = atletaFederado ? 'Federado' : 'Não federado';
+        preview.textContent = `Valor da inscrição: R$ ${formatarValorBR(valor)} (${tipo})`;
+    }
+}
+
+function abrirModalInscricao(atletaId, atletaNome, classe, sexo, federado) {
+    atletaAtual = atletaId;
+    classeAtleta = classe;
+    sexoAtleta = sexo;
+    atletaFederado = !!federado;
+    
+    document.getElementById('atleta_id_inscricao').value = atletaId;
+    document.getElementById('atleta_nome_inscricao').textContent = atletaNome;
+    document.getElementById('atleta_classe_inscricao').textContent = classe;
+    document.getElementById('atleta_sexo_inscricao').textContent = sexo === 'M' ? 'Masculino' : 'Feminino';
+    atualizarValorPreview();
+    
+    const classesPermitidas = categoriasPermitidas(classe);
+    const classeSelect = document.getElementById('classe_escolhida');
+    classeSelect.innerHTML = '<option value="">Selecione a classe</option>';
+    
+    classesPermitidas.forEach(classePermitida => {
+        const option = document.createElement('option');
+        option.value = classePermitida;
+        option.textContent = classePermitida;
+        if (classesPermitidas.length === 1) {
+            option.selected = true;
+            setTimeout(() => classeSelect.dispatchEvent(new Event('change')), 100);
+        }
+        classeSelect.appendChild(option);
+    });
+    
+    const categoriaSelect = document.getElementById('categoria_escolhida');
+    categoriaSelect.innerHTML = '<option value="">Selecione primeiro a classe</option>';
+    categoriaSelect.disabled = true;
+    
+    document.getElementById('modal-inscricao').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function fecharModalInscricao() {
+    document.getElementById('modal-inscricao').classList.remove('active');
+    document.body.style.overflow = '';
+    document.getElementById('form-inscricao').reset();
+    atletaAtual = null;
+}
+
+// Event listener para mudança de classe
+document.getElementById('classe_escolhida').addEventListener('change', function() {
+    const classeSelecionada = this.value;
+    const categoriaSelect = document.getElementById('categoria_escolhida');
+    
+    if (!classeSelecionada) {
+        categoriaSelect.disabled = true;
+        categoriaSelect.innerHTML = '<option value="">Selecione primeiro a classe</option>';
+        return;
+    }
+    
+    // Normalizar para comparação
+    const classeSelecionadaNormal = classeSelecionada.toUpperCase().trim();
+    
+    const categoriasFiltradas = categorias.filter(cat => {
+        const catClasseNormal = cat.classe.toUpperCase().trim();
+        return catClasseNormal === classeSelecionadaNormal && 
+               cat.sexo === sexoAtleta;
+    });
+    
+    categoriaSelect.innerHTML = '<option value="">Selecione uma categoria</option>';
+    
+    if (categoriasFiltradas.length === 0) {
+        categoriaSelect.disabled = true;
+        categoriaSelect.innerHTML = '<option value="">Nenhuma categoria disponível para ' + classeSelecionada + ' - ' + (sexoAtleta === 'M' ? 'Masculino' : 'Feminino') + '</option>';
+    } else {
+        categoriaSelect.disabled = false;
+        categoriasFiltradas.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.id;
+            option.textContent = cat.label;
+            categoriaSelect.appendChild(option);
+        });
+    }
+});
+
+// Fechar modal ao clicar fora
+document.getElementById('modal-inscricao').addEventListener('click', function(e) {
+    if (e.target === this) {
+        fecharModalInscricao();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (NOVO_ATLETA_ID) {
+        const botao = document.querySelector(`[data-atleta-id="${NOVO_ATLETA_ID}"]`);
+        if (botao) {
+            setTimeout(() => botao.click(), 300);
+        }
+    }
+});
+</script>
+{% endblock %}

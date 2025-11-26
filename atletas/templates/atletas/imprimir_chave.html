@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chave - {{ chave.classe }} - {{ chave.categoria }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 12mm;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-size: 9pt;
+            line-height: 1.3;
+            color: #000;
+            background: #fff;
+            width: 190mm;
+            margin: 0 auto;
+        }
+
+        /* Cabeçalho */
+        .print-header {
+            border-bottom: 2px solid #000;
+            padding-bottom: 4mm;
+            margin-bottom: 6mm;
+        }
+
+        .print-header h1 {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-bottom: 3mm;
+            text-transform: uppercase;
+        }
+
+        .print-header-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2mm;
+            font-size: 8pt;
+        }
+
+        .print-header-info div {
+            padding: 1mm 0;
+        }
+
+        .print-header-info strong {
+            font-weight: bold;
+        }
+
+        /* Container Principal */
+        .print-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4mm;
+            width: 190mm;
+            margin: 0 auto;
+            page-break-after: auto;
+        }
+
+        /* Round Section */
+        .round-section {
+            margin-bottom: 5mm;
+            page-break-inside: avoid;
+        }
+
+        .round-title {
+            font-size: 10pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 1px solid #000;
+            padding-bottom: 1mm;
+            margin-bottom: 3mm;
+        }
+
+        /* Luta Card */
+        .luta-print {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 3mm;
+            border: 1px solid #000;
+            padding: 3mm;
+            margin-bottom: 3mm;
+            page-break-inside: avoid;
+            min-height: 25mm;
+        }
+
+        .fighter-box {
+            border: 1px solid #333;
+            padding: 2mm;
+            min-height: 20mm;
+            position: relative;
+        }
+
+        .fighter-box.blue {
+            background: #f0f0f0;
+            border-left: 3px solid #000;
+        }
+
+        .fighter-box.white {
+            background: #fff;
+            border-right: 3px solid #000;
+        }
+
+        .fighter-name {
+            font-weight: bold;
+            font-size: 9pt;
+            margin-bottom: 1mm;
+            border-bottom: 1px dotted #666;
+            padding-bottom: 1mm;
+            min-height: 5mm;
+        }
+
+        .fighter-academy {
+            font-size: 7pt;
+            margin-bottom: 1mm;
+            color: #333;
+        }
+
+        .fighter-info {
+            font-size: 7pt;
+            margin-bottom: 1mm;
+        }
+
+        .fighter-badge {
+            display: inline-block;
+            border: 1px solid #000;
+            padding: 0.5mm 2mm;
+            font-size: 6pt;
+            margin-right: 1mm;
+            margin-top: 1mm;
+        }
+
+        /* VS Central */
+        .vs-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12pt;
+            font-weight: bold;
+            padding: 0 2mm;
+        }
+
+        /* Campos para Anotações */
+        .annotation-fields {
+            margin-top: 2mm;
+            padding-top: 2mm;
+            border-top: 1px dotted #666;
+            font-size: 7pt;
+        }
+
+        .annotation-field {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 1mm;
+        }
+
+        .annotation-label {
+            font-weight: bold;
+            min-width: 20mm;
+            margin-right: 2mm;
+        }
+
+        .annotation-line {
+            flex: 1;
+            border-bottom: 1px solid #000;
+            min-height: 4mm;
+        }
+
+        /* Seta de Avanço */
+        .arrow-container {
+            text-align: center;
+            margin: 2mm 0;
+            page-break-inside: avoid;
+        }
+
+        .arrow-down {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 3px solid transparent;
+            border-right: 3px solid transparent;
+            border-top: 8px solid #000;
+            margin: 0 auto;
+        }
+
+        .arrow-line {
+            width: 1px;
+            height: 8mm;
+            background: #000;
+            margin: 0 auto;
+        }
+
+        /* Colocações */
+        .colocacoes-box {
+            border: 2px solid #000;
+            padding: 3mm;
+            margin-top: 5mm;
+            page-break-inside: avoid;
+        }
+
+        .colocacoes-title {
+            font-size: 10pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 1px solid #000;
+            padding-bottom: 1mm;
+            margin-bottom: 2mm;
+        }
+
+        .colocacao-line {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 2mm;
+            padding-bottom: 1mm;
+            border-bottom: 1px dotted #666;
+        }
+
+        .colocacao-pos {
+            font-weight: bold;
+            min-width: 8mm;
+        }
+
+        .colocacao-nome {
+            flex: 1;
+            border-bottom: 1px solid #000;
+            min-height: 4mm;
+            margin: 0 2mm;
+        }
+
+        .colocacao-academia {
+            font-size: 7pt;
+            color: #666;
+            min-width: 30mm;
+        }
+
+        /* Assinatura */
+        .assinatura-box {
+            margin-top: 8mm;
+            padding-top: 3mm;
+            border-top: 1px solid #000;
+            page-break-inside: avoid;
+        }
+
+        .assinatura-line {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8mm;
+        }
+
+        .assinatura-field {
+            width: 45%;
+            text-align: center;
+        }
+
+        .assinatura-label {
+            font-size: 7pt;
+            font-weight: bold;
+            margin-bottom: 1mm;
+        }
+
+        .assinatura-space {
+            border-bottom: 1px solid #000;
+            min-height: 8mm;
+        }
+
+        /* Resultado Final */
+        .resultado-final {
+            border: 2px solid #000;
+            padding: 4mm;
+            margin-top: 5mm;
+            page-break-inside: avoid;
+        }
+
+        .resultado-final-title {
+            font-size: 11pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 3mm;
+            border-bottom: 2px solid #000;
+            padding-bottom: 2mm;
+        }
+
+        .resultado-medal {
+            display: grid;
+            grid-template-columns: 15mm 1fr;
+            gap: 2mm;
+            margin-bottom: 2mm;
+            padding: 2mm;
+            border: 1px solid #000;
+        }
+
+        .resultado-medal-pos {
+            font-weight: bold;
+            font-size: 10pt;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .resultado-medal-info {
+            border-left: 1px solid #000;
+            padding-left: 2mm;
+        }
+
+        .resultado-medal-nome {
+            font-weight: bold;
+            margin-bottom: 1mm;
+            border-bottom: 1px dotted #666;
+            min-height: 4mm;
+        }
+
+        .resultado-medal-academia {
+            font-size: 7pt;
+            color: #666;
+        }
+
+        /* Empty State */
+        .empty-luta {
+            text-align: center;
+            padding: 5mm;
+            border: 1px dashed #666;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* WO (Walkover) */
+        .wo-box {
+            text-align: center;
+            font-weight: bold;
+            font-size: 12pt;
+            color: #666;
+            padding: 5mm 0;
+        }
+
+        /* Vencedor destacado */
+        .fighter-winner {
+            position: absolute;
+            top: 1mm;
+            right: 1mm;
+            font-size: 6pt;
+            font-weight: bold;
+            background: #000;
+            color: #fff;
+            padding: 1mm 2mm;
+        }
+
+        /* Print only - esconder elementos desnecessários */
+        @media screen {
+            body {
+                background: #f5f5f5;
+                padding: 20px;
+            }
+            
+            .print-container {
+                max-width: 210mm;
+                margin: 0 auto;
+                background: #fff;
+                padding: 20px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+        }
+
+        /* Quebra de página */
+        .page-break {
+            page-break-before: always;
+        }
+
+        /* Ajustes para múltiplas páginas */
+        @media print {
+            .round-section {
+                page-break-inside: avoid;
+            }
+            
+            .luta-print {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Cabeçalho -->
+    <div class="print-header">
+        <h1>CHAVE DE COMPETIÇÃO</h1>
+        <div class="print-header-info">
+            <div><strong>Evento:</strong> {{ campeonato.nome|default:"Não especificado" }}</div>
+            <div><strong>Categoria:</strong> {{ chave.categoria }}</div>
+            <div><strong>Classe:</strong> {{ chave.classe }}</div>
+            <div><strong>Sexo:</strong> {{ chave.get_sexo_display }}</div>
+        </div>
+    </div>
+
+    <!-- Container Principal -->
+    <div class="print-container">
+        {% if lutas %}
+            {% for round_num, lutas_round in lutas_por_round.items %}
+            <div class="round-section">
+                <div class="round-title">ROUND {{ round_num }}</div>
+                
+                {% for luta in lutas_round %}
+                <!-- Luta -->
+                <div class="luta-print">
+                    <!-- Lutador A (Azul) -->
+                    <div class="fighter-box blue">
+                        {% if luta.vencedor == luta.atleta_a %}
+                        <div class="fighter-winner">✓</div>
+                        {% endif %}
+                        
+                        {% if luta.atleta_a %}
+                            <div class="fighter-name">{{ luta.atleta_a.nome }}</div>
+                            <div class="fighter-academy">{{ luta.atleta_a.academia.nome }}</div>
+                            <div class="fighter-info">
+                                {% if luta.atleta_a.inscricao_info %}
+                                    <span class="fighter-badge">{{ luta.atleta_a.inscricao_info.classe_escolhida }}</span>
+                                    <span class="fighter-badge">{{ luta.atleta_a.inscricao_info.categoria_ajustada|default:luta.atleta_a.inscricao_info.categoria_escolhida }}</span>
+                                {% else %}
+                                    <span class="fighter-badge">{{ chave.classe }}</span>
+                                    <span class="fighter-badge">{{ chave.categoria }}</span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Campos para anotações -->
+                            <div class="annotation-fields">
+                                <div class="annotation-field">
+                                    <span class="annotation-label">Pontos:</span>
+                                    <span class="annotation-line"></span>
+                                </div>
+                                <div class="annotation-field">
+                                    <span class="annotation-label">Tipo Vitória:</span>
+                                    <span class="annotation-line"></span>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="wo-box">WO</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- VS -->
+                    <div class="vs-box">VS</div>
+
+                    <!-- Lutador B (Branco) -->
+                    <div class="fighter-box white">
+                        {% if luta.vencedor == luta.atleta_b %}
+                        <div class="fighter-winner">✓</div>
+                        {% endif %}
+                        
+                        {% if luta.atleta_b %}
+                            <div class="fighter-name">{{ luta.atleta_b.nome }}</div>
+                            <div class="fighter-academy">{{ luta.atleta_b.academia.nome }}</div>
+                            <div class="fighter-info">
+                                {% if luta.atleta_b.inscricao_info %}
+                                    <span class="fighter-badge">{{ luta.atleta_b.inscricao_info.classe_escolhida }}</span>
+                                    <span class="fighter-badge">{{ luta.atleta_b.inscricao_info.categoria_ajustada|default:luta.atleta_b.inscricao_info.categoria_escolhida }}</span>
+                                {% else %}
+                                    <span class="fighter-badge">{{ chave.classe }}</span>
+                                    <span class="fighter-badge">{{ chave.categoria }}</span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Campos para anotações -->
+                            <div class="annotation-fields">
+                                <div class="annotation-field">
+                                    <span class="annotation-label">Pontos:</span>
+                                    <span class="annotation-line"></span>
+                                </div>
+                                <div class="annotation-field">
+                                    <span class="annotation-label">Tipo Vitória:</span>
+                                    <span class="annotation-line"></span>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="wo-box">WO</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Seta de Avanço (exceto última luta do último round) -->
+                {% if not forloop.last or not forloop.parentloop.last %}
+                <div class="arrow-container">
+                    <div class="arrow-line"></div>
+                    <div class="arrow-down"></div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% endfor %}
+
+            <!-- Resultado Final / Colocações -->
+            <div class="resultado-final">
+                <div class="resultado-final-title">RESULTADO FINAL</div>
+                
+                <div class="colocacoes-box">
+                    <div class="colocacoes-title">Colocações</div>
+                    
+                    <div class="colocacao-line">
+                        <div class="colocacao-pos">1º</div>
+                        <div class="colocacao-nome">
+                            {% if resultados|length > 0 %}{{ resultados.0.nome }}{% endif %}
+                        </div>
+                        <div class="colocacao-academia">
+                            {% if resultados|length > 0 %}{{ resultados.0.academia.nome }}{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="colocacao-line">
+                        <div class="colocacao-pos">2º</div>
+                        <div class="colocacao-nome">
+                            {% if resultados|length > 1 %}{{ resultados.1.nome }}{% endif %}
+                        </div>
+                        <div class="colocacao-academia">
+                            {% if resultados|length > 1 %}{{ resultados.1.academia.nome }}{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="colocacao-line">
+                        <div class="colocacao-pos">3º</div>
+                        <div class="colocacao-nome">
+                            {% if resultados|length > 2 %}{{ resultados.2.nome }}{% endif %}
+                        </div>
+                        <div class="colocacao-academia">
+                            {% if resultados|length > 2 %}{{ resultados.2.academia.nome }}{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="colocacao-line">
+                        <div class="colocacao-pos">3º</div>
+                        <div class="colocacao-nome">
+                            {% if resultados|length > 3 %}{{ resultados.3.nome }}{% endif %}
+                        </div>
+                        <div class="colocacao-academia">
+                            {% if resultados|length > 3 %}{{ resultados.3.academia.nome }}{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        {% else %}
+            {% if chave.estrutura.tipo == "campeao_automatico" and resultados %}
+            <div class="luta-print">
+                <div class="fighter-box white" style="grid-column: 1 / -1; text-align: center;">
+                    <div class="fighter-name">{{ resultados.0.nome }}</div>
+                    <div class="fighter-academy">{{ resultados.0.academia.nome }}</div>
+                    <div class="fighter-info">
+                        <span class="fighter-badge">{{ chave.classe }}</span>
+                        <span class="fighter-badge">{{ chave.categoria }}</span>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 3mm; font-weight: bold;">
+                CAMPEÃO AUTOMÁTICO - Chave com apenas um atleta
+            </div>
+            {% else %}
+            <div class="empty-luta">
+                Nenhuma luta gerada para esta chave
+            </div>
+            {% endif %}
+        {% endif %}
+
+        <!-- Assinaturas -->
+        <div class="assinatura-box">
+            <div class="assinatura-line">
+                <div class="assinatura-field">
+                    <div class="assinatura-label">Oficial da Mesa</div>
+                    <div class="assinatura-space"></div>
+                </div>
+                <div class="assinatura-field">
+                    <div class="assinatura-label">Árbitro Principal</div>
+                    <div class="assinatura-space"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

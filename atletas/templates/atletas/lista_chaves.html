@@ -1,0 +1,143 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Lista de Chaves{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
+    <div>
+        <h1 class="page-title">Chaves</h1>
+        <p class="page-description">Gerencie todas as chaves da competição</p>
+    </div>
+    <div style="display: flex; gap: var(--spacing-3); flex-wrap: wrap;">
+        <a href="{% url 'gerar_chave_view' %}" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Gerar Nova Chave
+        </a>
+        <a href="{% url 'gerar_chave_manual' %}" class="btn btn-success">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            Lutas Casadas
+        </a>
+    </div>
+</div>
+
+{% if total_chaves %}
+<div class="card mb-6">
+    <div class="card-body">
+        <p style="margin: 0; color: var(--color-gray-700);">
+            <strong>Total de chaves encontradas:</strong> <span style="color: var(--color-primary); font-weight: 600;">{{ total_chaves }}</span>
+        </p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Filtros -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Filtros</h3>
+    </div>
+    <div class="card-body">
+        <form method="get">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-4);">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="classe">Classe</label>
+                    <select id="classe" name="classe" class="form-select">
+                <option value="">Todas</option>
+                {% for c in classes %}
+                <option value="{{ c }}" {% if c == classe_filtro %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="sexo">Sexo</label>
+                    <select id="sexo" name="sexo" class="form-select">
+                <option value="">Todos</option>
+                <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
+                <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
+            </select>
+        </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="categoria">Categoria</label>
+                    <select id="categoria" name="categoria" class="form-select">
+                <option value="">Todas</option>
+                {% for cat in categorias %}
+                <option value="{{ cat }}" {% if cat == categoria_filtro %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+            </div>
+            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
+                <a href="{% url 'lista_chaves' %}" class="btn btn-secondary">Limpar Filtros</a>
+                <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+        </div>
+    </form>
+    </div>
+</div>
+
+<!-- Tabela de Chaves -->
+{% if chaves %}
+<div class="table-container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Campeonato</th>
+                <th>Classe</th>
+                <th>Sexo</th>
+                <th>Categoria</th>
+                <th style="text-align: center;">Nº Atletas</th>
+                <th>Tipo</th>
+                <th style="text-align: right;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for chave in chaves %}
+            <tr>
+                <td>
+                    {% if chave.campeonato %}
+                        <strong style="color: var(--color-primary);">{{ chave.campeonato.nome }}</strong>
+                    {% else %}
+                        <span style="color: var(--color-gray-400); font-style: italic;">Sem campeonato</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge badge-success">{{ chave.classe }}</span>
+                </td>
+                <td>
+                    <span class="badge {% if chave.sexo == 'M' %}badge-success{% else %}badge-warning{% endif %}">
+                        {{ chave.get_sexo_display }}
+                    </span>
+                </td>
+                <td style="font-weight: 500; color: var(--color-gray-900);">{{ chave.categoria }}</td>
+                <td style="text-align: center;">
+                    <span style="font-weight: 600; color: var(--color-primary);">{{ chave.atletas.count }}</span>
+                </td>
+                <td style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                    {{ chave.estrutura.tipo|default:"-" }}
+                </td>
+                <td style="text-align: right;">
+                    <a href="{% url 'detalhe_chave' chave.id %}" class="btn btn-primary btn-sm">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        Ver Detalhes
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        <div class="empty-state-title">Nenhuma chave gerada</div>
+        <div class="empty-state-description">Comece gerando sua primeira chave</div>
+        <div style="display: flex; gap: var(--spacing-3); justify-content: center; margin-top: var(--spacing-4);">
+            <a href="{% url 'gerar_chave_view' %}" class="btn btn-primary">Gerar Nova Chave</a>
+            <a href="{% url 'gerar_chave_manual' %}" class="btn btn-success">Lutas Casadas</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

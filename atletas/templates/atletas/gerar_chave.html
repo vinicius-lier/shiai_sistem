@@ -1,0 +1,176 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Gerar Chave - SHIAI SISTEM{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
+    <div>
+        <h1 class="page-title">Gerar Chave</h1>
+        <p class="page-description">Crie uma chave de competição para uma categoria específica</p>
+    </div>
+    <a href="{% url 'lista_chaves' %}" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+        Voltar
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Configuração da Chave</h3>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--spacing-6);">
+                <div class="form-group">
+                    <label class="form-label" for="classe">
+                        Classe
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <select id="classe" name="classe" class="form-select" required>
+                        <option value="">Selecione uma classe</option>
+                        {% for classe in classes %}
+                        <option value="{{ classe }}">{{ classe }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="sexo">
+                        Sexo
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <select id="sexo" name="sexo" class="form-select" required onchange="filtrarCategorias()">
+                        <option value="">Selecione</option>
+                        <option value="M" {% if sexo_selecionado == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if sexo_selecionado == 'F' %}selected{% endif %}>Feminino</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="categoria">
+                        Categoria
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <select id="categoria" name="categoria" class="form-select" required>
+                        <option value="">Selecione primeiro o Sexo</option>
+                        {% for categoria in categorias %}
+                        <option value="{{ categoria.categoria_nome }}">{{ categoria.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label class="form-label" for="modelo_chave">
+                        Modelo de Chave
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    <select id="modelo_chave" name="modelo_chave" class="form-select" onchange="atualizarDescricaoModelo()">
+                        <option value="automatico" selected>Automático (padrão baseado no número de atletas)</option>
+                        <option value="eliminatoria_simples">Eliminatória Simples</option>
+                        <option value="eliminatoria_repescagem">Eliminatória com Repescagem (CBJ)</option>
+                        <option value="round_robin">Round Robin (Todos contra Todos)</option>
+                        <option value="melhor_de_3">Melhor de 3</option>
+                        <option value="olimpica_4">Chave Olímpica 4 Atletas</option>
+                        <option value="olimpica_8">Chave Olímpica 8 Atletas</option>
+                        <option value="olimpica_16">Chave Olímpica 16 Atletas</option>
+                        <option value="olimpica_32">Chave Olímpica 32 Atletas</option>
+                    </select>
+                    <small class="form-help-text">Se não selecionar, o sistema escolhe automaticamente baseado no número de atletas.</small>
+                    <div id="descricao-modelo" style="margin-top: var(--spacing-2); padding: var(--spacing-3); background: var(--color-gray-50); border-radius: var(--border-radius-md); border-left: 3px solid var(--color-primary); display: none;">
+                        <strong style="display: block; margin-bottom: var(--spacing-1); color: var(--color-gray-900);">Descrição do modelo:</strong>
+                        <span id="texto-descricao" style="color: var(--color-gray-700); font-size: var(--font-size-sm);"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end; margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
+                <a href="{% url 'lista_chaves' %}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                    Gerar Chave
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const descricoesModelos = {
+    'automatico': 'O sistema escolhe automaticamente: 1 atleta → WO, 2 → Melhor de 3, 3-5 → Round Robin, 6-7 → Eliminatória com Repescagem (8 posições), 8+ → Eliminatória com Repescagem completa.',
+    'eliminatoria_simples': 'Chave eliminatória simples (mata-mata) sem repescagem. Perdeu, está fora. Não há disputa de 3º lugar automática.',
+    'eliminatoria_repescagem': 'Chave eliminatória com repescagem (modelo CBJ). Perdedores das semifinais disputam o 3º lugar. Atletas da mesma academia não se enfrentam na 1ª rodada.',
+    'round_robin': 'Sistema de rodízio onde todos competem contra todos. Classificação por número de vitórias e critérios de desempate.',
+    'melhor_de_3': 'Dois atletas lutam em até 3 lutas. O primeiro a vencer 2 lutas é o campeão.',
+    'olimpica_4': 'Chave eliminatória simples com 4 posições. Estrutura: 4 → 2 → 1 (Final).',
+    'olimpica_8': 'Chave eliminatória simples com 8 posições. Estrutura: 8 → 4 → 2 → 1 (Final).',
+    'olimpica_16': 'Chave eliminatória simples com 16 posições. Estrutura: 16 → 8 → 4 → 2 → 1 (Final).',
+    'olimpica_32': 'Chave eliminatória simples com 32 posições. Estrutura: 32 → 16 → 8 → 4 → 2 → 1 (Final).'
+};
+
+function atualizarDescricaoModelo() {
+    const select = document.getElementById('modelo_chave');
+    const descricaoDiv = document.getElementById('descricao-modelo');
+    const textoDescricao = document.getElementById('texto-descricao');
+    const valor = select.value;
+    
+    if (valor && valor !== 'automatico' && descricoesModelos[valor]) {
+        textoDescricao.textContent = descricoesModelos[valor];
+        descricaoDiv.style.display = 'block';
+    } else {
+        descricaoDiv.style.display = 'none';
+    }
+}
+
+function filtrarCategorias() {
+    const sexo = document.getElementById('sexo').value;
+    const classe = document.getElementById('classe').value;
+    const categoriaSelect = document.getElementById('categoria');
+    
+    if (!sexo) {
+        categoriaSelect.innerHTML = '<option value="">Selecione primeiro o Sexo</option>';
+        return;
+    }
+    
+    // Limpar opções atuais
+    categoriaSelect.innerHTML = '<option value="">Carregando...</option>';
+    
+    // Fazer requisição AJAX para obter categorias filtradas
+    let url = '{% url "get_categorias_por_sexo" %}?sexo=' + sexo;
+    if (classe) {
+        url += '&classe=' + classe;
+    }
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            categoriaSelect.innerHTML = '<option value="">Selecione</option>';
+            data.categorias.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.nome;
+                option.textContent = cat.label;
+                categoriaSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Erro ao filtrar categorias:', error);
+            categoriaSelect.innerHTML = '<option value="">Erro ao carregar categorias</option>';
+        });
+}
+
+// Filtrar categorias quando classe mudar também
+document.addEventListener('DOMContentLoaded', function() {
+    const classeSelect = document.getElementById('classe');
+    if (classeSelect) {
+        classeSelect.addEventListener('change', function() {
+            const sexo = document.getElementById('sexo').value;
+            if (sexo) {
+                filtrarCategorias();
+            }
+        });
+    }
+});
+</script>
+
+{% endblock %}

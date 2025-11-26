@@ -1,0 +1,688 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Pesagem - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 10mm;
+    }
+
+    body {
+        background: #ffffff !important;
+        padding: 0;
+    }
+
+    .sidebar,
+    .navbar,
+    .page-header,
+    .filter-box,
+    .btn,
+    #modal-remanejamento,
+    script,
+    .sidebar-overlay {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+    }
+
+    .content-wrapper {
+        padding: 0 !important;
+    }
+
+    .table-container {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+
+.form-pesagem-inline {
+    display: flex;
+    gap: var(--spacing-2);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.input-peso-inline {
+    width: 120px;
+    min-width: 100px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
+    <div>
+        <h1 class="page-title">Pesagem</h1>
+        <p class="page-description">Registre o peso oficial dos atletas</p>
+    </div>
+    <button type="button" class="btn btn-secondary" onclick="window.print()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        Imprimir
+    </button>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Filtros</h3>
+    </div>
+    <div class="card-body">
+        <form method="get">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-4);">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="classe">Classe</label>
+                    <select id="classe" name="classe" class="form-select">
+                        <option value="">Todas</option>
+                        {% for classe in classes %}
+                        <option value="{{ classe }}" {% if classe == classe_filtro %}selected{% endif %}>{{ classe }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="sexo">Sexo</label>
+                    <select id="sexo" name="sexo" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="categoria">Categoria</label>
+                    <select id="categoria" name="categoria" class="form-select">
+                        <option value="">Todas</option>
+                        {% for categoria in categorias %}
+                        <option value="{{ categoria }}" {% if categoria == categoria_filtro %}selected{% endif %}>{{ categoria }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
+                <a href="{% url 'pesagem' %}" class="btn btn-secondary">Limpar Filtros</a>
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabela de Pesagem -->
+{% if atletas %}
+<div class="table-container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Classe</th>
+                <th>Sexo</th>
+                <th>Categoria</th>
+                <th>Limite (kg)</th>
+                <th>Peso Oficial</th>
+                <th>Status</th>
+                <th style="min-width: 200px;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for atleta in atletas %}
+            <tr>
+                <td>
+                    <div style="font-weight: 500; color: var(--color-gray-900);">{{ atleta.nome }}</div>
+                    <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">{{ atleta.academia.nome }}</div>
+                </td>
+                <td>
+                    <span class="badge badge-success">{{ atleta.classe }}</span>
+                </td>
+                <td>
+                    <span class="badge {% if atleta.sexo == 'M' %}badge-success{% else %}badge-warning{% endif %}">
+                        {{ atleta.get_sexo_display }}
+                    </span>
+                </td>
+                <td style="font-size: var(--font-size-sm); color: var(--color-gray-700);">
+                    {{ atleta.categoria_ajustada|default:atleta.categoria_nome }}
+                </td>
+                <td style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                    {% if atleta.get_limite_categoria %}{{ atleta.get_limite_categoria }}{% else %}-{% endif %}
+                </td>
+                <td style="font-size: var(--font-size-sm); color: var(--color-gray-700);">
+                    {% if atleta.peso_oficial %}
+                        <strong style="color: var(--color-gray-900);">{{ atleta.peso_oficial }}</strong> kg
+                    {% else %}
+                        <span style="color: var(--color-gray-400);">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if atleta.status == 'OK' %}
+                        <span class="badge badge-success">{{ atleta.status }}</span>
+                    {% elif 'Eliminado' in atleta.status %}
+                        <span class="badge badge-danger">{{ atleta.status }}</span>
+                        {% if atleta.motivo_ajuste %}
+                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-top: var(--spacing-1);">
+                                {{ atleta.motivo_ajuste|truncatewords:10 }}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge badge-warning">{{ atleta.status }}</span>
+                    {% endif %}
+                    {% if atleta.remanejado %}
+                        <div style="margin-top: var(--spacing-1);">
+                            <span class="badge" style="background: var(--color-warning-light); color: #92400E; font-size: var(--font-size-xs);">⚠ Remanejado</span>
+                        </div>
+                    {% endif %}
+                    {% if 'Eliminado' in atleta.status or atleta.remanejado %}
+                        {% if atleta.academia.telefone %}
+                            <div style="margin-top: var(--spacing-2);">
+                                <a href="#" onclick="abrirModalWhatsAppAtleta('{{ atleta.academia.telefone }}', '{{ atleta.academia.nome }}', {{ atleta.academia.id }}, '{{ atleta.nome }}', '{{ atleta.categoria_ajustada|default:atleta.categoria_nome }}', '{{ atleta.get_limite_categoria }}', '{{ atleta.peso_oficial }}', '{% if atleta.remanejado %}remanejamento{% else %}desclassificacao{% endif %}', '{{ atleta.categoria_nome }}'); return false;" class="btn btn-whatsapp" style="padding: var(--spacing-1) var(--spacing-2); font-size: var(--font-size-xs);">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;">
+                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                                    </svg>
+                                    WhatsApp
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td>
+                    <form class="form-pesagem-inline" method="post" action="{% url 'registrar_peso' atleta.inscricao_obj.id %}" data-inscricao-id="{{ atleta.inscricao_obj.id }}" data-atleta-id="{{ atleta.id }}">
+                        {% csrf_token %}
+                        <input type="number" 
+                               name="peso_oficial" 
+                               step="0.1" 
+                               min="0" 
+                               placeholder="Peso (kg)" 
+                               value="{% if atleta.peso_oficial %}{{ atleta.peso_oficial }}{% endif %}" 
+                               class="form-input input-peso-inline" 
+                               inputmode="decimal" 
+                               required>
+                        <button type="submit" class="btn btn-primary" style="padding: var(--spacing-2) var(--spacing-3); font-size: var(--font-size-xs); white-space: nowrap;">
+                            Registrar
+                        </button>
+                    </form>
+                    {% if 'Pode rebaixar' in atleta.motivo_ajuste %}
+                    <div style="margin-top: var(--spacing-2);">
+                        <a href="{% url 'rebaixar_categoria' atleta.id %}" class="btn btn-success" style="padding: var(--spacing-2) var(--spacing-3); font-size: var(--font-size-xs);">
+                            Rebaixar Categoria
+                        </a>
+                    </div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+        </svg>
+        <div class="empty-state-title">Nenhum atleta encontrado</div>
+        <div class="empty-state-description">
+            {% if classe_filtro or sexo_filtro or categoria_filtro %}
+                Nenhum atleta corresponde aos filtros aplicados.
+            {% else %}
+                Ainda não há atletas cadastrados para pesagem.
+            {% endif %}
+        </div>
+        {% if not classe_filtro and not sexo_filtro and not categoria_filtro %}
+        <a href="{% url 'cadastrar_atleta' %}" class="btn btn-primary">Cadastrar Atleta</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal de Confirmação de Remanejamento -->
+<div class="modal-overlay" id="modal-remanejamento">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">⚠️ Atenção: Peso fora da categoria!</h3>
+            <button class="modal-close" onclick="fecharModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="modal-conteudo">
+                <!-- Conteúdo será preenchido via JavaScript -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <form id="form-confirmacao" method="post" style="width: 100%;">
+                {% csrf_token %}
+                <input type="hidden" name="peso_oficial" id="modal-peso">
+                <input type="hidden" name="categoria_nova" id="modal-categoria-nova">
+                <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="btn-desclassificar">Desclassificar</button>
+                    <button type="submit" name="acao" value="remanejar" class="btn btn-success">Remanejar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.form-pesagem-inline');
+    
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const inscricaoId = this.dataset.inscricaoId;
+            const btnSubmit = this.querySelector('button[type="submit"]');
+            const originalText = btnSubmit.textContent;
+            
+            // Loading state
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'Salvando...';
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.precisa_confirmacao) {
+                    // Mostrar modal de confirmação
+                    mostrarModalRemanejamento(data);
+                    btnSubmit.disabled = false;
+                    btnSubmit.textContent = originalText;
+                } else {
+                    // Recarregar página
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = originalText;
+                window.location.reload();
+            });
+        });
+    });
+});
+
+function mostrarModalRemanejamento(data) {
+    const modal = document.getElementById('modal-remanejamento');
+    const conteudo = document.getElementById('modal-conteudo');
+    const form = document.getElementById('form-confirmacao');
+    
+    form.action = `/pesagem/inscricao/${data.inscricao_id}/confirmar-remanejamento/`;
+    document.getElementById('modal-peso').value = data.peso;
+    document.getElementById('modal-categoria-nova').value = data.categoria_nova;
+    
+    const limiteAtual = data.limite_atual_max ? 
+        `${data.limite_atual_min} a ${data.limite_atual_max} kg` : 
+        `${data.limite_atual_min} kg ou mais`;
+    
+    const limiteNovo = data.limite_novo_max ? 
+        `${data.limite_novo_min} a ${data.limite_novo_max} kg` : 
+        `${data.limite_novo_min} kg ou mais`;
+    
+    conteudo.innerHTML = `
+        <div style="margin-bottom: var(--spacing-4);">
+            <p style="margin-bottom: var(--spacing-2);"><strong>Atleta:</strong> <span style="color: var(--color-gray-900);">${data.atleta_nome}</span></p>
+            <p style="margin-bottom: var(--spacing-2);"><strong>Peso registrado:</strong> <span style="color: var(--color-primary); font-weight: 600;">${data.peso} kg</span></p>
+        </div>
+        <div style="border-top: 1px solid var(--color-gray-200); border-bottom: 1px solid var(--color-gray-200); padding: var(--spacing-4) 0; margin: var(--spacing-4) 0;">
+            <p style="margin-bottom: var(--spacing-2);"><strong>Categoria atual:</strong> ${data.categoria_atual}</p>
+            <p style="margin-bottom: var(--spacing-2); color: var(--color-gray-600);">Limite: ${limiteAtual}</p>
+            <p style="margin-top: var(--spacing-3); margin-bottom: var(--spacing-2);"><strong>Categoria sugerida:</strong> <span style="color: var(--color-success);">${data.categoria_nova}</span></p>
+            <p style="color: var(--color-gray-600);">Limite: ${limiteNovo}</p>
+        </div>
+        <div style="background: var(--color-danger-light); border: 1px solid var(--color-danger); border-radius: var(--border-radius-md); padding: var(--spacing-4);">
+            <p style="color: #991B1B; font-weight: 600; margin-bottom: var(--spacing-2);">⚠️ IMPORTANTE:</p>
+            <ul style="margin: 0; padding-left: var(--spacing-5); color: #991B1B;">
+                <li style="margin-bottom: var(--spacing-1);">Se <strong>Remanejar</strong>: O atleta será remanejado para a nova categoria e a academia <strong>perderá 1 ponto</strong>.</li>
+                <li>Se <strong>Desclassificar</strong>: O atleta será desclassificado por estar fora do peso da categoria.</li>
+            </ul>
+        </div>
+    `;
+    
+    modal.classList.add('active');
+    
+    // Remover listeners anteriores e adicionar novo
+    const btnDesclassificar = document.getElementById('btn-desclassificar');
+    const novoBtn = btnDesclassificar.cloneNode(true);
+    btnDesclassificar.parentNode.replaceChild(novoBtn, btnDesclassificar);
+    
+    novoBtn.addEventListener('click', function() {
+        const formData = new FormData(form);
+        formData.append('acao', 'desclassificar');
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(() => {
+            window.location.reload();
+        });
+    });
+}
+
+function fecharModal() {
+    const modal = document.getElementById('modal-remanejamento');
+    modal.classList.remove('active');
+}
+
+// Fechar modal ao clicar no overlay
+document.getElementById('modal-remanejamento')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        fecharModal();
+    }
+});
+
+// Função para abrir modal WhatsApp com dados do atleta
+function abrirModalWhatsAppAtleta(telefone, nomeAcademia, academiaId, nomeAtleta, categoriaAtual, limiteCategoria, pesoAtleta, tipoNotificacao, categoriaOriginal) {
+    const dadosAtleta = {
+        nome: nomeAtleta,
+        categoria: categoriaAtual,
+        limite: limiteCategoria,
+        peso: pesoAtleta,
+        categoria_original: categoriaOriginal,
+        categoria_nova: categoriaAtual
+    };
+    
+    // Se já existe a função global, usar ela
+    if (typeof abrirModalWhatsApp === 'function') {
+        abrirModalWhatsApp(telefone, nomeAcademia, academiaId, 'atleta', dadosAtleta);
+        // Selecionar o tema correto
+        setTimeout(() => {
+            const tema = tipoNotificacao === 'remanejamento' ? 'remanejamento' : 'desclassificacao';
+            const radio = document.querySelector(`input[name="tema-mensagem"][value="${tema}"]`);
+            if (radio) {
+                radio.checked = true;
+                if (typeof atualizarMensagem === 'function') {
+                    atualizarMensagem();
+                }
+            }
+        }, 100);
+    } else {
+        // Carregar modal dinamicamente
+        carregarModalWhatsApp().then(() => {
+            abrirModalWhatsApp(telefone, nomeAcademia, academiaId, 'atleta', dadosAtleta);
+            setTimeout(() => {
+                const tema = tipoNotificacao === 'remanejamento' ? 'remanejamento' : 'desclassificacao';
+                const radio = document.querySelector(`input[name="tema-mensagem"][value="${tema}"]`);
+                if (radio) {
+                    radio.checked = true;
+                    atualizarMensagem();
+                }
+            }, 100);
+        });
+    }
+}
+
+// Carregar modal WhatsApp dinamicamente se não estiver na página
+function carregarModalWhatsApp() {
+    return new Promise((resolve) => {
+        if (document.getElementById('modal-whatsapp')) {
+            resolve();
+            return;
+        }
+        
+        // Carregar o modal da lista de academias via fetch ou criar inline
+        const modalHTML = `
+            <!-- Modal WhatsApp -->
+            <div class="modal-overlay" id="modal-whatsapp">
+                <div class="modal" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h3 class="modal-title">
+                            <svg viewBox="0 0 24 24" fill="#25D366" style="width: 24px; height: 24px; vertical-align: middle; margin-right: var(--spacing-2);">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                            </svg>
+                            Enviar Mensagem WhatsApp
+                        </h3>
+                        <button class="modal-close" onclick="fecharModalWhatsApp()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group mb-4">
+                            <label class="form-label">Destinatário</label>
+                            <div style="padding: var(--spacing-3); background: var(--color-gray-50); border-radius: var(--border-radius-md);">
+                                <strong id="whatsapp-destinatario"></strong>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-4">
+                            <label class="form-label">Tema da Mensagem</label>
+                            <div style="display: grid; gap: var(--spacing-2);">
+                                <label style="display: flex; align-items: center; gap: var(--spacing-2); padding: var(--spacing-3); border: 2px solid var(--color-gray-200); border-radius: var(--border-radius-md); cursor: pointer; transition: all var(--transition-base);">
+                                    <input type="radio" name="tema-mensagem" value="convite" checked onchange="atualizarMensagem()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <div>
+                                        <div style="font-weight: 500; color: var(--color-gray-900);">📢 Convite para a Copa</div>
+                                        <small style="color: var(--color-gray-500);">Mensagem de convite para participar do campeonato</small>
+                                    </div>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: var(--spacing-2); padding: var(--spacing-3); border: 2px solid var(--color-gray-200); border-radius: var(--border-radius-md); cursor: pointer; transition: all var(--transition-base);">
+                                    <input type="radio" name="tema-mensagem" value="desclassificacao" onchange="atualizarMensagem()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <div>
+                                        <div style="font-weight: 500; color: var(--color-gray-900);">⚠️ Atleta Fora do Peso - Desclassificação</div>
+                                        <small style="color: var(--color-gray-500);">Informar sobre desclassificação por peso</small>
+                                    </div>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: var(--spacing-2); padding: var(--spacing-3); border: 2px solid var(--color-gray-200); border-radius: var(--border-radius-md); cursor: pointer; transition: all var(--transition-base);">
+                                    <input type="radio" name="tema-mensagem" value="remanejamento" onchange="atualizarMensagem()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <div>
+                                        <div style="font-weight: 500; color: var(--color-gray-900);">🔄 Atleta Fora do Peso - Remanejamento</div>
+                                        <small style="color: var(--color-gray-500);">Informar sobre remanejamento e perda de 1 ponto</small>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-4">
+                            <label class="form-label" for="whatsapp-mensagem">Mensagem</label>
+                            <textarea id="whatsapp-mensagem" class="form-textarea" rows="8" oninput="contarCaracteres()"></textarea>
+                            <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">
+                                Você pode editar a mensagem antes de enviar. 
+                                <span id="contador-caracteres">0</span> caracteres
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="fecharModalWhatsApp()">Cancelar</button>
+                        <button class="btn btn-whatsapp" onclick="abrirWhatsApp()" style="display: inline-flex; align-items: center; gap: var(--spacing-2);">
+                            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                            </svg>
+                            Abrir WhatsApp
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        inicializarFuncoesWhatsApp();
+        resolve();
+    });
+}
+
+// Inicializar funções do WhatsApp se não existirem
+function inicializarFuncoesWhatsApp() {
+    if (typeof window.whatsappData === 'undefined') {
+        window.whatsappData = {
+            telefone: '',
+            nome: '',
+            academiaId: null,
+            tipo: 'academia',
+            dadosAtleta: null
+        };
+    }
+    
+    if (typeof window.abrirModalWhatsApp === 'undefined') {
+        window.abrirModalWhatsApp = function(telefone, nome, academiaId = null, tipo = 'academia', dadosAtleta = null) {
+            window.whatsappData.telefone = telefone;
+            window.whatsappData.nome = nome;
+            window.whatsappData.academiaId = academiaId;
+            window.whatsappData.tipo = tipo;
+            window.whatsappData.dadosAtleta = dadosAtleta;
+            
+            document.getElementById('whatsapp-destinatario').textContent = `${nome} (${telefone})`;
+            
+            const radioConvite = document.querySelector('input[name="tema-mensagem"][value="convite"]');
+            if (radioConvite) radioConvite.checked = true;
+            
+            atualizarMensagem();
+            document.getElementById('modal-whatsapp').classList.add('active');
+        };
+    }
+    
+    if (typeof window.fecharModalWhatsApp === 'undefined') {
+        window.fecharModalWhatsApp = function() {
+            document.getElementById('modal-whatsapp').classList.remove('active');
+        };
+    }
+    
+    if (typeof window.contarCaracteres === 'undefined') {
+        window.contarCaracteres = function() {
+            const textarea = document.getElementById('whatsapp-mensagem');
+            const contador = document.getElementById('contador-caracteres');
+            if (textarea && contador) {
+                contador.textContent = textarea.value.length;
+            }
+        };
+    }
+    
+    if (typeof window.atualizarMensagem === 'undefined') {
+        window.atualizarMensagem = function() {
+            const tema = document.querySelector('input[name="tema-mensagem"]:checked')?.value || 'convite';
+            const textarea = document.getElementById('whatsapp-mensagem');
+            if (!textarea) return;
+            
+            const campeonatoNome = '{% if campeonato_ativo %}{{ campeonato_ativo.nome }}{% else %}Campeonato{% endif %}';
+            const campeonatoDataInicio = '{% if campeonato_ativo and campeonato_ativo.data_inicio %}{{ campeonato_ativo.data_inicio|date:"d/m/Y" }}{% endif %}';
+            const valorFederado = '{% if campeonato_ativo and campeonato_ativo.valor_inscricao_federado %}R$ {{ campeonato_ativo.valor_inscricao_federado|floatformat:2 }}{% else %}-{% endif %}';
+            const valorNaoFederado = '{% if campeonato_ativo and campeonato_ativo.valor_inscricao_nao_federado %}R$ {{ campeonato_ativo.valor_inscricao_nao_federado|floatformat:2 }}{% else %}-{% endif %}';
+            
+            let mensagem = '';
+            const data = window.whatsappData;
+            
+            if (tema === 'convite') {
+                mensagem = `🥋 *Convite para ${campeonatoNome}*\\n\\n`;
+                mensagem += `Olá! ${data.nome}\\n\\n`;
+                mensagem += `Gostaríamos de convidar sua academia para participar do *${campeonatoNome}*.\\n\\n`;
+                if (campeonatoDataInicio) {
+                    mensagem += `📅 *Data:* ${campeonatoDataInicio}\\n`;
+                }
+                mensagem += `\\n💰 *Valores de Inscrição:*\\n`;
+                mensagem += `• Federado: ${valorFederado}\\n`;
+                mensagem += `• Não Federado: ${valorNaoFederado}\\n\\n`;
+                mensagem += `Contamos com a participação de vocês!\\n\\n`;
+                mensagem += `Para mais informações, entre em contato.`;
+            } else if (tema === 'desclassificacao') {
+                if (data.tipo === 'atleta' && data.dadosAtleta) {
+                    const atleta = data.dadosAtleta;
+                    mensagem = `⚠️ *Atleta Fora do Peso - Desclassificação*\\n\\n`;
+                    mensagem += `Olá! Professor da ${data.nome}\\n\\n`;
+                    mensagem += `Informamos que o atleta *${atleta.nome}* foi *DESCLASSIFICADO* por estar fora do peso da categoria.\\n\\n`;
+                    mensagem += `📋 *Detalhes:*\\n`;
+                    mensagem += `• Atleta: ${atleta.nome}\\n`;
+                    mensagem += `• Categoria: ${atleta.categoria}\\n`;
+                    mensagem += `• Limite da categoria: ${atleta.limite}\\n`;
+                    mensagem += `• Peso registrado: ${atleta.peso} kg\\n\\n`;
+                    mensagem += `O atleta está fora dos limites permitidos e não poderá competir nesta categoria.\\n\\n`;
+                    mensagem += `Em caso de dúvidas, entre em contato conosco.`;
+                } else {
+                    mensagem = `⚠️ *Atleta Fora do Peso - Desclassificação*\\n\\n`;
+                    mensagem += `Olá! ${data.nome}\\n\\n`;
+                    mensagem += `Informamos que um atleta de sua academia foi *DESCLASSIFICADO* por estar fora do peso da categoria.\\n\\n`;
+                    mensagem += `O atleta não poderá competir nesta categoria.\\n\\n`;
+                    mensagem += `Para mais detalhes, acesse o sistema ou entre em contato.`;
+                }
+            } else if (tema === 'remanejamento') {
+                if (data.tipo === 'atleta' && data.dadosAtleta) {
+                    const atleta = data.dadosAtleta;
+                    mensagem = `🔄 *Atleta Fora do Peso - Remanejamento*\\n\\n`;
+                    mensagem += `Olá! Professor da ${data.nome}\\n\\n`;
+                    mensagem += `Informamos que o atleta *${atleta.nome}* foi *REMANEJADO* para outra categoria.\\n\\n`;
+                    mensagem += `📋 *Detalhes:*\\n`;
+                    mensagem += `• Atleta: ${atleta.nome}\\n`;
+                    mensagem += `• Categoria original: ${atleta.categoria_original}\\n`;
+                    mensagem += `• Nova categoria: ${atleta.categoria_nova}\\n`;
+                    mensagem += `• Peso registrado: ${atleta.peso} kg\\n\\n`;
+                    mensagem += `⚠️ *ATENÇÃO:*\\n`;
+                    mensagem += `Como o atleta foi remanejado, a academia *perderá 1 ponto* no quadro geral de medalhas.\\n\\n`;
+                    mensagem += `O atleta poderá competir na nova categoria, mas este ajuste impacta a pontuação da academia.\\n\\n`;
+                    mensagem += `Em caso de dúvidas, entre em contato conosco.`;
+                } else {
+                    mensagem = `🔄 *Atleta Fora do Peso - Remanejamento*\\n\\n`;
+                    mensagem += `Olá! ${data.nome}\\n\\n`;
+                    mensagem += `Informamos que um atleta de sua academia foi *REMANEJADO* para outra categoria.\\n\\n`;
+                    mensagem += `⚠️ *ATENÇÃO:*\\n`;
+                    mensagem += `Como houve remanejamento, a academia *perderá 1 ponto* no quadro geral de medalhas.\\n\\n`;
+                    mensagem += `O atleta poderá competir na nova categoria, mas este ajuste impacta a pontuação da academia.\\n\\n`;
+                    mensagem += `Para mais detalhes, acesse o sistema ou entre em contato.`;
+                }
+            }
+            
+            textarea.value = mensagem;
+            contarCaracteres();
+        };
+    }
+    
+    if (typeof window.abrirWhatsApp === 'undefined') {
+        window.abrirWhatsApp = function() {
+            const textarea = document.getElementById('whatsapp-mensagem');
+            const mensagem = textarea?.value || '';
+            
+            if (!mensagem.trim()) {
+                alert('Por favor, preencha a mensagem antes de enviar.');
+                return;
+            }
+            
+            let numero = window.whatsappData.telefone.replace(/\\D/g, '');
+            if (numero.length === 11 && numero[0] !== '5') {
+                numero = '55' + numero;
+            } else if (numero.length === 10) {
+                numero = '55' + numero;
+            }
+            numero = numero.replace(/^550/, '55');
+            
+            const mensagemEncoded = encodeURIComponent(mensagem);
+            const urlWhatsApp = `https://wa.me/${numero}?text=${mensagemEncoded}`;
+            window.open(urlWhatsApp, '_blank');
+            
+            setTimeout(() => {
+                fecharModalWhatsApp();
+            }, 500);
+        };
+    }
+    
+    // Event listeners
+    const modal = document.getElementById('modal-whatsapp');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                fecharModalWhatsApp();
+            }
+        });
+    }
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal?.classList.contains('active')) {
+            fecharModalWhatsApp();
+        }
+    });
+}
+</script>
+{% endblock %}

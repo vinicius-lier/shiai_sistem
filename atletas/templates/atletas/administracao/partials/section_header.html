@@ -1,0 +1,14 @@
+<div class="card-header card-header-flex">
+    <h2 class="card-title m-0">{{ titulo }}</h2>
+    {% if acao_url and acao_texto %}
+    <a href="{{ acao_url }}" class="btn btn-secondary w-auto">
+        {% if acao_icone %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-sm">
+            <path d="{{ acao_icone }}"></path>
+        </svg>
+        {% endif %}
+        {{ acao_texto }}
+    </a>
+    {% endif %}
+</div>
+

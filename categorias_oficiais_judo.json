@@ -1,0 +1,473 @@
+[
+  {
+    "classe": "SUB 9",
+    "categoria": "Super Ligeiro",
+    "limite_min": 0,
+    "limite_max": 23,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 9",
+    "categoria": "Ligeiro",
+    "limite_min": 23,
+    "limite_max": 26,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 9",
+    "categoria": "Meio Leve",
+    "limite_min": 26,
+    "limite_max": 29,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 9",
+    "categoria": "Leve",
+    "limite_min": 29,
+    "limite_max": 32,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 9",
+    "categoria": "Meio Médio",
+    "limite_min": 32,
+    "limite_max": 36,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 9",
+    "categoria": "Médio",
+    "limite_min": 36,
+    "limite_max": 40,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 9",
+    "categoria": "Meio Pesado",
+    "limite_min": 40,
+    "limite_max": 45,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 9",
+    "categoria": "Pesado",
+    "limite_min": 45,
+    "limite_max": 50,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 9",
+    "categoria": "Super Pesado",
+    "limite_min": 50,
+    "limite_max": null,
+    "acima": true,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 11",
+    "categoria": "Super Ligeiro",
+    "limite_min": 0,
+    "limite_max": 28,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 11",
+    "categoria": "Ligeiro",
+    "limite_min": 28,
+    "limite_max": 31,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 11",
+    "categoria": "Meio Leve",
+    "limite_min": 31,
+    "limite_max": 34,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 11",
+    "categoria": "Leve",
+    "limite_min": 34,
+    "limite_max": 37,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 11",
+    "categoria": "Meio Médio",
+    "limite_min": 37,
+    "limite_max": 40,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 11",
+    "categoria": "Médio",
+    "limite_min": 40,
+    "limite_max": 44,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 11",
+    "categoria": "Meio Pesado",
+    "limite_min": 44,
+    "limite_max": 48,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 11",
+    "categoria": "Pesado",
+    "limite_min": 48,
+    "limite_max": 52,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 11",
+    "categoria": "Super Pesado",
+    "limite_min": 52,
+    "limite_max": null,
+    "acima": true,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 13",
+    "categoria": "Super Ligeiro",
+    "limite_min": 0,
+    "limite_max": 31,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 13",
+    "categoria": "Ligeiro",
+    "limite_min": 31,
+    "limite_max": 34,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 13",
+    "categoria": "Meio Leve",
+    "limite_min": 34,
+    "limite_max": 38,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 13",
+    "categoria": "Leve",
+    "limite_min": 38,
+    "limite_max": 42,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 13",
+    "categoria": "Meio Médio",
+    "limite_min": 42,
+    "limite_max": 47,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 13",
+    "categoria": "Médio",
+    "limite_min": 47,
+    "limite_max": 52,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 13",
+    "categoria": "Meio Pesado",
+    "limite_min": 52,
+    "limite_max": 57,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 13",
+    "categoria": "Pesado",
+    "limite_min": 57,
+    "limite_max": 64,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 13",
+    "categoria": "Super Pesado",
+    "limite_min": 64,
+    "limite_max": null,
+    "acima": true,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 15",
+    "categoria": "Super Ligeiro",
+    "limite_min": 0,
+    "limite_max": 36,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 15",
+    "categoria": "Ligeiro",
+    "limite_min": 36,
+    "limite_max": 40,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 15",
+    "categoria": "Meio Leve",
+    "limite_min": 40,
+    "limite_max": 44,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 15",
+    "categoria": "Leve",
+    "limite_min": 44,
+    "limite_max": 48,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 15",
+    "categoria": "Meio Médio",
+    "limite_min": 48,
+    "limite_max": 53,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 15",
+    "categoria": "Médio",
+    "limite_min": 53,
+    "limite_max": 58,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 15",
+    "categoria": "Meio Pesado",
+    "limite_min": 58,
+    "limite_max": 64,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 15",
+    "categoria": "Pesado",
+    "limite_min": 64,
+    "limite_max": 70,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 15",
+    "categoria": "Super Pesado",
+    "limite_min": 70,
+    "limite_max": null,
+    "acima": true,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 18",
+    "categoria": "Super Ligeiro",
+    "limite_min": 0,
+    "limite_max": 50,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 18",
+    "categoria": "Meio Leve",
+    "limite_min": 50,
+    "limite_max": 55,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 18",
+    "categoria": "Leve",
+    "limite_min": 55,
+    "limite_max": 60,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 18",
+    "categoria": "Meio Médio",
+    "limite_min": 60,
+    "limite_max": 66,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 18",
+    "categoria": "Médio",
+    "limite_min": 66,
+    "limite_max": 73,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 18",
+    "categoria": "Meio Pesado",
+    "limite_min": 73,
+    "limite_max": 81,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 18",
+    "categoria": "Pesado",
+    "limite_min": 81,
+    "limite_max": 90,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 18",
+    "categoria": "Meio Pesadíssimo",
+    "limite_min": 90,
+    "limite_max": 100,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 18",
+    "categoria": "Pesadíssimo",
+    "limite_min": 100,
+    "limite_max": null,
+    "acima": true,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 21",
+    "categoria": "Super Ligeiro",
+    "limite_min": 0,
+    "limite_max": 60,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 21",
+    "categoria": "Meio Leve",
+    "limite_min": 60,
+    "limite_max": 66,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 21",
+    "categoria": "Leve",
+    "limite_min": 66,
+    "limite_max": 73,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 21",
+    "categoria": "Meio Médio",
+    "limite_min": 73,
+    "limite_max": 81,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 21",
+    "categoria": "Médio",
+    "limite_min": 81,
+    "limite_max": 90,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 21",
+    "categoria": "Meio Pesado",
+    "limite_min": 90,
+    "limite_max": 100,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SUB 21",
+    "categoria": "Pesado",
+    "limite_min": 100,
+    "limite_max": null,
+    "acima": true,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SÊNIOR",
+    "categoria": "Super Ligeiro",
+    "limite_min": 0,
+    "limite_max": 60,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SÊNIOR",
+    "categoria": "Meio Leve",
+    "limite_min": 60,
+    "limite_max": 66,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SÊNIOR",
+    "categoria": "Leve",
+    "limite_min": 66,
+    "limite_max": 73,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SÊNIOR",
+    "categoria": "Meio Médio",
+    "limite_min": 73,
+    "limite_max": 81,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SÊNIOR",
+    "categoria": "Médio",
+    "limite_min": 81,
+    "limite_max": 90,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SÊNIOR",
+    "categoria": "Meio Pesado",
+    "limite_min": 90,
+    "limite_max": 100,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "SÊNIOR",
+    "categoria": "Pesado",
+    "limite_min": 100,
+    "limite_max": null,
+    "acima": true,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "VETERANOS",
+    "categoria": "Super Ligeiro",
+    "limite_min": 0,
+    "limite_max": 60,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "VETERANOS",
+    "categoria": "Meio Leve",
+    "limite_min": 60,
+    "limite_max": 66,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "VETERANOS",
+    "categoria": "Leve",
+    "limite_min": 66,
+    "limite_max": 73,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "VETERANOS",
+    "categoria": "Meio Médio",
+    "limite_min": 73,
+    "limite_max": 81,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "VETERANOS",
+    "categoria": "Médio",
+    "limite_min": 81,
+    "limite_max": 90,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "VETERANOS",
+    "categoria": "Meio Pesado",
+    "limite_min": 90,
+    "limite_max": 100,
+    "sexo": "M/F"
+  },
+  {
+    "classe": "VETERANOS",
+    "categoria": "Pesado",
+    "limite_min": 100,
+    "limite_max": null,
+    "acima": true,
+    "sexo": "M/F"
+  }
+]
+

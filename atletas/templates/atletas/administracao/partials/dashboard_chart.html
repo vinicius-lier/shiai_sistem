@@ -1,0 +1,75 @@
+<div class="dashboard-chart-card">
+    <div class="card-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title">{{ chart_title }}</h3>
+            {% if chart_menu %}
+            <button class="btn btn-ghost" style="padding: var(--spacing-1);" onclick="alert('Menu de opções do gráfico');">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="19" cy="12" r="1"></circle>
+                    <circle cx="5" cy="12" r="1"></circle>
+                </svg>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body" style="padding: var(--spacing-6);">
+        <div class="chart-container" style="height: {{ chart_height|default:'300px' }}; position: relative;">
+            {% if chart_type == 'bar' %}
+            <div class="chart-placeholder" style="display: flex; align-items: flex-end; justify-content: space-around; height: 100%; gap: var(--spacing-2); padding: var(--spacing-4);">
+                {% for item in chart_data %}
+                <div style="display: flex; flex-direction: column; align-items: center; flex: 1; gap: var(--spacing-2);">
+                    <div style="width: 100%; background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-secondary) 100%); border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0; min-height: 20px; height: {{ item.percentage }}%; transition: all var(--transition-base);" title="{{ item.label }}: {{ item.value }}"></div>
+                    <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); text-align: center; font-weight: 500;">{{ item.label }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% elif chart_type == 'donut' %}
+            <div class="chart-placeholder" style="display: flex; align-items: center; justify-content: center; height: 100%; position: relative;">
+                <div style="width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(
+                    {% for item in chart_data %}{{ item.color }} {{ item.start }}% {{ item.end }}%{% if not forloop.last %}, {% endif %}{% endfor %}
+                ); display: flex; align-items: center; justify-content: center;">
+                    <div style="width: 120px; height: 120px; background: var(--color-white); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                        <div style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-gray-900);">{{ chart_center_value|default:'Total' }}</div>
+                        <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">{{ chart_center_label|default:'' }}</div>
+                    </div>
+                </div>
+                <div style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: var(--spacing-3);">
+                    {% for item in chart_data %}
+                    <div style="display: flex; align-items: center; gap: var(--spacing-2);">
+                        <div style="width: 12px; height: 12px; border-radius: 2px; background: {{ item.color }};"></div>
+                        <div style="font-size: var(--font-size-sm); color: var(--color-gray-700);">
+                            <strong>{{ item.label }}</strong>: {{ item.value }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% elif chart_type == 'area' %}
+            <div class="chart-placeholder" style="height: 100%; position: relative; padding: var(--spacing-4);">
+                <svg viewBox="0 0 400 200" style="width: 100%; height: 100%;">
+                    <defs>
+                        <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:var(--color-primary);stop-opacity:0.3" />
+                            <stop offset="100%" style="stop-color:var(--color-primary);stop-opacity:0.05" />
+                        </linearGradient>
+                    </defs>
+                    <polyline points="{% for item in chart_data %}{{ item.x }},{{ item.y }}{% if not forloop.last %} {% endif %}{% endfor %}" 
+                              fill="url(#areaGradient)" 
+                              stroke="var(--color-primary)" 
+                              stroke-width="2"/>
+                    <polyline points="{% for item in chart_data %}{{ item.x }},{{ item.y }}{% if not forloop.last %} {% endif %}{% endfor %}" 
+                              fill="none" 
+                              stroke="var(--color-primary)" 
+                              stroke-width="2"/>
+                </svg>
+            </div>
+            {% else %}
+            <div class="chart-placeholder" style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--color-gray-400); font-size: var(--font-size-sm);">
+                Gráfico: {{ chart_title }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+

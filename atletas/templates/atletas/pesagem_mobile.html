@@ -1,0 +1,425 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Pesagem - Mobile - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media (min-width: 769px) {
+        .mobile-only {
+            display: none;
+        }
+    }
+    
+    .mobile-header {
+        display: none;
+    }
+    
+    @media (max-width: 768px) {
+        .mobile-header {
+            display: block;
+            background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+            color: white;
+            padding: var(--spacing-4);
+            margin: calc(var(--spacing-4) * -1) calc(var(--spacing-4) * -1) var(--spacing-6);
+            text-align: center;
+        }
+        
+        .mobile-header h1 {
+            font-size: var(--font-size-xl);
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-2);
+        }
+        
+        .mobile-header .link-desktop {
+            display: block;
+            margin-top: var(--spacing-2);
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: underline;
+            font-size: var(--font-size-sm);
+        }
+        
+        .page-header {
+            display: none;
+        }
+        
+        .content-wrapper {
+            padding: var(--spacing-4) !important;
+        }
+        
+        .atleta-card-mobile {
+            background: var(--color-white);
+            border-radius: var(--border-radius-xl);
+            padding: var(--spacing-6);
+            margin-bottom: var(--spacing-4);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .atleta-nome-mobile {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            color: var(--color-gray-900);
+            margin-bottom: var(--spacing-3);
+        }
+        
+        .atleta-info-mobile {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            font-size: var(--font-size-sm);
+            color: var(--color-gray-600);
+            margin-bottom: var(--spacing-2);
+        }
+        
+        .atleta-info-mobile svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+        
+        .peso-atual-mobile {
+            background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+            color: white;
+            padding: var(--spacing-4);
+            border-radius: var(--border-radius-lg);
+            text-align: center;
+            margin: var(--spacing-4) 0;
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+        }
+        
+        .peso-input-mobile {
+            width: 100%;
+            padding: var(--spacing-6);
+            font-size: var(--font-size-2xl);
+            text-align: center;
+            border: 3px solid var(--color-primary);
+            border-radius: var(--border-radius-lg);
+            margin: var(--spacing-4) 0;
+            font-weight: 600;
+        }
+        
+        .btn-salvar-mobile {
+            width: 100%;
+            padding: var(--spacing-6);
+            background: var(--color-success);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-lg);
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: var(--spacing-4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-2);
+            min-height: 56px;
+        }
+        
+        .btn-ok-mobile {
+            width: 100%;
+            padding: var(--spacing-4);
+            background: var(--color-success);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-md);
+            font-size: var(--font-size-base);
+            font-weight: 500;
+            margin-top: var(--spacing-2);
+        }
+        
+        .status-badge-mobile {
+            padding: var(--spacing-3);
+            border-radius: var(--border-radius-md);
+            text-align: center;
+            font-weight: 600;
+            margin-top: var(--spacing-3);
+            font-size: var(--font-size-sm);
+        }
+        
+        .status-ok-mobile {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-remanejado-mobile {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-eliminado-mobile {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .filtros-mobile .form-select,
+        .filtros-mobile .form-input {
+            min-height: 52px;
+            font-size: var(--font-size-base);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mobile-header">
+    <h1>⚖️ Pesagem</h1>
+    <a href="{% url 'pesagem' %}?desktop=1" class="link-desktop">← Versão Desktop</a>
+</div>
+
+<div class="page-header">
+    <h1 class="page-title">Pesagem</h1>
+    <p class="page-description">Registre o peso oficial dos atletas</p>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-6 filtros-mobile">
+    <div class="card-header">
+        <h3 class="card-title">Filtros</h3>
+    </div>
+    <div class="card-body">
+        <form method="get">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-4);">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="classe">Classe</label>
+                    <select id="classe" name="classe" class="form-select">
+                        <option value="">Todas</option>
+                        {% for classe in classes %}
+                        <option value="{{ classe }}" {% if classe == classe_filtro %}selected{% endif %}>{{ classe }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="sexo">Sexo</label>
+                    <select id="sexo" name="sexo" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="categoria">Categoria</label>
+                    <select id="categoria" name="categoria" class="form-select">
+                        <option value="">Todas</option>
+                        {% for categoria in categorias %}
+                        <option value="{{ categoria }}" {% if categoria == categoria_filtro %}selected{% endif %}>{{ categoria }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
+                <a href="{% url 'pesagem_mobile' %}" class="btn btn-secondary">Limpar Filtros</a>
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Atletas -->
+{% for atleta in atletas %}
+<div class="atleta-card-mobile">
+    <div class="atleta-nome-mobile">{{ atleta.nome }}</div>
+    
+    <div class="atleta-info-mobile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <span>{{ atleta.classe }} - {{ atleta.get_sexo_display }}</span>
+    </div>
+    
+    <div class="atleta-info-mobile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 3v12a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path>
+            <line x1="6" y1="9" x2="18" y2="9"></line>
+        </svg>
+        <span>Categoria: {{ atleta.categoria_ajustada|default:atleta.categoria_nome }}</span>
+    </div>
+    
+    <div class="atleta-info-mobile" style="font-size: var(--font-size-xs); color: var(--color-gray-500);">
+        <span>Limite: {{ atleta.get_limite_categoria }}</span>
+    </div>
+    
+    <div class="atleta-info-mobile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <span>{{ atleta.academia.nome }}</span>
+    </div>
+    
+    {% if atleta.peso_oficial %}
+    <div class="peso-atual-mobile">Peso: {{ atleta.peso_oficial }} kg</div>
+    {% endif %}
+    
+    <form class="form-pesagem-mobile" method="post" action="{% url 'registrar_peso' atleta.inscricao_obj.id %}" data-inscricao-id="{{ atleta.inscricao_obj.id }}" data-atleta-id="{{ atleta.id }}">
+        {% csrf_token %}
+        <input type="number" 
+               name="peso_oficial" 
+               step="0.1" 
+               min="0" 
+               placeholder="Digite o peso (kg)" 
+               class="peso-input-mobile"
+               value="{% if atleta.peso_oficial %}{{ atleta.peso_oficial }}{% endif %}" 
+               required>
+        <button type="submit" class="btn-salvar-mobile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Salvar Peso
+        </button>
+    </form>
+    
+    {% if atleta.status == 'OK' and not atleta.remanejado %}
+        <div class="status-badge-mobile status-ok-mobile">✓ OK</div>
+    {% elif atleta.remanejado %}
+        <div class="status-badge-mobile status-remanejado-mobile">⚠ Remanejado</div>
+    {% elif atleta.status == 'Eliminado Peso' %}
+        <div class="status-badge-mobile status-eliminado-mobile">✗ Eliminado por Peso</div>
+    {% elif atleta.status == 'Eliminado Indisciplina' %}
+        <div class="status-badge-mobile status-eliminado-mobile">✗ Eliminado por Indisciplina</div>
+    {% endif %}
+    
+    {% if atleta.motivo_ajuste %}
+    <div style="font-size: var(--font-size-xs); color: #856404; margin-top: var(--spacing-2); padding: var(--spacing-2); background: #fff3cd; border-radius: var(--border-radius-md);">
+        {{ atleta.motivo_ajuste }}
+    </div>
+    {% endif %}
+</div>
+{% empty %}
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-state-title">Nenhum atleta encontrado</div>
+        <div class="empty-state-description">Ajuste os filtros para encontrar atletas para pesagem.</div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Modal de Remanejamento Mobile -->
+<div id="modal-remanejamento" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; padding: var(--spacing-4); box-sizing: border-box;">
+    <div style="background: white; padding: var(--spacing-6); border-radius: var(--border-radius-xl); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-xl);">
+        <h2 style="margin-top: 0; color: var(--color-danger); font-size: var(--font-size-xl); font-weight: 700; margin-bottom: var(--spacing-4);">⚠ Atenção!</h2>
+        <div id="modal-conteudo" style="margin: var(--spacing-4) 0; font-size: var(--font-size-base); line-height: 1.6;">
+            <!-- Conteúdo será preenchido via JavaScript -->
+        </div>
+        <form id="form-confirmacao" method="post" style="display: flex; flex-direction: column; gap: var(--spacing-3); margin-top: var(--spacing-6);">
+            {% csrf_token %}
+            <input type="hidden" name="peso_oficial" id="modal-peso">
+            <input type="hidden" name="categoria_nova" id="modal-categoria-nova">
+            <button type="button" class="btn-desclassificar" style="width: 100%; padding: var(--spacing-4); background: var(--color-danger); color: white; border: none; border-radius: var(--border-radius-lg); font-size: var(--font-size-base); font-weight: 600; cursor: pointer; min-height: 52px;">✗ Desclassificar</button>
+            <button type="submit" name="acao" value="remanejar" style="width: 100%; padding: var(--spacing-4); background: var(--color-success); color: white; border: none; border-radius: var(--border-radius-lg); font-size: var(--font-size-base); font-weight: 600; cursor: pointer; min-height: 52px;">✓ Remanejar (-1 ponto)</button>
+            <button type="button" onclick="fecharModal()" style="width: 100%; padding: var(--spacing-4); background: var(--color-gray-400); color: white; border: none; border-radius: var(--border-radius-lg); font-size: var(--font-size-base); font-weight: 500; cursor: pointer; min-height: 48px;">Cancelar</button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.form-pesagem-mobile');
+    
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const inscricaoId = this.dataset.inscricaoId;
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.precisa_confirmacao) {
+                    mostrarModalRemanejamento(data, inscricaoId);
+                } else {
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao salvar peso. Tente novamente.');
+                window.location.reload();
+            });
+        });
+    });
+});
+
+function mostrarModalRemanejamento(data, inscricaoId) {
+    const modal = document.getElementById('modal-remanejamento');
+    const conteudo = document.getElementById('modal-conteudo');
+    const form = document.getElementById('form-confirmacao');
+    
+    form.action = `/pesagem/inscricao/${inscricaoId}/confirmar-remanejamento/`;
+    document.getElementById('modal-peso').value = data.peso;
+    document.getElementById('modal-categoria-nova').value = data.categoria_nova;
+    
+    const limiteAtual = data.limite_atual_max ? 
+        `${data.limite_atual_min} a ${data.limite_atual_max} kg` : 
+        `${data.limite_atual_min} kg ou mais`;
+    
+    const limiteNovo = data.limite_novo_max ? 
+        `${data.limite_novo_min} a ${data.limite_novo_max} kg` : 
+        `${data.limite_novo_min} kg ou mais`;
+    
+    conteudo.innerHTML = `
+        <p><strong>Atleta:</strong> ${data.atleta_nome}</p>
+        <p><strong>Peso:</strong> ${data.peso} kg</p>
+        <hr style="margin: var(--spacing-4) 0; border: none; border-top: 1px solid var(--color-gray-200);">
+        <p><strong>Categoria atual:</strong><br>${data.categoria_atual}<br><small style="color: var(--color-gray-600);">(${limiteAtual})</small></p>
+        <p><strong>Categoria sugerida:</strong><br>${data.categoria_nova}<br><small style="color: var(--color-gray-600);">(${limiteNovo})</small></p>
+        <hr style="margin: var(--spacing-4) 0; border: none; border-top: 1px solid var(--color-gray-200);">
+        <p style="color: var(--color-danger); font-weight: 600; font-size: var(--font-size-base);">⚠ A academia perderá 1 ponto!</p>
+    `;
+    
+    modal.style.display = 'flex';
+    
+    const btnDesclassificar = document.querySelector('.btn-desclassificar');
+    btnDesclassificar.onclick = function() {
+        const formData = new FormData(form);
+        formData.append('acao', 'desclassificar');
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(() => {
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            window.location.reload();
+        });
+    };
+}
+
+function fecharModal() {
+    document.getElementById('modal-remanejamento').style.display = 'none';
+}
+
+// Fechar modal ao clicar fora
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('modal-remanejamento');
+    if (e.target === modal) {
+        fecharModal();
+    }
+});
+</script>
+{% endblock %}

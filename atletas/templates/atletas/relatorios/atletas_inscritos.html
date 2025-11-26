@@ -1,0 +1,41 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Relatório - Atletas Inscritos{% endblock %}
+
+{% block content %}
+<h1>Relatório - Atletas Inscritos</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Sexo</th>
+            <th>Classe</th>
+            <th>Categoria</th>
+            <th>Faixa</th>
+            <th>Academia</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for atleta in atletas %}
+        <tr>
+            <td>{{ atleta.nome }}</td>
+            <td>{{ atleta.get_sexo_display }}</td>
+            <td>{{ atleta.classe }}</td>
+            <td>{{ atleta.categoria_ajustada|default:atleta.categoria_nome }}</td>
+            <td>{{ atleta.faixa }}</td>
+            <td>{{ atleta.academia.nome }}</td>
+            <td>{{ atleta.status }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" style="text-align: center;">Nenhum atleta inscrito</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p style="margin-top: 20px;"><strong>Total de atletas:</strong> {{ atletas.count }}</p>
+{% endblock %}
+

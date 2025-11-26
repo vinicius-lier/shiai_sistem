@@ -1,0 +1,588 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Ranking de Academias - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ranking-header {
+        margin-bottom: var(--spacing-8);
+    }
+    
+    .ranking-title-wrapper {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-4);
+        margin-bottom: var(--spacing-2);
+    }
+    
+    .ranking-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: var(--border-radius-lg);
+        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .ranking-title {
+        font-size: var(--font-size-4xl);
+        font-weight: 700;
+        color: var(--color-gray-900);
+        margin: 0;
+        letter-spacing: -0.02em;
+    }
+    
+    .ranking-subtitle {
+        font-size: var(--font-size-base);
+        color: var(--color-gray-600);
+        margin: 0 0 0 calc(56px + var(--spacing-4));
+    }
+    
+    .ranking-competition {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        padding: var(--spacing-2) var(--spacing-4);
+        background: var(--color-primary-light);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        color: var(--color-primary);
+        font-weight: 500;
+        margin-left: calc(56px + var(--spacing-4));
+        margin-top: var(--spacing-3);
+    }
+    
+    /* Pódio Top 3 */
+    .podium-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: var(--spacing-6);
+        margin-bottom: var(--spacing-8);
+    }
+    
+    .podium-card {
+        position: relative;
+        border-radius: var(--border-radius-xl);
+        padding: var(--spacing-6);
+        box-shadow: var(--shadow-xl);
+        transition: transform var(--transition-base), box-shadow var(--transition-base);
+        overflow: hidden;
+    }
+    
+    .podium-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    
+    .podium-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, transparent, currentColor, transparent);
+        opacity: 0.3;
+    }
+    
+    .podium-card.first {
+        background: linear-gradient(135deg, #FFD700 0%, #FFED4E 100%);
+        color: #744210;
+        order: 2;
+    }
+    
+    .podium-card.second {
+        background: linear-gradient(135deg, #C0C0C0 0%, #E8E8E8 100%);
+        color: #4A4A4A;
+        order: 1;
+    }
+    
+    .podium-card.third {
+        background: linear-gradient(135deg, #CD7F32 0%, #E6A55D 100%);
+        color: #5A3414;
+        order: 3;
+    }
+    
+    .podium-medal {
+        font-size: 64px;
+        line-height: 1;
+        margin-bottom: var(--spacing-3);
+        text-align: center;
+    }
+    
+    .podium-position {
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: var(--spacing-2);
+        opacity: 0.8;
+    }
+    
+    .podium-name {
+        font-size: var(--font-size-2xl);
+        font-weight: 700;
+        margin-bottom: var(--spacing-2);
+        line-height: 1.2;
+    }
+    
+    .podium-location {
+        font-size: var(--font-size-sm);
+        opacity: 0.8;
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .podium-points {
+        font-size: var(--font-size-4xl);
+        font-weight: 700;
+        text-align: center;
+        padding: var(--spacing-4);
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: var(--border-radius-lg);
+        backdrop-filter: blur(10px);
+    }
+    
+    .podium-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-top: var(--spacing-4);
+        padding-top: var(--spacing-4);
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        font-size: var(--font-size-xs);
+    }
+    
+    .podium-stat {
+        text-align: center;
+    }
+    
+    .podium-stat-value {
+        font-weight: 700;
+        font-size: var(--font-size-lg);
+        display: block;
+    }
+    
+    /* Tabela Moderna */
+    .ranking-table-wrapper {
+        background: white;
+        border-radius: var(--border-radius-xl);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        margin-bottom: var(--spacing-8);
+    }
+    
+    .ranking-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .ranking-table thead {
+        background: var(--color-gray-50);
+        border-bottom: 2px solid var(--color-gray-200);
+    }
+    
+    .ranking-table th {
+        padding: var(--spacing-4) var(--spacing-4);
+        text-align: left;
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-gray-600);
+    }
+    
+    .ranking-table th:first-child {
+        padding-left: var(--spacing-6);
+    }
+    
+    .ranking-table th:last-child {
+        padding-right: var(--spacing-6);
+        text-align: right;
+    }
+    
+    .ranking-table tbody tr {
+        border-bottom: 1px solid var(--color-gray-100);
+        transition: background-color var(--transition-fast);
+    }
+    
+    .ranking-table tbody tr:hover {
+        background: var(--color-gray-50);
+    }
+    
+    .ranking-table tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    .ranking-table td {
+        padding: var(--spacing-4);
+        font-size: var(--font-size-sm);
+        color: var(--color-gray-900);
+    }
+    
+    .ranking-table td:first-child {
+        padding-left: var(--spacing-6);
+    }
+    
+    .ranking-table td:last-child {
+        padding-right: var(--spacing-6);
+        text-align: right;
+    }
+    
+    .position-cell {
+        font-weight: 600;
+        font-size: var(--font-size-base);
+        color: var(--color-gray-700);
+        width: 60px;
+    }
+    
+    .medal-icon {
+        font-size: var(--font-size-lg);
+        margin-right: var(--spacing-1);
+    }
+    
+    .medal-count {
+        font-weight: 600;
+        color: var(--color-gray-900);
+    }
+    
+    .points-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        padding: var(--spacing-2) var(--spacing-3);
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        color: white;
+        border-radius: var(--border-radius-md);
+        font-weight: 700;
+        font-size: var(--font-size-lg);
+    }
+    
+    /* Card de Pontuação */
+    .scoring-card {
+        background: white;
+        border-radius: var(--border-radius-xl);
+        padding: var(--spacing-6);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .scoring-title {
+        font-size: var(--font-size-xl);
+        font-weight: 600;
+        color: var(--color-gray-900);
+        margin-bottom: var(--spacing-6);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-3);
+    }
+    
+    .scoring-grid {
+        display: grid;
+        gap: var(--spacing-4);
+    }
+    
+    .scoring-item {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-3);
+        padding: var(--spacing-3);
+        border-radius: var(--border-radius-md);
+        background: var(--color-gray-50);
+        transition: background-color var(--transition-fast);
+    }
+    
+    .scoring-item:hover {
+        background: var(--color-gray-100);
+    }
+    
+    .scoring-icon {
+        font-size: var(--font-size-2xl);
+        width: 48px;
+        text-align: center;
+    }
+    
+    .scoring-content {
+        flex: 1;
+    }
+    
+    .scoring-label {
+        font-weight: 500;
+        color: var(--color-gray-900);
+        margin-bottom: var(--spacing-1);
+    }
+    
+    .scoring-desc {
+        font-size: var(--font-size-xs);
+        color: var(--color-gray-600);
+    }
+    
+    .scoring-value {
+        font-weight: 700;
+        font-size: var(--font-size-lg);
+        color: var(--color-primary);
+    }
+    
+    .scoring-item.negative .scoring-value {
+        color: var(--color-danger);
+    }
+    
+    /* Responsividade */
+    @media (max-width: 1024px) {
+        .podium-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .podium-card.first {
+            order: 1;
+        }
+        
+        .podium-card.second {
+            order: 2;
+        }
+        
+        .podium-card.third {
+            order: 3;
+        }
+        
+        .ranking-table-wrapper {
+            overflow-x: auto;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .ranking-title {
+            font-size: var(--font-size-3xl);
+        }
+        
+        .ranking-subtitle,
+        .ranking-competition {
+            margin-left: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho -->
+<div class="ranking-header">
+    <div class="ranking-title-wrapper">
+        <div class="ranking-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;">
+                <circle cx="12" cy="8" r="7"></circle>
+                <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+            </svg>
+        </div>
+        <div style="flex: 1;">
+            <h1 class="ranking-title">Ranking de Academias</h1>
+            <p class="ranking-subtitle">Classificação geral baseada em medalhas, festival e penalizações</p>
+            {% if campeonato %}
+            <div class="ranking-competition">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+                {{ campeonato.nome }}
+            </div>
+            {% endif %}
+        </div>
+        <a href="{% url 'calcular_pontuacao' %}" class="btn btn-secondary" onclick="return confirm('Deseja recalcular a pontuação de todas as academias?');">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            Recalcular Pontuação
+        </a>
+    </div>
+</div>
+
+<!-- Pódio Top 3 -->
+{% if top3 %}
+<div class="podium-container">
+    {% for item in top3 %}
+    <div class="podium-card {% if forloop.counter == 1 %}first{% elif forloop.counter == 2 %}second{% else %}third{% endif %}">
+        <div class="podium-medal">
+            {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
+        </div>
+        <div class="podium-position">{{ forloop.counter }}º Lugar</div>
+        <div class="podium-name">{{ item.academia.nome }}</div>
+        {% if item.academia.cidade %}
+        <div class="podium-location">📍 {{ item.academia.cidade }}{% if item.academia.estado %}, {{ item.academia.estado }}{% endif %}</div>
+        {% endif %}
+        <div class="podium-points">{{ item.pontos_totais }}<span style="font-size: var(--font-size-sm); opacity: 0.8;"> pts</span></div>
+        <div class="podium-stats">
+            <div class="podium-stat">
+                <span class="podium-stat-value">🥇 {{ item.ouro }}</span>
+                <span>Ouro</span>
+            </div>
+            <div class="podium-stat">
+                <span class="podium-stat-value">🥈 {{ item.prata }}</span>
+                <span>Prata</span>
+            </div>
+            <div class="podium-stat">
+                <span class="podium-stat-value">🥉 {{ item.bronze }}</span>
+                <span>Bronze</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Layout em duas colunas: Tabela e Card de Pontuação -->
+<div style="display: grid; grid-template-columns: 1fr 380px; gap: var(--spacing-8); margin-bottom: var(--spacing-8);">
+    <!-- Tabela Completa do Ranking -->
+    <div class="ranking-table-wrapper">
+        <table class="ranking-table">
+        <thead>
+            <tr>
+                    <th style="width: 80px;">Posição</th>
+                    <th>Nome da Academia</th>
+                <th>Cidade</th>
+                <th>Estado</th>
+                    <th style="text-align: center;">🥇</th>
+                    <th style="text-align: center;">🥈</th>
+                    <th style="text-align: center;">🥉</th>
+                    <th style="text-align: center;">🏅</th>
+                    <th style="text-align: center;">⚠️</th>
+                    <th style="text-align: right;">Pontos</th>
+            </tr>
+        </thead>
+        <tbody>
+                {% if academias_ranking %}
+                    {% for item in academias_ranking %}
+            <tr>
+                        <td class="position-cell">
+                            {% if forloop.counter == 1 %}
+                                <span style="font-size: var(--font-size-xl);">🥇</span>
+                            {% elif forloop.counter == 2 %}
+                                <span style="font-size: var(--font-size-xl);">🥈</span>
+                            {% elif forloop.counter == 3 %}
+                                <span style="font-size: var(--font-size-xl);">🥉</span>
+                            {% else %}
+                                <span style="color: var(--color-gray-400);">#{{ forloop.counter }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; color: var(--color-gray-900); margin-bottom: var(--spacing-1);">
+                                {{ item.academia.nome }}
+                            </div>
+                            {% if item.academia.telefone %}
+                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">
+                                📞 {{ item.academia.telefone }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td style="color: var(--color-gray-600);">{{ item.academia.cidade|default:"-" }}</td>
+                        <td style="color: var(--color-gray-600);">{{ item.academia.estado|default:"-" }}</td>
+                        <td style="text-align: center;">
+                            {% if item.ouro > 0 %}
+                                <span class="medal-count">{{ item.ouro }}</span>
+                            {% else %}
+                                <span style="color: var(--color-gray-300);">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if item.prata > 0 %}
+                                <span class="medal-count">{{ item.prata }}</span>
+                            {% else %}
+                                <span style="color: var(--color-gray-300);">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if item.bronze > 0 %}
+                                <span class="medal-count">{{ item.bronze }}</span>
+                            {% else %}
+                                <span style="color: var(--color-gray-300);">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if item.festival > 0 %}
+                                <span class="medal-count">{{ item.festival }}</span>
+                            {% else %}
+                                <span style="color: var(--color-gray-300);">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if item.remanejamento > 0 %}
+                                <span style="color: var(--color-danger); font-weight: 600;">-{{ item.remanejamento }}</span>
+                            {% else %}
+                                <span style="color: var(--color-gray-300);">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="points-badge">
+                                {{ item.pontos_totais }}
+                            </div>
+                        </td>
+            </tr>
+            {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="10" style="text-align: center; padding: var(--spacing-12); color: var(--color-gray-500);">
+                            <div style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-2);">📊</div>
+                            <div>Nenhuma academia com pontuação ainda</div>
+                            <div style="font-size: var(--font-size-sm); margin-top: var(--spacing-2);">Calcule a pontuação para ver o ranking</div>
+                        </td>
+                    </tr>
+                {% endif %}
+        </tbody>
+    </table>
+</div>
+
+    <!-- Card de Tabela de Pontuação -->
+    <div class="scoring-card">
+        <h3 class="scoring-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            Tabela de Pontuação
+        </h3>
+        <div class="scoring-grid">
+            <div class="scoring-item">
+                <div class="scoring-icon">🥇</div>
+                <div class="scoring-content">
+                    <div class="scoring-label">Ouro (1º lugar)</div>
+                    <div class="scoring-desc">Medalha de ouro em qualquer categoria</div>
+                </div>
+                <div class="scoring-value">10 pts</div>
+            </div>
+            <div class="scoring-item">
+                <div class="scoring-icon">🥈</div>
+                <div class="scoring-content">
+                    <div class="scoring-label">Prata (2º lugar)</div>
+                    <div class="scoring-desc">Medalha de prata em qualquer categoria</div>
+                </div>
+                <div class="scoring-value">7 pts</div>
+            </div>
+            <div class="scoring-item">
+                <div class="scoring-icon">🥉</div>
+                <div class="scoring-content">
+                    <div class="scoring-label">Bronze (3º lugar)</div>
+                    <div class="scoring-desc">Medalha de bronze em qualquer categoria</div>
+                </div>
+                <div class="scoring-value">5 pts</div>
+            </div>
+            <div class="scoring-item">
+                <div class="scoring-icon">🏅</div>
+                <div class="scoring-content">
+                    <div class="scoring-label">Festival</div>
+                    <div class="scoring-desc">Atleta participante do festival (3-6 anos)</div>
+                </div>
+                <div class="scoring-value">1 pt</div>
+            </div>
+            <div class="scoring-item negative">
+                <div class="scoring-icon">⚠️</div>
+                <div class="scoring-content">
+                    <div class="scoring-label">Remanejamento</div>
+                    <div class="scoring-desc">Penalização por remanejamento de categoria</div>
+                </div>
+                <div class="scoring-value">-1 pt</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media (max-width: 1200px) {
+    div[style*="grid-template-columns: 1fr 380px"] {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .scoring-card {
+        margin-top: var(--spacing-6);
+    }
+}
+</style>
+{% endblock %}

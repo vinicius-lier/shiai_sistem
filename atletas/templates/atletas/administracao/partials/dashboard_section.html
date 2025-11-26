@@ -1,0 +1,22 @@
+<section class="dashboard-section" style="margin-bottom: var(--spacing-10);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6);">
+        <div>
+            <h2 style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-gray-900); margin: 0 0 var(--spacing-1) 0; line-height: 1.2;">{{ section_title }}</h2>
+            {% if section_subtitle %}
+            <p style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin: 0; line-height: 1.5;">{{ section_subtitle }}</p>
+            {% endif %}
+        </div>
+        {% if section_action_url %}
+        <a href="{{ section_action_url }}" class="btn btn-secondary" style="width: auto;">
+            {{ section_action_text|default:'Ver Detalhes' }}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        </a>
+        {% endif %}
+    </div>
+    <div class="dashboard-section-content">
+        {{ section_content|safe }}
+    </div>
+</section>
+

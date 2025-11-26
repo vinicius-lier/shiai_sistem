@@ -1,0 +1,147 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Cadastrar Atleta Festival - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🏅 Cadastrar Atleta Festival</h1>
+    <p class="page-description">Cadastro de atletas para o Festival de Judô (3 a 6 anos)</p>
+</div>
+
+<!-- Aviso importante -->
+<div class="card" style="background: linear-gradient(135deg, #FFF3CD 0%, #FFE69C 100%); border-left: 4px solid #FFA500; margin-bottom: var(--spacing-6);">
+    <div class="card-body">
+        <div style="display: flex; align-items: flex-start; gap: var(--spacing-3);">
+            <div style="font-size: var(--font-size-2xl); flex-shrink: 0;">⚠️</div>
+            <div>
+                <strong style="display: block; margin-bottom: var(--spacing-2); color: var(--color-gray-900); font-size: var(--font-size-lg);">Importante</strong>
+                <p style="margin: 0; color: var(--color-gray-700); line-height: 1.6;">
+                    Atletas do Festival (3 a 6 anos) não competem, mas cada inscrito conta <strong>1 ponto</strong> para a academia na pontuação geral.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Informações do Atleta</h3>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
+                <div class="form-group">
+                    <label class="form-label" for="nome">
+                        Nome completo do Atleta
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="text" id="nome" name="nome" class="form-input" required placeholder="Digite o nome completo do atleta">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="ano_nasc">
+                        Ano de Nascimento
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="number" id="ano_nasc" name="ano_nasc" class="form-input" min="2018" max="2021" required placeholder="Ex: 2019">
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">
+                        Idade entre 3 e 6 anos (anos 2018 a 2021)
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="sexo">
+                        Sexo
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <select id="sexo" name="sexo" class="form-select" required>
+                        <option value="">Selecione</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Feminino</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="faixa">
+                        Faixa
+                    </label>
+                    <select id="faixa" name="faixa" class="form-select">
+                        <option value="">Selecione a faixa</option>
+                        <option value="BRANCA">Branca</option>
+                        <option value="P.CINZA">P. Cinza</option>
+                        <option value="CINZA">Cinza</option>
+                        <option value="P.AZUL">P. Azul</option>
+                        <option value="AZUL">Azul</option>
+                        <option value="P.AMARELA">P. Amarela</option>
+                        <option value="AMARELA">Amarela</option>
+                        <option value="P.LARANJA">P. Laranja</option>
+                        <option value="LARANJA">Laranja</option>
+                        <option value="VERDE">Verde</option>
+                        <option value="ROXA">Roxa</option>
+                        <option value="MARRON">Marrom</option>
+                        <option value="PRETA">Preta</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label class="form-label" for="academia">
+                        Academia
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <select id="academia" name="academia" class="form-select" required>
+                        <option value="">Selecione uma academia</option>
+                        {% for academia in academias %}
+                        <option value="{{ academia.id }}">{{ academia.nome }}</option>
+                        {% endfor %}
+                    </select>
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">
+                        Ou <a href="{% url 'cadastrar_academia' %}" style="color: var(--color-primary); text-decoration: underline;">cadastre uma nova academia</a>
+                    </small>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end; margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200); flex-wrap: wrap;">
+                <a href="{% url 'index' %}" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+                    Voltar para Início
+                </a>
+                <a href="{% url 'lista_atletas' %}?classe=Festival" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    Ver Atletas Festival Cadastrados
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    🏅 Cadastrar Atleta Festival
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    @media (max-width: 768px) {
+        .page-header {
+            padding: var(--spacing-4);
+        }
+        
+        .card {
+            margin: var(--spacing-4);
+        }
+        
+        .card-body {
+            padding: var(--spacing-4);
+        }
+        
+        .form-group {
+            grid-column: 1 / -1 !important;
+        }
+        
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}

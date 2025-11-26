@@ -1,0 +1,160 @@
+{% extends 'atletas/academia/base_academia.html' %}
+
+{% block title %}Chaves - {{ campeonato.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        color: var(--color-primary);
+        text-decoration: none;
+        font-size: var(--font-size-sm);
+        margin-bottom: var(--spacing-4);
+        font-weight: 500;
+    }
+
+    .btn-back:hover {
+        color: var(--color-primary-hover);
+    }
+
+    .chave-card {
+        background: var(--color-white);
+        border: 1px solid var(--color-gray-200);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-sm);
+        padding: var(--spacing-4);
+        margin-bottom: var(--spacing-4);
+        border-left: 4px solid var(--color-primary);
+        transition: all var(--transition-base);
+    }
+
+    @media (min-width: 768px) {
+        .chave-card {
+            padding: var(--spacing-6);
+        }
+    }
+
+    .chave-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+
+    .chave-header {
+        margin-bottom: var(--spacing-4);
+    }
+
+    .chave-title {
+        font-size: var(--font-size-lg);
+        font-weight: 600;
+        color: var(--color-gray-900);
+        margin-bottom: var(--spacing-2);
+    }
+
+    .chave-info {
+        font-size: var(--font-size-sm);
+        color: var(--color-gray-600);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-2);
+    }
+
+    .chave-actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-2);
+    }
+
+    @media (min-width: 480px) {
+        .chave-actions {
+            flex-direction: row;
+        }
+    }
+
+    .chaves-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-4);
+    }
+
+    @media (min-width: 768px) {
+        .chaves-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .chaves-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="{% url 'academia_evento' campeonato.id %}" class="btn-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Voltar para evento
+    </a>
+    
+    <h1 class="page-title">Chaves do Evento</h1>
+    <p class="page-description">{{ campeonato.nome }}</p>
+</div>
+
+{% if chaves %}
+<div class="chaves-grid">
+    {% for chave in chaves %}
+    <div class="chave-card">
+        <div class="chave-header">
+            <div class="chave-title">{{ chave.classe }} - {{ chave.get_sexo_display }} - {{ chave.categoria }}</div>
+            <div class="chave-info">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; color: var(--color-gray-400);">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span>Total de atletas: {{ chave.atletas.count }}</span>
+            </div>
+        </div>
+        <div class="chave-actions">
+            <a href="{% url 'academia_detalhe_chave' campeonato.id chave.id %}" class="btn btn-primary" style="text-decoration: none; flex: 1;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                Ver Chave
+            </a>
+            <a href="{% url 'imprimir_chave' chave.id %}" target="_blank" rel="noopener" class="btn btn-secondary" style="text-decoration: none; flex: 1;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                PDF
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 64px; height: 64px; color: var(--color-gray-400); margin: 0 auto var(--spacing-4);">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+            <p class="text-gray-500" style="font-size: var(--font-size-lg);">
+                Nenhuma chave gerada ainda para este evento.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

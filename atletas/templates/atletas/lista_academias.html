@@ -1,0 +1,344 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Academias - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
+    <div>
+        <h1 class="page-title">Academias</h1>
+        <p class="page-description">Gerencie todas as academias participantes</p>
+    </div>
+    <a href="{% url 'cadastrar_academia' %}" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Nova Academia
+    </a>
+</div>
+
+{% if academias %}
+<div class="table-container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Cidade</th>
+                <th>Estado</th>
+                <th>Telefone</th>
+                <th style="text-align: right;">Pontos</th>
+                <th style="text-align: center;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for academia in academias %}
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: var(--spacing-3);">
+                        {% if academia.foto_perfil %}
+                        <img src="{{ academia.foto_perfil.url }}" alt="{{ academia.nome }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-gray-300); flex-shrink: 0;">
+                        {% else %}
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--color-gray-200); display: flex; align-items: center; justify-content: center; font-size: var(--font-size-lg); color: var(--color-gray-400); flex-shrink: 0;">🏫</div>
+                        {% endif %}
+                        <div>
+                            <div style="font-weight: 500; color: var(--color-gray-900);">{{ academia.nome }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                    {{ academia.cidade|default:"-" }}
+                </td>
+                <td style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                    {{ academia.estado|default:"-" }}
+                </td>
+                <td style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                    {% if academia.telefone %}
+                        <a href="tel:{{ academia.telefone }}" style="color: var(--color-primary); text-decoration: none;">{{ academia.telefone }}</a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td style="text-align: right;">
+                    <span style="font-weight: 600; color: var(--color-primary); font-size: var(--font-size-lg);">{{ academia.pontos }}</span>
+                    <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);"> pts</span>
+                </td>
+                <td style="text-align: center;">
+                    <div style="display: flex; gap: var(--spacing-2); justify-content: center; align-items: center;">
+                        <a href="{% url 'detalhe_academia' academia.id %}" class="btn btn-primary" style="padding: var(--spacing-2) var(--spacing-3); font-size: var(--font-size-xs);" title="Ver detalhes">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </a>
+                        <a href="{% url 'editar_academia' academia.id %}" class="btn btn-secondary" style="padding: var(--spacing-2) var(--spacing-3); font-size: var(--font-size-xs);" title="Editar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </a>
+                        {% if academia.telefone %}
+                            <a href="#" onclick="abrirModalWhatsApp('{{ academia.telefone }}', '{{ academia.nome }}', '{{ academia.id }}'); return false;" class="btn btn-whatsapp" style="padding: var(--spacing-2) var(--spacing-3); font-size: var(--font-size-xs);" title="Enviar WhatsApp">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                                </svg>
+                            </a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <div class="empty-state-title">Nenhuma academia cadastrada</div>
+        <div class="empty-state-description">Comece cadastrando sua primeira academia</div>
+        <a href="{% url 'cadastrar_academia' %}" class="btn btn-primary">Cadastrar Academia</a>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.btn-whatsapp {
+    background: #25D366 !important;
+    color: white !important;
+    border: none !important;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    transition: all var(--transition-base);
+}
+
+.btn-whatsapp:hover {
+    background: #20BA5A !important;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+</style>
+
+<!-- Modal WhatsApp -->
+<div class="modal-overlay" id="modal-whatsapp">
+    <div class="modal" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <svg viewBox="0 0 24 24" fill="#25D366" style="width: 24px; height: 24px; vertical-align: middle; margin-right: var(--spacing-2);">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
+                Enviar Mensagem WhatsApp
+            </h3>
+            <button class="modal-close" onclick="fecharModalWhatsApp()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group mb-4">
+                <label class="form-label">Destinatário</label>
+                <div style="padding: var(--spacing-3); background: var(--color-gray-50); border-radius: var(--border-radius-md);">
+                    <strong id="whatsapp-destinatario"></strong>
+                </div>
+            </div>
+            
+            <div class="form-group mb-4">
+                <label class="form-label">Tema da Mensagem</label>
+                <div style="display: grid; gap: var(--spacing-2);">
+                    <label style="display: flex; align-items: center; gap: var(--spacing-2); padding: var(--spacing-3); border: 2px solid var(--color-gray-200); border-radius: var(--border-radius-md); cursor: pointer; transition: all var(--transition-base);">
+                        <input type="radio" name="tema-mensagem" value="convite" checked onchange="atualizarMensagem()" style="width: 18px; height: 18px; cursor: pointer;">
+                        <div>
+                            <div style="font-weight: 500; color: var(--color-gray-900);">📢 Convite para a Copa</div>
+                            <small style="color: var(--color-gray-500);">Mensagem de convite para participar do campeonato</small>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: var(--spacing-2); padding: var(--spacing-3); border: 2px solid var(--color-gray-200); border-radius: var(--border-radius-md); cursor: pointer; transition: all var(--transition-base);">
+                        <input type="radio" name="tema-mensagem" value="desclassificacao" onchange="atualizarMensagem()" style="width: 18px; height: 18px; cursor: pointer;">
+                        <div>
+                            <div style="font-weight: 500; color: var(--color-gray-900);">⚠️ Atleta Fora do Peso - Desclassificação</div>
+                            <small style="color: var(--color-gray-500);">Informar sobre desclassificação por peso</small>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: var(--spacing-2); padding: var(--spacing-3); border: 2px solid var(--color-gray-200); border-radius: var(--border-radius-md); cursor: pointer; transition: all var(--transition-base);">
+                        <input type="radio" name="tema-mensagem" value="remanejamento" onchange="atualizarMensagem()" style="width: 18px; height: 18px; cursor: pointer;">
+                        <div>
+                            <div style="font-weight: 500; color: var(--color-gray-900);">🔄 Atleta Fora do Peso - Remanejamento</div>
+                            <small style="color: var(--color-gray-500);">Informar sobre remanejamento e perda de 1 ponto</small>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-group mb-4">
+                <label class="form-label" for="whatsapp-mensagem">Mensagem</label>
+                <textarea id="whatsapp-mensagem" class="form-textarea" rows="8" oninput="contarCaracteres()"></textarea>
+                <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">
+                    Você pode editar a mensagem antes de enviar. 
+                    <span id="contador-caracteres">0</span> caracteres
+                </small>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="fecharModalWhatsApp()">Cancelar</button>
+            <button class="btn btn-whatsapp" onclick="abrirWhatsApp()" style="display: inline-flex; align-items: center; gap: var(--spacing-2);">
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
+                Abrir WhatsApp
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let whatsappData = {
+    telefone: '',
+    nome: '',
+    academiaId: null,
+    tipo: 'academia' // 'academia' ou 'atleta'
+};
+
+function abrirModalWhatsApp(telefone, nome, academiaId = null, tipo = 'academia', dadosAtleta = null) {
+    whatsappData.telefone = telefone;
+    whatsappData.nome = nome;
+    whatsappData.academiaId = academiaId;
+    whatsappData.tipo = tipo;
+    whatsappData.dadosAtleta = dadosAtleta;
+    
+    document.getElementById('whatsapp-destinatario').textContent = `${nome} (${telefone})`;
+    
+    // Resetar para tema padrão (convite)
+    document.querySelector('input[name="tema-mensagem"][value="convite"]').checked = true;
+    
+    // Atualizar mensagem
+    atualizarMensagem();
+    
+    // Mostrar modal
+    document.getElementById('modal-whatsapp').classList.add('active');
+}
+
+function fecharModalWhatsApp() {
+    document.getElementById('modal-whatsapp').classList.remove('active');
+}
+
+function contarCaracteres() {
+    const textarea = document.getElementById('whatsapp-mensagem');
+    const contador = document.getElementById('contador-caracteres');
+    contador.textContent = textarea.value.length;
+}
+
+function atualizarMensagem() {
+    const tema = document.querySelector('input[name="tema-mensagem"]:checked').value;
+    const textarea = document.getElementById('whatsapp-mensagem');
+    const campeonatoNome = '{% if campeonato_ativo %}{{ campeonato_ativo.nome }}{% else %}Campeonato{% endif %}';
+    const campeonatoDataInicio = '{% if campeonato_ativo and campeonato_ativo.data_inicio %}{{ campeonato_ativo.data_inicio|date:"d/m/Y" }}{% endif %}';
+    const valorFederado = '{% if campeonato_ativo and campeonato_ativo.valor_inscricao_federado %}R$ {{ campeonato_ativo.valor_inscricao_federado|floatformat:2 }}{% else %}-{% endif %}';
+    const valorNaoFederado = '{% if campeonato_ativo and campeonato_ativo.valor_inscricao_nao_federado %}R$ {{ campeonato_ativo.valor_inscricao_nao_federado|floatformat:2 }}{% else %}-{% endif %}';
+    
+    let mensagem = '';
+    
+    if (tema === 'convite') {
+        mensagem = `🥋 *Convite para ${campeonatoNome}*\n\n`;
+        mensagem += `Olá! ${whatsappData.nome}\n\n`;
+        mensagem += `Gostaríamos de convidar sua academia para participar do *${campeonatoNome}*.\n\n`;
+        
+        if (campeonatoDataInicio) {
+            mensagem += `📅 *Data:* ${campeonatoDataInicio}\n`;
+        }
+        mensagem += `\n💰 *Valores de Inscrição:*\n`;
+        mensagem += `• Federado: ${valorFederado}\n`;
+        mensagem += `• Não Federado: ${valorNaoFederado}\n\n`;
+        mensagem += `Contamos com a participação de vocês!\n\n`;
+        mensagem += `Para mais informações, entre em contato.`;
+    } else if (tema === 'desclassificacao') {
+        if (whatsappData.tipo === 'atleta' && whatsappData.dadosAtleta) {
+            const atleta = whatsappData.dadosAtleta;
+            mensagem = `⚠️ *Atleta Fora do Peso - Desclassificação*\n\n`;
+            mensagem += `Olá! Professor da ${whatsappData.nome}\n\n`;
+            mensagem += `Informamos que o atleta *${atleta.nome}* foi *DESCLASSIFICADO* por estar fora do peso da categoria.\n\n`;
+            mensagem += `📋 *Detalhes:*\n`;
+            mensagem += `• Atleta: ${atleta.nome}\n`;
+            mensagem += `• Categoria: ${atleta.categoria}\n`;
+            mensagem += `• Limite da categoria: ${atleta.limite}\n`;
+            mensagem += `• Peso registrado: ${atleta.peso} kg\n\n`;
+            mensagem += `O atleta está fora dos limites permitidos e não poderá competir nesta categoria.\n\n`;
+            mensagem += `Em caso de dúvidas, entre em contato conosco.`;
+        } else {
+            mensagem = `⚠️ *Atleta Fora do Peso - Desclassificação*\n\n`;
+            mensagem += `Olá! ${whatsappData.nome}\n\n`;
+            mensagem += `Informamos que um atleta de sua academia foi *DESCLASSIFICADO* por estar fora do peso da categoria.\n\n`;
+            mensagem += `O atleta não poderá competir nesta categoria.\n\n`;
+            mensagem += `Para mais detalhes, acesse o sistema ou entre em contato.`;
+        }
+    } else if (tema === 'remanejamento') {
+        if (whatsappData.tipo === 'atleta' && whatsappData.dadosAtleta) {
+            const atleta = whatsappData.dadosAtleta;
+            mensagem = `🔄 *Atleta Fora do Peso - Remanejamento*\n\n`;
+            mensagem += `Olá! Professor da ${whatsappData.nome}\n\n`;
+            mensagem += `Informamos que o atleta *${atleta.nome}* foi *REMANEJADO* para outra categoria.\n\n`;
+            mensagem += `📋 *Detalhes:*\n`;
+            mensagem += `• Atleta: ${atleta.nome}\n`;
+            mensagem += `• Categoria original: ${atleta.categoria_original}\n`;
+            mensagem += `• Nova categoria: ${atleta.categoria_nova}\n`;
+            mensagem += `• Peso registrado: ${atleta.peso} kg\n\n`;
+            mensagem += `⚠️ *ATENÇÃO:*\n`;
+            mensagem += `Como o atleta foi remanejado, a academia *perderá 1 ponto* no quadro geral de medalhas.\n\n`;
+            mensagem += `O atleta poderá competir na nova categoria, mas este ajuste impacta a pontuação da academia.\n\n`;
+            mensagem += `Em caso de dúvidas, entre em contato conosco.`;
+        } else {
+            mensagem = `🔄 *Atleta Fora do Peso - Remanejamento*\n\n`;
+            mensagem += `Olá! ${whatsappData.nome}\n\n`;
+            mensagem += `Informamos que um atleta de sua academia foi *REMANEJADO* para outra categoria.\n\n`;
+            mensagem += `⚠️ *ATENÇÃO:*\n`;
+            mensagem += `Como houve remanejamento, a academia *perderá 1 ponto* no quadro geral de medalhas.\n\n`;
+            mensagem += `O atleta poderá competir na nova categoria, mas este ajuste impacta a pontuação da academia.\n\n`;
+            mensagem += `Para mais detalhes, acesse o sistema ou entre em contato.`;
+        }
+    }
+    
+    textarea.value = mensagem;
+    contarCaracteres();
+}
+
+function abrirWhatsApp() {
+    const mensagem = document.getElementById('whatsapp-mensagem').value;
+    
+    if (!mensagem.trim()) {
+        alert('Por favor, preencha a mensagem antes de enviar.');
+        return;
+    }
+    
+    // Formatar número de telefone
+    let numero = whatsappData.telefone.replace(/\D/g, '');
+    
+    if (numero.length === 11 && numero[0] !== '5') {
+        numero = '55' + numero;
+    } else if (numero.length === 10) {
+        numero = '55' + numero;
+    }
+    numero = numero.replace(/^550/, '55');
+    
+    // Codificar mensagem
+    const mensagemEncoded = encodeURIComponent(mensagem);
+    
+    // Abrir WhatsApp
+    const urlWhatsApp = `https://wa.me/${numero}?text=${mensagemEncoded}`;
+    window.open(urlWhatsApp, '_blank');
+    
+    // Fechar modal após abrir WhatsApp
+    setTimeout(() => {
+        fecharModalWhatsApp();
+    }, 500);
+}
+
+// Fechar modal ao clicar no overlay
+document.getElementById('modal-whatsapp')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        fecharModalWhatsApp();
+    }
+});
+
+// Fechar modal com ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        fecharModalWhatsApp();
+    }
+});
+</script>
+{% endblock %}

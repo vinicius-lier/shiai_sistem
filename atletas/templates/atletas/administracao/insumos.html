@@ -1,0 +1,16 @@
+{% extends 'atletas/administracao/base_admin.html' %}
+
+{% block admin_page_title %}Insumos e Estrutura{% endblock %}
+{% block admin_page_description %}Controle de ambulâncias, materiais e itens logísticos do evento{% endblock %}
+
+{% block admin_content %}
+<section class="section-spacing">
+    <p class="text-gray-600 mb-6 text-base" style="line-height: 1.6;">Acompanhe os recursos disponíveis e acesse os cadastros completos.</p>
+    <div class="grid grid-auto-fit-lg gap-6">
+        {% for card in cards %}
+            {% include 'atletas/administracao/partials/operacional_card.html' with titulo=card.titulo count=card.quantidade url=card.tipo icon=card.icone %}
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
+

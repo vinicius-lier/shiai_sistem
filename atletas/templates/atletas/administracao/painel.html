@@ -1,0 +1,678 @@
+{% extends 'atletas/administracao/base_admin.html' %}
+{% load static %}
+
+{% block admin_page_title %}Dashboard Geral do Campeonato{% endblock %}
+{% block admin_page_description %}Indicadores operacionais, financeiros e estatísticos em tempo real{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Dashboard Styles */
+    .dashboard-header {
+        background: var(--color-white);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-8);
+        margin-bottom: var(--spacing-8);
+        border: 1px solid var(--color-gray-200);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .dashboard-header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: var(--spacing-6);
+    }
+    
+    .dashboard-header-text h1 {
+        font-size: var(--font-size-4xl);
+        font-weight: 700;
+        color: var(--color-gray-900);
+        margin: 0 0 var(--spacing-2) 0;
+        line-height: 1.2;
+    }
+    
+    .dashboard-header-text p {
+        font-size: var(--font-size-base);
+        color: var(--color-gray-600);
+        margin: 0;
+        line-height: 1.5;
+    }
+    
+    .dashboard-toolbar {
+        display: flex;
+        gap: var(--spacing-2);
+        flex-wrap: wrap;
+    }
+    
+    .toolbar-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: var(--border-radius-md);
+        border: 1px solid var(--color-gray-300);
+        background: var(--color-white);
+        color: var(--color-gray-700);
+        cursor: pointer;
+        transition: all var(--transition-base);
+        position: relative;
+    }
+    
+    .toolbar-btn:hover {
+        background: var(--color-gray-50);
+        border-color: var(--color-gray-400);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .toolbar-btn[title]:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-bottom: var(--spacing-1);
+        padding: var(--spacing-1) var(--spacing-2);
+        background: var(--color-gray-900);
+        color: var(--color-white);
+        font-size: var(--font-size-xs);
+        border-radius: var(--border-radius-sm);
+        white-space: nowrap;
+        z-index: 1000;
+    }
+    
+    /* KPI Cards */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: var(--spacing-6);
+        margin-bottom: var(--spacing-10);
+    }
+    
+    .kpi-card {
+        background: var(--color-white);
+        border-radius: var(--border-radius-lg);
+        border: 1px solid var(--color-gray-200);
+        box-shadow: var(--shadow-sm);
+        transition: all var(--transition-base);
+        position: relative;
+        overflow: hidden;
+        height: 120px;
+    }
+    
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--color-gray-300);
+    }
+    
+    .kpi-card-content {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-4);
+        padding: var(--spacing-6);
+        height: 100%;
+    }
+    
+    .kpi-card-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: var(--border-radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .kpi-card-text {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .kpi-card-label {
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        color: var(--color-gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: var(--spacing-2);
+    }
+    
+    .kpi-card-value {
+        font-size: var(--font-size-3xl);
+        font-weight: 700;
+        color: var(--color-gray-900);
+        line-height: 1;
+        margin-bottom: var(--spacing-1);
+    }
+    
+    .kpi-card-change {
+        font-size: var(--font-size-xs);
+        color: var(--color-gray-500);
+    }
+    
+    .kpi-card-border {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+    }
+    
+    .trend-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-1);
+        padding: var(--spacing-1) var(--spacing-2);
+        border-radius: var(--border-radius-sm);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+    }
+    
+    .trend-positive {
+        background: var(--color-success-light);
+        color: #065F46;
+    }
+    
+    .trend-negative {
+        background: var(--color-danger-light);
+        color: #991B1B;
+    }
+    
+    .trend-neutral {
+        background: var(--color-gray-100);
+        color: var(--color-gray-600);
+    }
+    
+    /* Chart Cards */
+    .dashboard-chart-card {
+        background: var(--color-white);
+        border-radius: var(--border-radius-lg);
+        border: 1px solid var(--color-gray-200);
+        box-shadow: var(--shadow-sm);
+        height: 100%;
+    }
+    
+    .chart-container {
+        position: relative;
+    }
+    
+    .chart-placeholder {
+        background: var(--color-gray-50);
+        border-radius: var(--border-radius-md);
+    }
+    
+    /* Progress Bars */
+    .progress-bar-container {
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .progress-bar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-2);
+    }
+    
+    .progress-bar-label {
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        color: var(--color-gray-900);
+    }
+    
+    .progress-bar-value {
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        color: var(--color-gray-600);
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 12px;
+        background: var(--color-gray-200);
+        border-radius: var(--border-radius-sm);
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        border-radius: var(--border-radius-sm);
+        transition: width var(--transition-base);
+    }
+    
+    .progress-bar-fill.warning {
+        background: linear-gradient(90deg, var(--color-warning) 0%, #F59E0B 100%);
+    }
+    
+    .progress-bar-fill.success {
+        background: linear-gradient(90deg, var(--color-success) 0%, #10B981 100%);
+    }
+    
+    /* Responsive */
+    @media (max-width: 767px) {
+        .dashboard-header-content {
+            flex-direction: column;
+        }
+        
+        .dashboard-toolbar {
+            width: 100%;
+            justify-content: flex-end;
+        }
+        
+        .kpi-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .dashboard-header-text h1 {
+            font-size: var(--font-size-2xl);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<!-- BLOCO 1: Cabeçalho Executivo -->
+<div class="dashboard-header">
+    <div class="dashboard-header-content">
+        <div class="dashboard-header-text">
+            <h1>Dashboard Geral do Campeonato</h1>
+            <p>Indicadores operacionais, financeiros e estatísticos em tempo real</p>
+        </div>
+        <div class="dashboard-toolbar">
+            <button class="toolbar-btn" title="Atualizar dados" onclick="location.reload();">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </button>
+            <button class="toolbar-btn" title="Exportar PDF" onclick="window.print();">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+            </button>
+            <button class="toolbar-btn" title="Exportar CSV" onclick="alert('Exportar CSV - Em desenvolvimento');">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+            </button>
+            <button class="toolbar-btn" title="Mais ações" onclick="alert('Menu de ações - Em desenvolvimento');">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="19" cy="12" r="1"></circle>
+                    <circle cx="5" cy="12" r="1"></circle>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- BLOCO 2: KPI Cards Principais -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-card-content">
+            <div class="kpi-card-icon" style="background: var(--color-warning-light); color: var(--color-warning);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;">
+                    <path d="M12 6v6l4 2"></path>
+                    <circle cx="12" cy="12" r="10"></circle>
+                </svg>
+            </div>
+            <div class="kpi-card-text">
+                <div class="kpi-card-label">Inscrições Pendentes</div>
+                <div class="kpi-card-value">{{ inscricoes_pendentes }}</div>
+                <div class="kpi-card-change">Aguardando aprovação</div>
+            </div>
+        </div>
+        <div class="kpi-card-border" style="background: var(--color-warning);"></div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-card-content">
+            <div class="kpi-card-icon" style="background: var(--color-success-light); color: var(--color-success);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <div class="kpi-card-text">
+                <div class="kpi-card-label">Inscrições Confirmadas</div>
+                <div class="kpi-card-value">{{ inscricoes_confirmadas }}</div>
+                <div class="kpi-card-change">
+                    <span class="trend-badge trend-positive">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                        Liberadas para o evento
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="kpi-card-border" style="background: var(--color-success);"></div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-card-content">
+            <div class="kpi-card-icon" style="background: var(--color-primary-light); color: var(--color-primary);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H6"></path>
+                </svg>
+            </div>
+            <div class="kpi-card-text">
+                <div class="kpi-card-label">Ganho Previsto</div>
+                <div class="kpi-card-value">R$ {{ ganho_previsto|floatformat:2 }}</div>
+                <div class="kpi-card-change">Confirmadas + pendentes</div>
+            </div>
+        </div>
+        <div class="kpi-card-border" style="background: var(--color-primary);"></div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-card-content">
+            <div class="kpi-card-icon" style="background: var(--color-success-light); color: var(--color-success);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;">
+                    <rect x="2" y="7" width="20" height="14" rx="2"></rect>
+                    <path d="M16 3h-8v4h8V3z"></path>
+                </svg>
+            </div>
+            <div class="kpi-card-text">
+                <div class="kpi-card-label">Dinheiro em Caixa</div>
+                <div class="kpi-card-value" style="color: var(--color-success);">R$ {{ dinheiro_caixa|floatformat:2 }}</div>
+                <div class="kpi-card-change">
+                    <span class="trend-badge trend-positive">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                        Recebimentos confirmados
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="kpi-card-border" style="background: var(--color-success);"></div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-card-content">
+            <div class="kpi-card-icon" style="background: var(--color-warning-light); color: var(--color-warning);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </div>
+            <div class="kpi-card-text">
+                <div class="kpi-card-label">Despesas Pendentes</div>
+                <div class="kpi-card-value" style="color: var(--color-warning);">R$ {{ despesas_pendentes|floatformat:2 }}</div>
+                <div class="kpi-card-change">Aguardando pagamento</div>
+            </div>
+        </div>
+        <div class="kpi-card-border" style="background: var(--color-warning);"></div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-card-content">
+            <div class="kpi-card-icon" style="background: var(--color-success-light); color: var(--color-success);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <div class="kpi-card-text">
+                <div class="kpi-card-label">Despesas Pagas</div>
+                <div class="kpi-card-value" style="color: var(--color-success);">R$ {{ despesas_pagas|floatformat:2 }}</div>
+                <div class="kpi-card-change">
+                    <span class="trend-badge trend-positive">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                        Pagamentos realizados
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="kpi-card-border" style="background: var(--color-success);"></div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-card-content">
+            <div class="kpi-card-icon" style="background: var(--color-primary-light); color: var(--color-primary);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;">
+                    <line x1="12" y1="2" x2="12" y2="22"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+            </div>
+            <div class="kpi-card-text">
+                <div class="kpi-card-label">Lucro / Prejuízo</div>
+                <div class="kpi-card-value" style="color: {% if lucro_atual >= 0 %}var(--color-success){% else %}var(--color-danger){% endif %};">R$ {{ lucro_atual|floatformat:2 }}</div>
+                <div class="kpi-card-change">
+                    {% if lucro_atual >= 0 %}
+                    <span class="trend-badge trend-positive">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                        Saldo positivo
+                    </span>
+                    {% else %}
+                    <span class="trend-badge trend-negative">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                        Saldo negativo
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="kpi-card-border" style="background: {% if lucro_atual >= 0 %}var(--color-success){% else %}var(--color-danger){% endif %};"></div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-card-content">
+            <div class="kpi-card-icon" style="background: var(--color-secondary-light); color: var(--color-secondary);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;">
+                    <path d="M12 2l3 7h7l-5.5 4 2.5 7-7-4-7 4 2.5-7L2 9h7z"></path>
+                </svg>
+            </div>
+            <div class="kpi-card-text">
+                <div class="kpi-card-label">Patrocínios</div>
+                <div class="kpi-card-value" style="color: var(--color-secondary);">R$ {{ patrocinios_total|floatformat:2 }}</div>
+                <div class="kpi-card-change">
+                    <span class="trend-badge trend-positive">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                        Total recebido
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="kpi-card-border" style="background: var(--color-secondary);"></div>
+    </div>
+</div>
+
+<!-- BLOCO 3: Seções de Análises -->
+<!-- A. Indicadores Financeiros -->
+<section class="dashboard-section" style="margin-bottom: var(--spacing-10);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6);">
+        <div>
+            <h2 style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-gray-900); margin: 0 0 var(--spacing-1) 0; line-height: 1.2;">Indicadores Financeiros</h2>
+            <p style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin: 0; line-height: 1.5;">Análise detalhada de entradas, saídas e lucratividade</p>
+        </div>
+        <a href="{% url 'administracao_financeiro' %}" class="btn btn-secondary" style="width: auto;">
+            Ver Relatório Completo
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        </a>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: var(--spacing-6);">
+        <div class="dashboard-chart-card">
+            <div class="card-header">
+                <h3 class="card-title">Entradas por Categoria de Atleta</h3>
+            </div>
+            <div class="card-body" style="padding: var(--spacing-6);">
+                <div class="chart-container" style="height: 300px; display: flex; align-items: flex-end; justify-content: space-around; gap: var(--spacing-4); padding: var(--spacing-4);">
+                    <div style="display: flex; flex-direction: column; align-items: center; flex: 1; gap: var(--spacing-2);">
+                        {% widthratio entradas_federado ganho_previsto 100 as federado_pct %}
+                        <div style="width: 100%; background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-secondary) 100%); border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0; min-height: 20px; height: {% if ganho_previsto > 0 %}{{ federado_pct }}{% else %}50{% endif %}%; transition: all var(--transition-base);" title="Federado: R$ {{ entradas_federado|floatformat:2 }}"></div>
+                        <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); text-align: center; font-weight: 500;">Federado</div>
+                        <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">R$ {{ entradas_federado|floatformat:2 }}</div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; flex: 1; gap: var(--spacing-2);">
+                        {% widthratio entradas_nao_federado ganho_previsto 100 as nao_federado_pct %}
+                        <div style="width: 100%; background: linear-gradient(180deg, var(--color-secondary) 0%, var(--color-primary) 100%); border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0; min-height: 20px; height: {% if ganho_previsto > 0 %}{{ nao_federado_pct }}{% else %}50{% endif %}%; transition: all var(--transition-base);" title="Não Federado: R$ {{ entradas_nao_federado|floatformat:2 }}"></div>
+                        <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); text-align: center; font-weight: 500;">Não Federado</div>
+                        <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">R$ {{ entradas_nao_federado|floatformat:2 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-chart-card">
+            <div class="card-header">
+                <h3 class="card-title">Distribuição de Despesas</h3>
+            </div>
+            <div class="card-body" style="padding: var(--spacing-6);">
+                <div class="chart-container" style="height: 300px; display: flex; align-items: center; justify-content: center; position: relative;">
+                    <div style="width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(var(--color-primary) 0% 40%, var(--color-secondary) 40% 70%, var(--color-warning) 70% 85%, var(--color-success) 85% 100%); display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 120px; height: 120px; background: var(--color-white); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                            <div style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-gray-900);">R$ {{ total_despesas|floatformat:2 }}</div>
+                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">Total</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- B. Indicadores Operacionais -->
+<section class="dashboard-section" style="margin-bottom: var(--spacing-10);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6);">
+        <div>
+            <h2 style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-gray-900); margin: 0 0 var(--spacing-1) 0; line-height: 1.2;">Indicadores Operacionais</h2>
+            <p style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin: 0; line-height: 1.5;">Equipe técnica e recursos cadastrados</p>
+        </div>
+        <a href="{% url 'administracao_equipe' %}" class="btn btn-secondary" style="width: auto;">
+            Gerenciar Equipe
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        </a>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
+                <div class="progress-bar-container">
+                    <div class="progress-bar-header">
+                        <span class="progress-bar-label">Árbitros</span>
+                        <span class="progress-bar-value">{{ operacional_counts.arbitro }} cadastrados</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill {% if operacional_counts.arbitro >= 6 %}success{% else %}warning{% endif %}" style="width: {% widthratio operacional_counts.arbitro 10 100 %}%;"></div>
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-header">
+                        <span class="progress-bar-label">Mesários</span>
+                        <span class="progress-bar-value">{{ operacional_counts.mesario }} cadastrados</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill {% if operacional_counts.mesario >= 8 %}success{% else %}warning{% endif %}" style="width: {% widthratio operacional_counts.mesario 10 100 %}%;"></div>
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-header">
+                        <span class="progress-bar-label">Oficiais de Mesa</span>
+                        <span class="progress-bar-value">{{ operacional_counts.oficial_mesa }} cadastrados</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill {% if operacional_counts.oficial_mesa >= 4 %}success{% else %}warning{% endif %}" style="width: {% widthratio operacional_counts.oficial_mesa 6 100 %}%;"></div>
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-header">
+                        <span class="progress-bar-label">Oficiais de Pesagem</span>
+                        <span class="progress-bar-value">{{ operacional_counts.oficial_pesagem }} cadastrados</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill {% if operacional_counts.oficial_pesagem >= 3 %}success{% else %}warning{% endif %}" style="width: {% widthratio operacional_counts.oficial_pesagem 5 100 %}%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- C. Indicadores Estratégicos -->
+<section class="dashboard-section" style="margin-bottom: var(--spacing-10);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6);">
+        <div>
+            <h2 style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-gray-900); margin: 0 0 var(--spacing-1) 0; line-height: 1.2;">Indicadores Estratégicos</h2>
+            <p style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin: 0; line-height: 1.5;">Rankings e análises de participação</p>
+        </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: var(--spacing-6);">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Top 5 Academias Mais Participativas</h3>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Posição</th>
+                                <th>Academia</th>
+                                <th>Atletas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in ranking_academias %}
+                            <tr>
+                                <td><span class="badge badge-primary">{{ forloop.counter }}º</span></td>
+                                <td><strong>{{ item.academia.nome }}</strong></td>
+                                <td><span style="font-weight: 600; color: var(--color-primary);">{{ item.total }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--color-gray-500); padding: var(--spacing-6);">Nenhuma academia encontrada</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Top 5 Custos do Evento</h3>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Categoria</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in top_custos %}
+                            <tr>
+                                <td>{{ item.categoria }}</td>
+                                <td><strong style="color: var(--color-danger);">R$ {{ item.valor|floatformat:2 }}</strong></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" style="text-align: center; color: var(--color-gray-500); padding: var(--spacing-6);">Nenhuma despesa encontrada</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+

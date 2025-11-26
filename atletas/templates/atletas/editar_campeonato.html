@@ -1,0 +1,257 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Editar Campeonato - SHIAI SISTEM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Editar Campeonato</h1>
+    <p class="page-description">Atualize as informações do campeonato</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Informações do Campeonato</h3>
+    </div>
+    <div class="card-body">
+        {% if form.errors %}
+        <div class="alert alert-error" style="margin-bottom: var(--spacing-6);">
+            <strong>Erro ao salvar:</strong>
+            <ul style="margin: var(--spacing-2) 0 0 var(--spacing-6); padding: 0;">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                    <li>{{ field }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label class="form-label" for="{{ form.nome.id_for_label }}">
+                        {{ form.nome.label }}
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    {{ form.nome }}
+                    {% if form.nome.errors %}
+                    <div class="text-danger" style="font-size: var(--font-size-xs); margin-top: var(--spacing-1);">
+                        {{ form.nome.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.data_inicio.id_for_label }}">
+                        {{ form.data_inicio.label }}
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    {{ form.data_inicio }}
+                    <small class="form-help-text">Data em que as inscrições começam a ser aceitas</small>
+                    {% if form.data_inicio.errors %}
+                    <div class="text-danger" style="font-size: var(--font-size-xs); margin-top: var(--spacing-1);">
+                        {{ form.data_inicio.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.data_limite_inscricao.id_for_label }}">
+                        {{ form.data_limite_inscricao.label }}
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    {{ form.data_limite_inscricao }}
+                    <small class="form-help-text">Última data para realizar inscrições</small>
+                    {% if form.data_limite_inscricao.errors %}
+                    <div class="text-danger" style="font-size: var(--font-size-xs); margin-top: var(--spacing-1);">
+                        {{ form.data_limite_inscricao.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.data_competicao.id_for_label }}">
+                        {{ form.data_competicao.label }}
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    {{ form.data_competicao }}
+                    <small class="form-help-text">Data em que a competição será realizada</small>
+                    {% if form.data_competicao.errors %}
+                    <div class="text-danger" style="font-size: var(--font-size-xs); margin-top: var(--spacing-1);">
+                        {{ form.data_competicao.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-2);">
+                        <label class="form-label" for="{{ form.regulamento.id_for_label }}" style="margin: 0;">
+                            {{ form.regulamento.label }}
+                            <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                        </label>
+                        <button type="button" onclick="carregarRegulamentoPadrao()" class="btn btn-secondary btn-sm" style="padding: var(--spacing-2) var(--spacing-3);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-right: var(--spacing-1);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                            Usar Regulamento Padrão
+                        </button>
+                    </div>
+                    {{ form.regulamento }}
+                    {% if form.regulamento.errors %}
+                    <div class="text-danger" style="font-size: var(--font-size-xs); margin-top: var(--spacing-1);">
+                        {{ form.regulamento.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.valor_inscricao_federado.id_for_label }}">
+                        {{ form.valor_inscricao_federado.label }}
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    {{ form.valor_inscricao_federado }}
+                    {% if form.valor_inscricao_federado.errors %}
+                    <div class="text-danger" style="font-size: var(--font-size-xs); margin-top: var(--spacing-1);">
+                        {{ form.valor_inscricao_federado.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.valor_inscricao_nao_federado.id_for_label }}">
+                        {{ form.valor_inscricao_nao_federado.label }}
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    {{ form.valor_inscricao_nao_federado }}
+                    {% if form.valor_inscricao_nao_federado.errors %}
+                    <div class="text-danger" style="font-size: var(--font-size-xs); margin-top: var(--spacing-1);">
+                        {{ form.valor_inscricao_nao_federado.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label style="display: flex; align-items: center; gap: var(--spacing-2); cursor: pointer; padding: var(--spacing-3); border: 1px solid var(--color-gray-300); border-radius: var(--border-radius-md); transition: all var(--transition-base);">
+                        {{ form.ativo }}
+                        <div>
+                            <span style="font-size: var(--font-size-sm); font-weight: 500; color: var(--color-gray-700);">
+                                Definir como campeonato ativo
+                            </span>
+                            <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-weight: normal;">
+                                (Se marcado, desativará os outros campeonatos ativos)
+                            </small>
+                        </div>
+                    </label>
+                    {% if form.ativo.errors %}
+                    <div class="text-danger" style="font-size: var(--font-size-xs); margin-top: var(--spacing-1);">
+                        {{ form.ativo.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end; margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
+                <a href="{% url 'lista_campeonatos' %}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline"></svg>
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function carregarRegulamentoPadrao() {
+    const regulamentoPadrao = `REGULAMENTO OFICIAL
+
+1. INSCRIÇÕES
+
+1.1. As inscrições devem ser realizadas pelo responsável pela agremiação ou representante devidamente designado.
+1.2. A organização não se responsabiliza por erros cometidos durante o processo de inscrição.
+1.3. As inscrições devem ser realizadas dentro do prazo estipulado. Inscrições realizadas no dia do evento estarão sujeitas a uma taxa adicional, conforme especificado no item 2.
+1.4. Atletas desclassificados que desejarem se reinscrever deverão pagar o valor integral correspondente à inscrição fora do prazo.
+
+2. TAXA DE INSCRIÇÃO
+
+- Atletas Federados: R$ 100,00 (com bonificação de R$ 10,00)
+- Atletas Não Federados: R$ 110,00
+- Inscrições após o prazo: R$ 125,00 (sem bonificação)
+
+3. DOCUMENTAÇÃO OBRIGATÓRIA
+
+3.1. Para atletas até a classe Sub 13, será permitido o ingresso mediante apresentação de certidão de nascimento.
+3.2. Para atletas a partir da classe Sub 15, será exigido documento oficial com foto. Serão aceitos os seguintes documentos:
+- RG Digital ou Físico;
+- CNH Digital ou Física;
+- GovBR;
+- Carteira de Trabalho;
+- Carteira Escolar do ano vigente (não serão aceitas carteiras de anos anteriores).
+3.3. É OBRIGATÓRIA A APRESENTAÇÃO DO DOCUMENTO NA PESAGEM.
+
+4. ORIENTAÇÕES AOS TÉCNICOS
+
+4.1. Nas Classes Sub 9 e Sub 11 não será permitida a presença de técnicos na área de combate, exceto:
+- Na classe inclusiva, onde o técnico poderá acompanhar o atleta.
+- Nos casos de atletas com necessidades especiais inscritos nas classes regulares, desde que estejam devidamente documentados.
+4.2. A partir da classe Sub 13, cada equipe poderá credenciar até dois técnicos, que deverão portar carteirinha emitida pela organização.
+
+5. CLASSE INCLUSIVA
+
+5.1. Destinada a atletas com espectro autista, TDAH ou outras necessidades especiais que não possuam condições de ingressar na classe regular.
+5.2. Atletas com necessidades especiais poderão competir nas classes regulares, desde que apresentem um termo de responsabilidade assinado pelo professor e pelos responsáveis legais.
+5.3. Os combates desta classe terão regras adaptadas e serão realizados simultaneamente aos da classe Festival.
+
+6. LUTA CASADA
+
+6.1. Poderá ser realizada luta casada a partir da classe Sub 13, apenas em caso de WO.
+
+7. CLASSES E HORÁRIOS
+
+As classes e horários serão definidos e divulgados pela organização do evento.
+
+8. SISTEMA DE CHAVES
+
+8.1. Para chaves com 6 ou mais atletas: sistema de chave simples, com disputa de 3º lugar.
+8.2. Para chaves com 5 atletas ou menos: sistema de rodízio.
+8.3. Para chaves com 2 atletas: melhor de 3.
+8.4. Critérios de desempate:
+- Número de Vitórias
+- Por pontos (Wazari vale 1 PT e IPPON 10 PTS)
+- Confronto direto entre os vencedores (nova luta).
+- Os perdedores dos finalistas disputarão o 3º lugar.
+
+9. TEMPO DE LUTA
+
+Os tempos de luta serão definidos conforme a classe e categoria, de acordo com as regras oficiais da Confederação Brasileira de Judô.
+
+10. ARBITRAGEM
+
+10.1. Somente árbitros com situação regular junto à Federação de Judô do Estado e à Confederação Brasileira de Judô poderão atuar.
+10.2. Árbitros devem estar devidamente credenciados.
+
+11. PREMIAÇÃO
+
+11.1. Festival de Judô: todos os participantes receberão medalhas de "OURO".
+11.2. Classes Sub 9, Sub 10 e Sub 11: os três primeiros colocados receberão medalhas, enquanto os demais participantes receberão medalhas de participação.
+11.3. Nas demais classes, serão premiados o campeão, o vicecampeão e os dois terceiros colocados. Não haverá medalhas de participação.
+11.4. Os atletas deverão estar com judogi completo para receber as premiações.
+
+12. JUDOGI
+
+12.1. O uso de judogi azul e branco será obrigatório a partir da classe Sub 15.
+12.2. O uso de patch não será obrigatório para nenhuma classe.
+
+13. DISPOSIÇÕES GERAIS
+
+13.1. As agremiações são responsáveis pelas condições físicas e mentais de seus atletas, assumindo a responsabilidade por qualquer acidente ocorrido durante o evento.
+13.2. A organização prestará primeiros socorros no local, mas as despesas médicas e hospitalares serão de responsabilidade da agremiação.
+13.3. Os casos omissos serão resolvidos pela Coordenação Geral do evento.`;
+    
+    if (confirm('Deseja substituir o regulamento atual pelo regulamento padrão? As alterações não salvas serão perdidas.')) {
+        document.getElementById('regulamento').value = regulamentoPadrao;
+    }
+}
+</script>
+{% endblock %}
+

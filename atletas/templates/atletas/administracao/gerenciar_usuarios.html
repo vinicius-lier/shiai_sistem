@@ -1,0 +1,243 @@
+{% extends 'atletas/administracao/base_admin.html' %}
+
+{% block admin_page_title %}Usuários Operacionais{% endblock %}
+{% block admin_page_description %}Gerencie usuários com acesso operacional ao sistema{% endblock %}
+
+{% block admin_content %}
+<section class="card" style="margin-bottom: var(--spacing-8);">
+    <div class="card-header">
+        <h3 class="card-title">Criar Novo Usuário Operacional</h3>
+    </div>
+    <div class="card-body">
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="criar" value="1">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="username">
+                    Nome de Usuário
+                    <span style="color: var(--color-danger);">*</span>
+                </label>
+                <input type="text" id="username" name="username" class="form-input" required placeholder="Ex: joao.silva">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="password">
+                    Senha
+                    <span style="color: var(--color-danger);">*</span>
+                </label>
+                <input type="password" id="password" name="password" class="form-input" required placeholder="Senha de acesso">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="email">E-mail</label>
+                <input type="email" id="email" name="email" class="form-input" placeholder="email@exemplo.com">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="primeiro_nome">Primeiro Nome</label>
+                <input type="text" id="primeiro_nome" name="primeiro_nome" class="form-input" placeholder="Nome">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="ultimo_nome">Último Nome</label>
+                <input type="text" id="ultimo_nome" name="ultimo_nome" class="form-input" placeholder="Sobrenome">
+            </div>
+        </div>
+        <div style="margin-top: var(--spacing-6); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
+            <p style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin: 0 0 var(--spacing-4) 0;">
+                <strong>Nota:</strong> O acesso será válido por 30 dias a partir da criação.
+            </p>
+            <button type="submit" class="btn btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Criar Usuário
+            </button>
+        </div>
+    </form>
+    </div>
+</section>
+
+<section class="card">
+    <div class="card-header">
+        <h3 class="card-title">Usuários Operacionais Cadastrados</h3>
+    </div>
+    <div class="card-body">
+    {% if usuarios_operacionais %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Usuário</th>
+                    <th>Nome Completo</th>
+                    <th>E-mail</th>
+                    <th>Status</th>
+                    <th>Validade</th>
+                    <th>Permissões</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in usuarios_operacionais %}
+                <tr>
+                    <td>
+                        <strong>{{ item.user.username }}</strong>
+                        {% if item.perfil.pode_resetar_campeonato %}
+                        <span class="badge badge-primary" style="margin-left: var(--spacing-2);">Principal</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.user.get_full_name|default:"—" }}</td>
+                    <td>{{ item.user.email|default:"—" }}</td>
+                    <td>
+                        {% if item.esta_expirado %}
+                        <span class="badge badge-danger">Expirado</span>
+                        {% elif not item.perfil.ativo %}
+                        <span class="badge" style="background: var(--color-gray-200); color: var(--color-gray-600);">Inativo</span>
+                        {% else %}
+                        <span class="badge badge-success">Ativo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.perfil.data_expiracao %}
+                        <div style="font-size: var(--font-size-sm);">
+                            {{ item.perfil.data_expiracao|date:"d/m/Y" }}
+                            {% if item.dias_restantes is not None %}
+                            <br>
+                            <span style="color: {% if item.dias_restantes <= 7 %}var(--color-danger){% elif item.dias_restantes <= 15 %}var(--color-warning){% else %}var(--color-gray-600){% endif %};">
+                                {{ item.dias_restantes }} dia(s) restante(s)
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <span class="badge badge-primary">Vitalício</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="font-size: var(--font-size-xs);">
+                            {% if item.perfil.pode_resetar_campeonato %}
+                            <span class="badge badge-primary">Resetar</span>
+                            {% endif %}
+                            {% if item.perfil.pode_criar_usuarios %}
+                            <span class="badge badge-primary">Criar Usuários</span>
+                            {% endif %}
+                            {% if not item.perfil.pode_resetar_campeonato and not item.perfil.pode_criar_usuarios %}
+                            <span style="color: var(--color-gray-500);">Padrão</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if not item.perfil.pode_resetar_campeonato and not item.perfil.pode_criar_usuarios %}
+                        <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="editarUsuario({{ item.user.id }}, '{{ item.user.username }}', '{{ item.user.email }}', '{{ item.user.first_name }}', '{{ item.user.last_name }}', {{ item.perfil.ativo|yesno:"true,false" }})">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Editar
+                            </button>
+                            <form method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja remover este usuário?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="deletar" value="1">
+                                <input type="hidden" name="user_id" value="{{ item.user.id }}">
+                                <button type="submit" class="btn btn-outline btn-sm" style="color: var(--color-danger); border-color: var(--color-danger);">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                    Remover
+                                </button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <span style="color: var(--color-gray-500); font-size: var(--font-size-sm);">Protegido</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: var(--color-gray-500); margin: 0; text-align: center; padding: var(--spacing-8) 0;">
+        Nenhum usuário operacional cadastrado.
+    </p>
+    {% endif %}
+    </div>
+</section>
+
+<!-- Modal de Edição -->
+<div class="modal-overlay" id="modal-editar-usuario" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center; padding: var(--spacing-4);">
+    <div class="modal-content" style="background: var(--color-white); border-radius: var(--border-radius-lg); max-width: 500px; width: 100%; box-shadow: var(--shadow-xl);">
+        <div class="modal-header" style="padding: var(--spacing-6); border-bottom: 1px solid var(--color-gray-200); display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="modal-title" style="font-size: var(--font-size-xl); font-weight: 600; color: var(--color-gray-900); margin: 0;">Editar Usuário</h3>
+            <button class="modal-close" onclick="fecharModalEditar()" style="background: none; border: none; font-size: var(--font-size-2xl); color: var(--color-gray-400); cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--border-radius-sm);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body" style="padding: var(--spacing-6);">
+            <form method="post" id="form-editar-usuario">
+                {% csrf_token %}
+                <input type="hidden" name="editar" value="1">
+                <input type="hidden" name="user_id" id="edit_user_id">
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit_username">Nome de Usuário</label>
+                    <input type="text" id="edit_username" class="form-input" readonly style="background: var(--color-gray-100);">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit_password">Nova Senha <small>(deixe em branco para manter a atual)</small></label>
+                    <input type="password" id="edit_password" name="password" class="form-input" placeholder="Nova senha">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit_email">E-mail</label>
+                    <input type="email" id="edit_email" name="email" class="form-input">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-4);">
+                    <div class="form-group">
+                        <label class="form-label" for="edit_primeiro_nome">Primeiro Nome</label>
+                        <input type="text" id="edit_primeiro_nome" name="primeiro_nome" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="edit_ultimo_nome">Último Nome</label>
+                        <input type="text" id="edit_ultimo_nome" name="ultimo_nome" class="form-input">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: var(--spacing-2); cursor: pointer;">
+                        <input type="checkbox" id="edit_ativo" name="ativo" style="width: 18px; height: 18px;">
+                        <span>Usuário ativo</span>
+                    </label>
+                </div>
+                
+                <div style="display: flex; gap: var(--spacing-3); margin-top: var(--spacing-6); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Salvar</button>
+                    <button type="button" class="btn btn-secondary" onclick="fecharModalEditar()" style="flex: 1;">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function editarUsuario(userId, username, email, primeiroNome, ultimoNome, ativo) {
+    document.getElementById('edit_user_id').value = userId;
+    document.getElementById('edit_username').value = username;
+    document.getElementById('edit_email').value = email || '';
+    document.getElementById('edit_primeiro_nome').value = primeiroNome || '';
+    document.getElementById('edit_ultimo_nome').value = ultimoNome || '';
+    document.getElementById('edit_ativo').checked = ativo;
+    document.getElementById('modal-editar-usuario').style.display = 'flex';
+}
+
+function fecharModalEditar() {
+    document.getElementById('modal-editar-usuario').style.display = 'none';
+    document.getElementById('form-editar-usuario').reset();
+}
+</script>
+{% endblock %}
+

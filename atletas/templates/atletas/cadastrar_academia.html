@@ -1,0 +1,137 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Cadastrar Academia - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Cadastrar Academia</h1>
+    <p class="page-description">Adicione uma nova academia participante</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Informações da Academia</h3>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label class="form-label" for="foto_perfil">
+                        Foto de Perfil
+                    </label>
+                    <input type="file" id="foto_perfil" name="foto_perfil" class="form-input" accept=".jpg,.jpeg,.png" onchange="previewFoto(this, 'foto-preview')">
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Formatos aceitos: JPG, PNG (máximo 2MB)</small>
+                    <div id="foto-preview" style="margin-top: var(--spacing-3); display: none;">
+                        <img id="foto-preview-img" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: var(--border-radius-md); border: 2px solid var(--color-gray-300);">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="nome">
+                        Nome da Academia
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="text" id="nome" name="nome" class="form-input" required placeholder="Digite o nome da academia">
+                </div>
+    
+                <div class="form-group">
+                    <label class="form-label" for="cidade">
+                        Cidade
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="text" id="cidade" name="cidade" class="form-input" required placeholder="Digite a cidade">
+                </div>
+    
+                <div class="form-group">
+                    <label class="form-label" for="estado">
+                        Estado (UF)
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="text" id="estado" name="estado" class="form-input" maxlength="2" required placeholder="Ex: SP, RJ, MG" style="text-transform: uppercase;">
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Digite a sigla do estado (2 letras)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="telefone">
+                        Telefone
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    <input type="tel" id="telefone" name="telefone" class="form-input" placeholder="Ex: (11) 98765-4321">
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Telefone de contato da academia</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="responsavel">
+                        Responsável
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    <input type="text" id="responsavel" name="responsavel" class="form-input" placeholder="Nome do responsável pela academia">
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label class="form-label" for="endereco">
+                        Endereço
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    <input type="text" id="endereco" name="endereco" class="form-input" placeholder="Endereço completo da academia">
+                </div>
+            </div>
+            
+            <div style="margin-top: var(--spacing-6); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
+                <h3 style="font-size: var(--font-size-lg); font-weight: 600; margin-bottom: var(--spacing-4); color: var(--color-gray-700);">Bônus do Professor</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
+                    <div class="form-group">
+                        <label class="form-label" for="bonus_percentual">
+                            Bônus Percentual (%)
+                            <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                        </label>
+                        <input type="number" id="bonus_percentual" name="bonus_percentual" class="form-input" step="0.01" min="0" max="100" placeholder="Ex: 5.00">
+                        <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Percentual sobre inscrições confirmadas</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="bonus_fixo">
+                            Bônus Fixo por Atleta
+                            <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                        </label>
+                        <input type="number" id="bonus_fixo" name="bonus_fixo" class="form-input" step="0.01" min="0" placeholder="Ex: 10.00">
+                        <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Valor fixo por atleta confirmado</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end; margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
+                <a href="{% url 'lista_academias' %}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Cadastrar Academia
+                </button>
+            </div>
+</form>
+    </div>
+</div>
+
+<script>
+// Preview de foto
+function previewFoto(input, previewId) {
+    const preview = document.getElementById(previewId);
+    const previewImg = document.getElementById(previewId + '-img');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+</script>
+{% endblock %}

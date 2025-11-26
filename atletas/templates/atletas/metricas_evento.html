@@ -1,0 +1,109 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Métricas do Evento - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Métricas do Evento</h1>
+    <p class="page-description">{{ campeonato_ativo.nome }}</p>
+</div>
+
+<!-- Indicadores Principais -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-6); margin-bottom: var(--spacing-8);">
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
+            <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-primary);">{{ total_inscricoes }}</div>
+            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Total de Inscrições</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
+            <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-success);">{{ inscricoes_aprovadas }}</div>
+            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Aprovados</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
+            <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-warning);">{{ inscricoes_pendentes }}</div>
+            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Pendentes</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
+            <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-primary);">{{ atletas_pesados }}</div>
+            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Atletas Pesados</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
+            <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-primary);">{{ total_chaves }}</div>
+            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Chaves Geradas</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
+            <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-success);">{{ total_lutas }}</div>
+            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Lutas Finalizadas</div>
+        </div>
+    </div>
+</div>
+
+<!-- Inscrições por Classe -->
+{% if inscricoes_por_classe %}
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Inscrições por Classe</h3>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Classe</th>
+                        <th>Total de Inscrições</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in inscricoes_por_classe %}
+                    <tr>
+                        <td><span class="badge badge-info">{{ item.classe_escolhida }}</span></td>
+                        <td><strong>{{ item.total }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Chaves por Classe -->
+{% if chaves_por_classe %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Chaves por Classe</h3>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Classe</th>
+                        <th>Total de Chaves</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in chaves_por_classe %}
+                    <tr>
+                        <td><span class="badge badge-info">{{ item.classe }}</span></td>
+                        <td><strong>{{ item.total }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

@@ -1,0 +1,53 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Relatório - Pesagem Final{% endblock %}
+
+{% block content %}
+<h1>Relatório - Pesagem Final</h1>
+
+<div style="margin: 10px 0 20px 0;" class="desktop-only">
+    <button onclick="window.print()" class="btn">🖨 Imprimir Pesagem</button>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Classe</th>
+            <th>Sexo</th>
+            <th>Categoria</th>
+            <th>Categoria Ajustada</th>
+            <th>Peso Oficial (kg)</th>
+            <th>Limite (kg)</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for atleta in atletas %}
+        <tr>
+            <td>{{ atleta.nome }}</td>
+            <td>{{ atleta.classe }}</td>
+            <td>{{ atleta.get_sexo_display }}</td>
+            <td>{{ atleta.categoria_nome }}</td>
+            <td>{{ atleta.categoria_ajustada|default:"-" }}</td>
+            <td><strong>{{ atleta.peso_oficial }}</strong></td>
+            <td>{{ atleta.categoria_limite }}</td>
+            <td>
+                {% if atleta.status == 'OK' %}
+                    <span class="status-ok">{{ atleta.status }}</span>
+                {% else %}
+                    <span class="status-eliminado">{{ atleta.status }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" style="text-align: center;">Nenhum peso registrado</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p style="margin-top: 20px;"><strong>Total de atletas pesados:</strong> {{ atletas.count }}</p>
+{% endblock %}
+

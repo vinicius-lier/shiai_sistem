@@ -1,0 +1,267 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Ranking Global - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Ranking Global</h1>
+    <p class="page-description">Ranking consolidado de todas as academias e atletas em todos os eventos</p>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Filtros</h3>
+    </div>
+    <div class="card-body">
+        <form method="get">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-4);">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="classe">Classe</label>
+                    <select id="classe" name="classe" class="form-select">
+                        <option value="">Todas</option>
+                        {% for classe in classes_disponiveis %}
+                        <option value="{{ classe }}" {% if classe == classe_filtro %}selected{% endif %}>{{ classe }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="sexo">Sexo</label>
+                    <select id="sexo" name="sexo" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="categoria">Categoria</label>
+                    <select id="categoria" name="categoria" class="form-select">
+                        <option value="">Todas</option>
+                        {% for categoria in categorias_disponiveis %}
+                        <option value="{{ categoria }}" {% if categoria == categoria_filtro %}selected{% endif %}>{{ categoria }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
+                <a href="{% url 'ranking_global' %}" class="btn btn-secondary">Limpar Filtros</a>
+                <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========== RANKING DE ACADEMIAS ========== -->
+<h2 class="page-title" style="margin-top: var(--spacing-6); margin-bottom: var(--spacing-4); font-size: var(--font-size-2xl);">🏆 Ranking de Academias</h2>
+
+{% if total_academias > 0 %}
+<!-- Podium Top 3 Academias -->
+{% if top3_academias %}
+<div style="margin-bottom: var(--spacing-8);">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--spacing-6);">
+        {% for item in top3_academias %}
+        <div class="card" style="{% if forloop.counter == 1 %}background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: white;{% elif forloop.counter == 2 %}background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%); color: white;{% elif forloop.counter == 3 %}background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%); color: white;{% endif %}">
+            <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
+                <div style="font-size: var(--font-size-4xl); font-weight: 700; margin-bottom: var(--spacing-2);">
+                    {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% endif %}
+                </div>
+                <div style="font-size: var(--font-size-2xl); font-weight: 600; margin-bottom: var(--spacing-2);">{{ item.academia.nome }}</div>
+                <div style="font-size: var(--font-size-sm); opacity: 0.9; margin-bottom: var(--spacing-4);">{{ item.academia.cidade }}, {{ item.academia.estado }}</div>
+                <div style="font-size: var(--font-size-3xl); font-weight: 700; margin-bottom: var(--spacing-2);">{{ item.pontos_totais }}</div>
+                <div style="font-size: var(--font-size-xs); opacity: 0.9;">pontos</div>
+                <div style="display: flex; justify-content: center; gap: var(--spacing-4); margin-top: var(--spacing-4); padding-top: var(--spacing-4); border-top: 1px solid rgba(255,255,255,0.3);">
+                    <div>
+                        <div style="font-size: var(--font-size-lg); font-weight: 600;">{{ item.ouro }}</div>
+                        <div style="font-size: var(--font-size-xs);">Ouro</div>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--font-size-lg); font-weight: 600;">{{ item.prata }}</div>
+                        <div style="font-size: var(--font-size-xs);">Prata</div>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--font-size-lg); font-weight: 600;">{{ item.bronze }}</div>
+                        <div style="font-size: var(--font-size-xs);">Bronze</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Tabela Completa -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Ranking Completo</h3>
+        <small style="color: var(--color-gray-500);">Total: {{ total_academias }} academias</small>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Posição</th>
+                        <th>Academia</th>
+                        <th>🥇 Ouro</th>
+                        <th>🥈 Prata</th>
+                        <th>🥉 Bronze</th>
+                        <th>🎭 Festival</th>
+                        <th>Total de Pontos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in ranking_academias_completo %}
+                    <tr>
+                        <td>
+                            <strong style="font-size: var(--font-size-lg);">{{ forloop.counter }}</strong>
+                        </td>
+                        <td>
+                            <div style="font-weight: 500; color: var(--color-gray-900);">{{ item.academia.nome }}</div>
+                        </td>
+                        <td style="text-align: center;">
+                            {% if item.ouro > 0 %}<span class="badge" style="background: #FFD700; color: white;">{{ item.ouro }}</span>{% else %}-{% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if item.prata > 0 %}<span class="badge" style="background: #C0C0C0; color: white;">{{ item.prata }}</span>{% else %}-{% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if item.bronze > 0 %}<span class="badge" style="background: #CD7F32; color: white;">{{ item.bronze }}</span>{% else %}-{% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if item.festival > 0 %}<span class="badge" style="background: #9C27B0; color: white;">{{ item.festival }}</span>{% else %}-{% endif %}
+                        </td>
+                        <td>
+                            <strong style="font-size: var(--font-size-lg); color: var(--color-primary);">{{ item.pontos_totais }}</strong>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: var(--spacing-8); color: var(--color-gray-500);">
+                            Nenhuma academia encontrada no ranking.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-state-title">Nenhum dado disponível</div>
+        <div class="empty-state-description">Ainda não há resultados consolidados no ranking global de academias.</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ========== RANKING DE ATLETAS ========== -->
+<h2 class="page-title" style="margin-top: var(--spacing-8); margin-bottom: var(--spacing-4); font-size: var(--font-size-2xl);">👤 Ranking de Atletas</h2>
+
+{% if total_atletas > 0 %}
+<!-- Podium Top 3 Atletas -->
+{% if top3_atletas %}
+<div style="margin-bottom: var(--spacing-8);">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--spacing-6);">
+        {% for item in top3_atletas %}
+        <div class="card" style="{% if forloop.counter == 1 %}background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: white;{% elif forloop.counter == 2 %}background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%); color: white;{% elif forloop.counter == 3 %}background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%); color: white;{% endif %}">
+            <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
+                <div style="font-size: var(--font-size-4xl); font-weight: 700; margin-bottom: var(--spacing-2);">
+                    {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% endif %}
+                </div>
+                <div style="font-size: var(--font-size-2xl); font-weight: 600; margin-bottom: var(--spacing-2);">{{ item.atleta.nome }}</div>
+                <div style="font-size: var(--font-size-sm); opacity: 0.9; margin-bottom: var(--spacing-2);">{{ item.atleta.get_sexo_display }}</div>
+                <div style="font-size: var(--font-size-sm); opacity: 0.9; margin-bottom: var(--spacing-4);">{{ item.atleta.academia.nome }}</div>
+                <div style="font-size: var(--font-size-3xl); font-weight: 700; margin-bottom: var(--spacing-2);">{{ item.total_medalhas }}</div>
+                <div style="font-size: var(--font-size-xs); opacity: 0.9;">medalhas</div>
+                <div style="display: flex; justify-content: center; gap: var(--spacing-4); margin-top: var(--spacing-4); padding-top: var(--spacing-4); border-top: 1px solid rgba(255,255,255,0.3);">
+                    <div>
+                        <div style="font-size: var(--font-size-lg); font-weight: 600;">{{ item.ouro }}</div>
+                        <div style="font-size: var(--font-size-xs);">Ouro</div>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--font-size-lg); font-weight: 600;">{{ item.prata }}</div>
+                        <div style="font-size: var(--font-size-xs);">Prata</div>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--font-size-lg); font-weight: 600;">{{ item.bronze }}</div>
+                        <div style="font-size: var(--font-size-xs);">Bronze</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Tabela Completa de Atletas -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Ranking Completo de Atletas</h3>
+        <small style="color: var(--color-gray-500);">Total: {{ total_atletas }} atleta(s)</small>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Posição</th>
+                        <th>Atleta</th>
+                        <th>Academia</th>
+                        <th>🥇 Ouro</th>
+                        <th>🥈 Prata</th>
+                        <th>🥉 Bronze</th>
+                        <th>Total de Medalhas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in ranking_atletas_completo %}
+                    <tr>
+                        <td>
+                            <strong style="font-size: var(--font-size-lg);">{{ forloop.counter }}</strong>
+                        </td>
+                        <td>
+                            <div style="font-weight: 500; color: var(--color-gray-900);">{{ item.atleta.nome }}</div>
+                        </td>
+                        <td style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                            {{ item.atleta.academia.nome }}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if item.ouro > 0 %}<span class="badge" style="background: #FFD700; color: white;">{{ item.ouro }}</span>{% else %}-{% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if item.prata > 0 %}<span class="badge" style="background: #C0C0C0; color: white;">{{ item.prata }}</span>{% else %}-{% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if item.bronze > 0 %}<span class="badge" style="background: #CD7F32; color: white;">{{ item.bronze }}</span>{% else %}-{% endif %}
+                        </td>
+                        <td>
+                            <strong style="font-size: var(--font-size-lg); color: var(--color-primary);">{{ item.total_medalhas }}</strong>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: var(--spacing-8); color: var(--color-gray-500);">
+                            Nenhum atleta encontrado no ranking.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-state-title">Nenhum dado disponível</div>
+        <div class="empty-state-description">Ainda não há resultados consolidados no ranking global de atletas.</div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

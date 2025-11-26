@@ -1,0 +1,328 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Atletas - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Atletas</h1>
+    <p class="page-description">Gerencie todos os atletas cadastrados no sistema</p>
+    <div style="display: flex; flex-direction: column; gap: var(--spacing-3); margin-top: var(--spacing-4);">
+        <a href="{% url 'cadastrar_atleta' %}" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Novo Atleta
+        </a>
+    </div>
+</div>
+
+<style>
+@media (min-width: 768px) {
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: var(--spacing-4);
+    }
+    .page-header > div:last-child {
+        flex-direction: row;
+        margin-top: 0;
+    }
+}
+</style>
+
+{% if total_encontrados > 0 %}
+<div style="margin-bottom: var(--spacing-6);">
+    <div class="card" style="background: var(--color-primary-light); border-color: var(--color-primary);">
+        <div class="card-body" style="padding: var(--spacing-4);">
+            <div style="display: flex; align-items: center; gap: var(--spacing-2);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+                <strong style="color: var(--color-primary);">Total encontrado: {{ total_encontrados }} atleta(s)</strong>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Filtros -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Filtros</h3>
+        </div>
+    <div class="card-body">
+        <form method="get">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-4);">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="nome">Nome</label>
+                    <input type="text" id="nome" name="nome" value="{{ nome_filtro }}" placeholder="Buscar por nome" class="form-input">
+        </div>
+        
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="sexo">Sexo</label>
+                    <select id="sexo" name="sexo" class="form-select">
+                <option value="">Todos</option>
+                <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
+                <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
+            </select>
+        </div>
+        
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="academia">Academia</label>
+                    <select id="academia" name="academia" class="form-select">
+                <option value="">Todas</option>
+                {% for academia in academias %}
+                <option value="{{ academia.id }}" {% if academia_filtro|default:""|stringformat:"s" == academia.id|stringformat:"s" %}selected{% endif %}>{{ academia.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="status_ativo">Status</label>
+                    <select id="status_ativo" name="status_ativo" class="form-select">
+                <option value="">Todos</option>
+                        <option value="ativo" {% if status_filtro == 'ativo' %}selected{% endif %}>Ativo</option>
+                        <option value="inativo" {% if status_filtro == 'inativo' %}selected{% endif %}>Inativo</option>
+            </select>
+        </div>
+        
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="federado">Federado</label>
+                    <select id="federado" name="federado" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="sim" {% if federado_filtro == 'sim' %}selected{% endif %}>Sim</option>
+                        <option value="nao" {% if federado_filtro == 'nao' %}selected{% endif %}>Não</option>
+                    </select>
+        </div>
+        
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="ordenar">Ordenar por</label>
+                    <select id="ordenar" name="ordenar" class="form-select">
+                <option value="nome" {% if ordenacao == 'nome' %}selected{% endif %}>Nome</option>
+                        <option value="sexo" {% if ordenacao == 'sexo' %}selected{% endif %}>Sexo</option>
+                <option value="academia__nome" {% if ordenacao == 'academia__nome' %}selected{% endif %}>Academia</option>
+                        <option value="data_nascimento" {% if ordenacao == 'data_nascimento' %}selected{% endif %}>Data de Nascimento</option>
+                        <option value="data_cadastro" {% if ordenacao == 'data_cadastro' %}selected{% endif %}>Data de Cadastro</option>
+            </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
+                <a href="{% url 'lista_atletas' %}" class="btn btn-secondary">Limpar</a>
+                <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Atletas - Mobile First -->
+{% if atletas %}
+<!-- Mobile List View (visible on mobile) -->
+<div class="mobile-list-view" style="display: block;">
+    {% for atleta in atletas %}
+    <div class="list-item">
+        <div class="list-item-header" style="display: flex; align-items: center; gap: var(--spacing-3);">
+            {% if atleta.foto_perfil %}
+            <img src="{{ atleta.foto_perfil.url }}" alt="{{ atleta.nome }}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-gray-300); flex-shrink: 0;">
+            {% else %}
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--color-gray-200); display: flex; align-items: center; justify-content: center; font-size: var(--font-size-2xl); color: var(--color-gray-400); flex-shrink: 0;">👤</div>
+            {% endif %}
+            <div style="flex: 1;">
+                <div class="list-item-title">{{ atleta.nome }}</div>
+            {% if atleta.status_ativo %}
+                <span class="badge badge-success">Ativo</span>
+            {% else %}
+                <span class="badge badge-warning">Inativo</span>
+            {% endif %}
+            </div>
+        </div>
+        <div class="list-item-subtitle">
+            <span class="badge {% if atleta.sexo == 'M' %}badge-success{% else %}badge-warning{% endif %}">
+                {{ atleta.get_sexo_display }}
+            </span>
+            {% if atleta.get_classe_atual %}
+                <span class="badge badge-info">{{ atleta.get_classe_atual }}</span>
+            {% endif %}
+            {% if atleta.faixa %}
+                <span class="badge badge-primary">{{ atleta.get_faixa_display }}</span>
+            {% endif %}
+            {% if atleta.data_nascimento and atleta.idade %}
+                <span>{{ atleta.idade }} anos</span>
+            {% elif atleta.ano_nasc %}
+                <span>Nasc. {{ atleta.ano_nasc }}</span>
+            {% endif %}
+        </div>
+        <div class="list-item-subtitle">
+            <strong>Academia:</strong> {{ atleta.academia.nome }}
+        </div>
+        {% if atleta.federado %}
+        <div class="list-item-subtitle">
+            <span class="badge badge-primary">Federado</span>
+            {% if atleta.numero_zempo %}<span>(Zempo: {{ atleta.numero_zempo }})</span>{% endif %}
+        </div>
+        {% endif %}
+        {% if atleta.documento_oficial %}
+        <div class="list-item-subtitle">
+            <span class="badge badge-success">✓ Documento</span>
+        </div>
+        {% else %}
+        <div class="list-item-subtitle">
+            <span class="badge badge-warning">⚠ Sem documento</span>
+        </div>
+        {% endif %}
+        <div class="list-item-actions" style="margin-top: var(--spacing-3); padding-top: var(--spacing-3); border-top: 1px solid var(--color-gray-200); display: flex; gap: var(--spacing-2);">
+            <a href="{% url 'perfil_atleta' atleta.id %}" class="btn btn-primary" style="flex: 1;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                Ver Perfil
+            </a>
+            <a href="{% url 'editar_atleta' atleta.id %}" class="btn btn-secondary" style="flex: 1;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                Editar
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Desktop Table View (hidden on mobile) -->
+<div class="desktop-table-view" style="display: none;">
+    <div class="table-container">
+        <table class="table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Sexo</th>
+                    <th>Idade</th>
+                <th>Classe</th>
+                <th>Academia</th>
+                    <th>Federado</th>
+                    <th>Documento</th>
+                <th>Status</th>
+                    <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for atleta in atletas %}
+            <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: var(--spacing-3);">
+                            {% if atleta.foto_perfil %}
+                            <img src="{{ atleta.foto_perfil.url }}" alt="{{ atleta.nome }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-gray-300); flex-shrink: 0;">
+                            {% else %}
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--color-gray-200); display: flex; align-items: center; justify-content: center; font-size: var(--font-size-lg); color: var(--color-gray-400); flex-shrink: 0;">👤</div>
+                            {% endif %}
+                            <div>
+                                <div style="font-weight: 500; color: var(--color-gray-900);">{{ atleta.nome }}</div>
+                                {% if atleta.data_cadastro %}
+                                <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">Cadastrado em {{ atleta.data_cadastro|date:"d/m/Y" }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge {% if atleta.sexo == 'M' %}badge-success{% else %}badge-warning{% endif %}">
+                            {{ atleta.get_sexo_display }}
+                        </span>
+                    </td>
+                    <td style="font-size: var(--font-size-sm); color: var(--color-gray-700);">
+                        {% if atleta.data_nascimento and atleta.idade %}
+                            {{ atleta.idade }} anos
+                        {% elif atleta.data_nascimento %}
+                            {{ atleta.data_nascimento|date:"d/m/Y" }}
+                        {% elif atleta.ano_nasc %}
+                            Nasc. {{ atleta.ano_nasc }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if atleta.get_classe_atual %}
+                            <span class="badge badge-info">{{ atleta.get_classe_atual }}</span>
+                        {% else %}
+                            <span style="color: var(--color-gray-400);">-</span>
+                        {% endif %}
+                        {% if atleta.faixa %}
+                            <div style="margin-top: var(--spacing-1);">
+                                <span class="badge badge-primary">{{ atleta.get_faixa_display }}</span>
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: var(--font-size-sm); color: var(--color-gray-700);">{{ atleta.academia.nome }}</td>
+                    <td>
+                        {% if atleta.federado %}
+                            <span class="badge badge-primary">Sim</span>
+                            {% if atleta.numero_zempo %}<div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">{{ atleta.numero_zempo }}</div>{% endif %}
+                        {% else %}
+                            <span style="color: var(--color-gray-400);">Não</span>
+                        {% endif %}
+                    </td>
+                <td>
+                        {% if atleta.tem_documento %}
+                            <span class="badge badge-success">✓</span>
+                        {% else %}
+                            <span class="badge badge-warning">✗</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if atleta.status_ativo %}
+                            <span class="badge badge-success">Ativo</span>
+                    {% else %}
+                            <span class="badge badge-warning">Inativo</span>
+                    {% endif %}
+                </td>
+                    <td>
+                        <div style="display: flex; gap: var(--spacing-2);">
+                            <a href="{% url 'perfil_atleta' atleta.id %}" class="btn btn-primary" style="padding: var(--spacing-1) var(--spacing-3); font-size: var(--font-size-sm);" title="Ver perfil">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </a>
+                            <a href="{% url 'editar_atleta' atleta.id %}" class="btn btn-secondary" style="padding: var(--spacing-1) var(--spacing-3); font-size: var(--font-size-sm);" title="Editar">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            </a>
+                        </div>
+                    </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+
+<style>
+/* Mobile: Show list, hide table */
+@media (max-width: 767px) {
+    .mobile-list-view {
+        display: block !important;
+    }
+    .desktop-table-view {
+        display: none !important;
+    }
+}
+
+/* Desktop: Show table, hide list */
+@media (min-width: 768px) {
+    .mobile-list-view {
+        display: none !important;
+    }
+    .desktop-table-view {
+        display: block !important;
+    }
+}
+</style>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+        </svg>
+        <div class="empty-state-title">Nenhum atleta encontrado</div>
+        <div class="empty-state-description">
+            {% if nome_filtro or sexo_filtro or academia_filtro %}
+                Nenhum atleta corresponde aos filtros aplicados. Tente ajustar os filtros ou
+            {% else %}
+                Ainda não há atletas cadastrados. Comece
+            {% endif %}
+            cadastrando seu primeiro atleta.
+        </div>
+        <a href="{% url 'cadastrar_atleta' %}" class="btn btn-primary">Cadastrar Atleta</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

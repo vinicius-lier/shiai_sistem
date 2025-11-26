@@ -1,0 +1,282 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Métricas - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho -->
+<div class="page-header" style="margin-bottom: var(--spacing-8);">
+    <div style="display: flex; align-items: center; gap: var(--spacing-4); margin-bottom: var(--spacing-2);">
+        <div style="width: 56px; height: 56px; border-radius: var(--border-radius-lg); background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;">
+                <line x1="12" y1="20" x2="12" y2="10"></line>
+                <line x1="18" y1="20" x2="18" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="16"></line>
+            </svg>
+        </div>
+        <div style="flex: 1;">
+            <h1 class="page-title">Métricas</h1>
+            <p class="page-description">Análises e indicadores gerais do sistema</p>
+        </div>
+    </div>
+</div>
+
+{% if total_atletas == 0 %}
+<!-- Estado Vazio -->
+<div class="card">
+    <div class="empty-state">
+        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="20" x2="12" y2="10"></line>
+            <line x1="18" y1="20" x2="18" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="16"></line>
+        </svg>
+        <div class="empty-state-title">Nenhum dado disponível ainda</div>
+        <div class="empty-state-description">Cadastre atletas para ativar as métricas do sistema</div>
+        <a href="{% url 'cadastrar_atleta' %}" class="btn btn-primary" style="margin-top: var(--spacing-4);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Cadastrar Atleta
+        </a>
+    </div>
+</div>
+{% else %}
+<!-- Indicadores Principais -->
+<div class="stats-grid" style="margin-bottom: var(--spacing-8);">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-title">Total de Atletas</span>
+            <div class="stat-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="stat-card-value">{{ total_atletas }}</div>
+        <div class="stat-card-change">Atletas cadastrados no sistema</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-title">Atletas OK</span>
+            <div class="stat-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+        </div>
+        <div class="stat-card-value">{{ total_atletas_ok }}</div>
+        <div class="stat-card-change">Atletas aptos para competir</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-title">Festival</span>
+            <div class="stat-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="stat-card-value">{{ total_festival }}</div>
+        <div class="stat-card-change">Atletas do Festival (3-6 anos)</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-title">Total de Medalhas</span>
+            <div class="stat-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                    <circle cx="12" cy="8" r="7"></circle>
+                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                </svg>
+            </div>
+        </div>
+        <div class="stat-card-value">{{ total_ouros|add:total_pratas|add:total_bronzes }}</div>
+        <div class="stat-card-change">
+            🥇 {{ total_ouros }} • 🥈 {{ total_pratas }} • 🥉 {{ total_bronzes }}
+        </div>
+    </div>
+</div>
+
+<!-- Atletas por Classe -->
+{% if atletas_por_classe %}
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Atletas por Classe</h3>
+    </div>
+    <div class="card-body" style="padding: 0;">
+<div class="table-container">
+            <table class="table">
+        <thead>
+            <tr>
+                <th>Classe</th>
+                        <th style="text-align: center;">Total</th>
+                        <th style="text-align: right;">Percentual</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in atletas_por_classe %}
+            <tr>
+                        <td>
+                            <span class="badge badge-success">{{ item.classe }}</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <span style="font-weight: 600; color: var(--color-gray-900);">{{ item.total }}</span>
+                        </td>
+                <td>
+                            <div style="display: flex; align-items: center; gap: var(--spacing-3);">
+                                <div style="flex: 1; height: 8px; background: var(--color-gray-200); border-radius: var(--border-radius-sm); overflow: hidden;">
+                                    <div style="height: 100%; width: {% widthratio item.total total_atletas 100 %}%; background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%); transition: width var(--transition-base);"></div>
+                                </div>
+                                <span style="font-size: var(--font-size-sm); color: var(--color-gray-600); font-weight: 500; min-width: 45px; text-align: right;">
+                            {% widthratio item.total total_atletas 100 %}%
+                                </span>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Atletas por Academia -->
+{% if atletas_por_academia %}
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Atletas por Academia</h3>
+    </div>
+    <div class="card-body" style="padding: 0;">
+<div class="table-container">
+            <table class="table">
+        <thead>
+            <tr>
+                <th>Academia</th>
+                        <th style="text-align: center;">Total</th>
+                        <th style="text-align: right;">Percentual</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in atletas_por_academia %}
+            <tr>
+                        <td>
+                            <div style="font-weight: 500; color: var(--color-gray-900);">{{ item.academia__nome }}</div>
+                        </td>
+                        <td style="text-align: center;">
+                            <span style="font-weight: 600; color: var(--color-primary);">{{ item.total }}</span>
+                        </td>
+                <td>
+                            <div style="display: flex; align-items: center; gap: var(--spacing-3);">
+                                <div style="flex: 1; height: 8px; background: var(--color-gray-200); border-radius: var(--border-radius-sm); overflow: hidden;">
+                                    <div style="height: 100%; width: {% widthratio item.total total_atletas 100 %}%; background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%); transition: width var(--transition-base);"></div>
+                                </div>
+                                <span style="font-size: var(--font-size-sm); color: var(--color-gray-600); font-weight: 500; min-width: 45px; text-align: right;">
+                            {% widthratio item.total total_atletas 100 %}%
+                                </span>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Medalhas por Academia -->
+{% if medalhas_por_academia %}
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Medalhas por Academia</h3>
+    </div>
+    <div class="card-body" style="padding: 0;">
+<div class="table-container">
+            <table class="table">
+        <thead>
+            <tr>
+                <th>Academia</th>
+                        <th style="text-align: center;">🥇 Ouro</th>
+                        <th style="text-align: center;">🥈 Prata</th>
+                        <th style="text-align: center;">🥉 Bronze</th>
+                        <th style="text-align: right;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in medalhas_por_academia %}
+            <tr>
+                        <td>
+                            <div style="font-weight: 500; color: var(--color-gray-900);">{{ item.academia.nome }}</div>
+                            {% if item.academia.cidade %}
+                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-500); margin-top: var(--spacing-1);">
+                                {{ item.academia.cidade }}{% if item.academia.estado %}, {{ item.academia.estado }}{% endif %}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                    {% if item.ouro > 0 %}
+                                <span style="font-weight: 600; color: #D97706;">{{ item.ouro }}</span>
+                    {% else %}
+                                <span style="color: var(--color-gray-300);">-</span>
+                    {% endif %}
+                </td>
+                        <td style="text-align: center;">
+                    {% if item.prata > 0 %}
+                                <span style="font-weight: 600; color: #6B7280;">{{ item.prata }}</span>
+                    {% else %}
+                                <span style="color: var(--color-gray-300);">-</span>
+                    {% endif %}
+                </td>
+                        <td style="text-align: center;">
+                    {% if item.bronze > 0 %}
+                                <span style="font-weight: 600; color: #92400E;">{{ item.bronze }}</span>
+                    {% else %}
+                                <span style="color: var(--color-gray-300);">-</span>
+                    {% endif %}
+                </td>
+                        <td style="text-align: right;">
+                            <span style="font-weight: 600; color: var(--color-primary); font-size: var(--font-size-lg);">{{ item.total_medalhas }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Resumo de Medalhas -->
+{% if total_ouros > 0 or total_pratas > 0 or total_bronzes > 0 %}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-6); margin-bottom: var(--spacing-8);">
+    <div class="card" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); border: none;">
+        <div class="card-body" style="text-align: center; color: #744210;">
+            <div style="font-size: 48px; margin-bottom: var(--spacing-2);">🥇</div>
+            <div style="font-size: var(--font-size-3xl); font-weight: 700; margin-bottom: var(--spacing-1);">{{ total_ouros }}</div>
+            <div style="font-size: var(--font-size-sm); font-weight: 600; opacity: 0.8;">Total de Ouros</div>
+        </div>
+    </div>
+    
+    <div class="card" style="background: linear-gradient(135deg, #C0C0C0 0%, #A0A0A0 100%); border: none;">
+        <div class="card-body" style="text-align: center; color: #4A4A4A;">
+            <div style="font-size: 48px; margin-bottom: var(--spacing-2);">🥈</div>
+            <div style="font-size: var(--font-size-3xl); font-weight: 700; margin-bottom: var(--spacing-1);">{{ total_pratas }}</div>
+            <div style="font-size: var(--font-size-sm); font-weight: 600; opacity: 0.8;">Total de Pratas</div>
+        </div>
+    </div>
+    
+    <div class="card" style="background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%); border: none;">
+        <div class="card-body" style="text-align: center; color: white;">
+            <div style="font-size: 48px; margin-bottom: var(--spacing-2);">🥉</div>
+            <div style="font-size: var(--font-size-3xl); font-weight: 700; margin-bottom: var(--spacing-1);">{{ total_bronzes }}</div>
+            <div style="font-size: var(--font-size-sm); font-weight: 600; opacity: 0.9;">Total de Bronzes</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

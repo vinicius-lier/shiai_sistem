@@ -1,0 +1,193 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}{{ academia.nome }} - Detalhes{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{{ academia.nome }}</h1>
+    <p class="page-description">Detalhes da academia</p>
+</div>
+
+<!-- Informações da Academia -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Informações da Academia</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: flex; align-items: center; gap: var(--spacing-6); margin-bottom: var(--spacing-6); padding-bottom: var(--spacing-6); border-bottom: 1px solid var(--color-gray-200);">
+            {% if academia.foto_perfil %}
+            <img src="{{ academia.foto_perfil.url }}" alt="{{ academia.nome }}" style="width: 150px; height: 150px; border-radius: var(--border-radius-lg); object-fit: cover; border: 3px solid var(--color-primary); flex-shrink: 0;">
+            {% else %}
+            <div style="width: 150px; height: 150px; border-radius: var(--border-radius-lg); background: var(--color-gray-200); display: flex; align-items: center; justify-content: center; font-size: 5rem; color: var(--color-gray-400); flex-shrink: 0; border: 3px solid var(--color-gray-300);">🏫</div>
+            {% endif %}
+            <div style="flex: 1;">
+                <h2 style="margin: 0 0 var(--spacing-2) 0; font-size: var(--font-size-2xl); color: var(--color-gray-900);">{{ academia.nome }}</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4); margin-top: var(--spacing-4);">
+                    <div>
+                        <strong style="color: var(--color-gray-600); font-size: var(--font-size-sm);">Cidade</strong>
+                        <div style="font-size: var(--font-size-base); font-weight: 500; margin-top: var(--spacing-1);">{{ academia.cidade|default:"-" }}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--color-gray-600); font-size: var(--font-size-sm);">Estado</strong>
+                        <div style="font-size: var(--font-size-base); font-weight: 500; margin-top: var(--spacing-1);">{{ academia.estado|default:"-" }}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--color-gray-600); font-size: var(--font-size-sm);">Telefone</strong>
+                        <div style="font-size: var(--font-size-base); font-weight: 500; margin-top: var(--spacing-1);">
+                            {% if academia.telefone %}
+                                <a href="tel:{{ academia.telefone }}" style="color: var(--color-primary); text-decoration: none;">{{ academia.telefone }}</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--color-gray-600); font-size: var(--font-size-sm);">Pontos Totais</strong>
+                        <div style="font-size: var(--font-size-xl); font-weight: 700; color: var(--color-primary); margin-top: var(--spacing-1);">{{ academia.pontos }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Atletas da Academia -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Atletas ({{ total_atletas }})</h3>
+    </div>
+    <div class="card-body">
+        {% if atletas %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Foto</th>
+                            <th>Nome</th>
+                            <th>Sexo</th>
+                            <th>Idade</th>
+                            <th>Classe</th>
+                            <th>Faixa</th>
+                            <th>Federado</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for atleta in atletas %}
+                        <tr>
+                            <td>
+                                {% if atleta.foto_perfil %}
+                                <img src="{{ atleta.foto_perfil.url }}" alt="{{ atleta.nome }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-gray-300);">
+                                {% else %}
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--color-gray-200); display: flex; align-items: center; justify-content: center; font-size: var(--font-size-lg); color: var(--color-gray-400);">👤</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="font-weight: 500; color: var(--color-gray-900);">{{ atleta.nome }}</div>
+                            </td>
+                            <td>
+                                <span class="badge {% if atleta.sexo == 'M' %}badge-success{% else %}badge-warning{% endif %}">
+                                    {{ atleta.get_sexo_display }}
+                                </span>
+                            </td>
+                            <td style="font-size: var(--font-size-sm); color: var(--color-gray-700);">
+                                {% if atleta.data_nascimento and atleta.idade %}
+                                    {{ atleta.idade }} anos
+                                {% elif atleta.ano_nasc %}
+                                    Nasc. {{ atleta.ano_nasc }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if atleta.get_classe_atual %}
+                                    <span class="badge badge-info">{{ atleta.get_classe_atual }}</span>
+                                {% else %}
+                                    <span style="color: var(--color-gray-400);">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if atleta.faixa %}
+                                    <span class="badge badge-primary">{{ atleta.get_faixa_display }}</span>
+                                {% else %}
+                                    <span style="color: var(--color-gray-400);">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if atleta.federado %}
+                                    <span class="badge badge-primary">Sim</span>
+                                {% else %}
+                                    <span style="color: var(--color-gray-400);">Não</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if atleta.status_ativo %}
+                                    <span class="badge badge-success">Ativo</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Inativo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: var(--spacing-2);">
+                                    <a href="{% url 'perfil_atleta' atleta.id %}" class="btn btn-primary" style="padding: var(--spacing-1) var(--spacing-3); font-size: var(--font-size-sm);" title="Ver perfil">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    </a>
+                                    <a href="{% url 'editar_atleta' atleta.id %}" class="btn btn-secondary" style="padding: var(--spacing-1) var(--spacing-3); font-size: var(--font-size-sm);" title="Editar">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-title">Nenhum atleta cadastrado</div>
+                <div class="empty-state-description">Esta academia ainda não possui atletas cadastrados.</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Estatísticas</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+            <div style="text-align: center; padding: var(--spacing-4); background: var(--color-gray-50); border-radius: var(--border-radius-md);">
+                <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-primary);">{{ total_atletas }}</div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Total de Atletas</div>
+            </div>
+            <div style="text-align: center; padding: var(--spacing-4); background: var(--color-gray-50); border-radius: var(--border-radius-md);">
+                <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-primary);">{{ total_atletas_ativos }}</div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Atletas Ativos</div>
+            </div>
+            <div style="text-align: center; padding: var(--spacing-4); background: var(--color-gray-50); border-radius: var(--border-radius-md);">
+                <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-primary);">{{ total_federados }}</div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Atletas Federados</div>
+            </div>
+            <div style="text-align: center; padding: var(--spacing-4); background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%); border-radius: var(--border-radius-md); color: white;">
+                <div style="font-size: var(--font-size-3xl); font-weight: 600;">{{ academia.pontos }}</div>
+                <div style="font-size: var(--font-size-sm); margin-top: var(--spacing-1);">Pontos Totais</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: var(--spacing-6); display: flex; gap: var(--spacing-3);">
+    <a href="{% url 'lista_academias' %}" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+        Voltar para Lista
+    </a>
+    <a href="{% url 'editar_academia' academia.id %}" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        Editar Academia
+    </a>
+</div>
+{% endblock %}
+

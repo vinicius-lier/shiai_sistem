@@ -1,0 +1,32 @@
+<div class="kpi-card" data-kpi="{{ kpi_id|default:'kpi' }}" style="cursor: pointer;" onclick="{% if drilldown_url %}window.location.href='{{ drilldown_url }}'{% endif %}">
+    <div class="kpi-card-content">
+        <div class="kpi-card-icon" style="background: {{ icon_bg|default:'var(--color-primary-light)' }}; color: {{ icon_color|default:'var(--color-primary)' }};">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;">
+                <path d="{{ icon_path }}"></path>
+            </svg>
+        </div>
+        <div class="kpi-card-text">
+            <div class="kpi-card-label">{{ label }}</div>
+            <div class="kpi-card-value" style="color: {{ value_color|default:'var(--color-gray-900)' }};">{{ value }}</div>
+            {% if change_text %}
+            <div class="kpi-card-change">
+                {% if change_positive %}
+                <span class="trend-badge trend-positive">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    {{ change_text }}
+                </span>
+                {% elif change_negative %}
+                <span class="trend-badge trend-negative">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                    {{ change_text }}
+                </span>
+                {% else %}
+                <span class="trend-badge trend-neutral">{{ change_text }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="kpi-card-border" style="background: {{ border_color|default:'var(--color-primary)' }};"></div>
+</div>
+

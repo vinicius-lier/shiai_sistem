@@ -1,0 +1,364 @@
+{% extends 'atletas/academia/base_academia.html' %}
+
+{% block title %}Chave {{ chave.classe }} - {{ chave.categoria }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        color: var(--color-primary);
+        text-decoration: none;
+        font-size: var(--font-size-sm);
+        margin-bottom: var(--spacing-4);
+        font-weight: 500;
+    }
+
+    .btn-back:hover {
+        color: var(--color-primary-hover);
+    }
+
+    .chave-header {
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+        color: var(--color-white);
+        padding: var(--spacing-4);
+        border-radius: var(--border-radius-lg);
+        margin-bottom: var(--spacing-6);
+        text-align: center;
+    }
+
+    @media (min-width: 768px) {
+        .chave-header {
+            padding: var(--spacing-6);
+        }
+    }
+
+    .chave-header h1 {
+        color: var(--color-white);
+        font-size: var(--font-size-xl);
+        font-weight: 700;
+        margin-bottom: var(--spacing-2);
+    }
+
+    @media (min-width: 768px) {
+        .chave-header h1 {
+            font-size: var(--font-size-2xl);
+        }
+    }
+
+    .chave-header p {
+        opacity: 0.95;
+        font-size: var(--font-size-sm);
+    }
+
+    .round-section {
+        margin-bottom: var(--spacing-6);
+    }
+
+    .round-badge {
+        display: inline-block;
+        padding: var(--spacing-2) var(--spacing-3);
+        background: var(--color-primary);
+        color: var(--color-white);
+        border-radius: var(--border-radius-sm);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        margin-bottom: var(--spacing-4);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .luta-card {
+        background: var(--color-white);
+        border: 1px solid var(--color-gray-200);
+        border-radius: var(--border-radius-md);
+        box-shadow: var(--shadow-sm);
+        padding: var(--spacing-4);
+        margin-bottom: var(--spacing-4);
+        transition: all var(--transition-base);
+    }
+
+    @media (min-width: 768px) {
+        .luta-card {
+            padding: var(--spacing-6);
+        }
+    }
+
+    .luta-card:hover {
+        box-shadow: var(--shadow-md);
+    }
+
+    .luta-card.concluida {
+        border-color: var(--color-success);
+        background: var(--color-success-light);
+    }
+
+    .luta-id {
+        font-size: var(--font-size-xs);
+        color: var(--color-gray-500);
+        margin-bottom: var(--spacing-3);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .atleta-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--spacing-3);
+        padding: var(--spacing-3);
+        background: var(--color-white);
+        border-radius: var(--border-radius-md);
+        margin-bottom: var(--spacing-3);
+        border: 1px solid var(--color-gray-200);
+        transition: all var(--transition-base);
+    }
+
+    @media (min-width: 768px) {
+        .atleta-box {
+            padding: var(--spacing-4);
+        }
+    }
+
+    .atleta-box:hover {
+        box-shadow: var(--shadow-sm);
+    }
+
+    .atleta-box.vencedor {
+        background: var(--color-success-light);
+        border: 2px solid var(--color-success);
+    }
+
+    .atleta-box.azul {
+        border-left: 4px solid var(--color-primary);
+    }
+
+    .atleta-box.branco {
+        border-left: 4px solid var(--color-gray-300);
+    }
+
+    .atleta-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .atleta-nome {
+        font-weight: 600;
+        color: var(--color-gray-900);
+        margin-bottom: var(--spacing-1);
+        font-size: var(--font-size-base);
+    }
+
+    .atleta-academia {
+        font-size: var(--font-size-xs);
+        color: var(--color-gray-600);
+    }
+
+    .vs-divider {
+        text-align: center;
+        margin: var(--spacing-3) 0;
+        font-weight: 700;
+        color: var(--color-gray-400);
+        font-size: var(--font-size-lg);
+        letter-spacing: 0.1em;
+    }
+
+    .tipo-vitoria {
+        margin-top: var(--spacing-3);
+        padding-top: var(--spacing-3);
+        border-top: 1px solid var(--color-gray-200);
+        font-size: var(--font-size-xs);
+        color: var(--color-gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .resultados-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-3);
+    }
+
+    @media (min-width: 768px) {
+        .resultados-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .resultado-card {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-3);
+        padding: var(--spacing-4);
+        border-radius: var(--border-radius-md);
+        border: 1px solid var(--color-gray-200);
+    }
+
+    .resultado-card.ouro {
+        background: linear-gradient(135deg, #FCD34D 0%, #FBBF24 100%);
+        border-color: #F59E0B;
+    }
+
+    .resultado-card.prata {
+        background: linear-gradient(135deg, #E5E7EB 0%, #D1D5DB 100%);
+        border-color: #9CA3AF;
+    }
+
+    .resultado-card.bronze {
+        background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%);
+        border-color: #D97706;
+    }
+
+    .resultado-posicao {
+        font-size: var(--font-size-2xl);
+        line-height: 1;
+    }
+
+    .resultado-info {
+        flex: 1;
+    }
+
+    .resultado-titulo {
+        font-weight: 600;
+        color: var(--color-gray-900);
+        margin-bottom: var(--spacing-1);
+        font-size: var(--font-size-sm);
+    }
+
+    .resultado-detalhes {
+        font-size: var(--font-size-xs);
+        color: var(--color-gray-700);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="{% url 'academia_ver_chaves' campeonato.id %}" class="btn-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Voltar para chaves
+    </a>
+</div>
+
+<div class="chave-header">
+    <h1>{{ chave.classe }} - {{ chave.get_sexo_display }} - {{ chave.categoria }}</h1>
+    <p>Total de atletas: {{ chave.atletas.count }}</p>
+</div>
+
+{% if lutas_por_round %}
+    {% for round_group in lutas_por_round %}
+    <div class="round-section">
+        <span class="round-badge">Rodada {{ round_group.grouper }}</span>
+        
+        <div class="grid grid-cols-1 gap-4">
+            {% for luta in round_group.list %}
+            <div class="luta-card {% if luta.vencedor %}concluida{% endif %}">
+                <div class="luta-id">Luta #{{ luta.id }}</div>
+                
+                {% if luta.atleta_a %}
+                <div class="atleta-box {% if luta.vencedor == luta.atleta_a %}vencedor{% else %}azul{% endif %}">
+                    <div class="atleta-info">
+                        <div class="atleta-nome">{{ luta.atleta_a.nome }}</div>
+                        <div class="atleta-academia">{{ luta.atleta_a.academia.nome }}</div>
+                    </div>
+                    {% if luta.vencedor == luta.atleta_a %}
+                    <span class="badge badge-success">Vencedor</span>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="atleta-box branco" style="opacity: 0.6;">
+                    <div class="atleta-info">
+                        <div class="atleta-nome" style="font-style: italic; color: var(--color-gray-500);">BYE</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="vs-divider">VS</div>
+                
+                {% if luta.atleta_b %}
+                <div class="atleta-box {% if luta.vencedor == luta.atleta_b %}vencedor{% else %}branco{% endif %}">
+                    <div class="atleta-info">
+                        <div class="atleta-nome">{{ luta.atleta_b.nome }}</div>
+                        <div class="atleta-academia">{{ luta.atleta_b.academia.nome }}</div>
+                    </div>
+                    {% if luta.vencedor == luta.atleta_b %}
+                    <span class="badge badge-success">Vencedor</span>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="atleta-box branco" style="opacity: 0.6;">
+                    <div class="atleta-info">
+                        <div class="atleta-nome" style="font-style: italic; color: var(--color-gray-500);">BYE</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if luta.tipo_vitoria %}
+                <div class="tipo-vitoria">
+                    Vitória: {{ luta.get_tipo_vitoria_display }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    
+    {% if resultados %}
+    <div class="card mt-8">
+        <div class="card-header">
+            <h2 class="card-title">Resultados Finais</h2>
+        </div>
+        <div class="card-body">
+            <div class="resultados-grid">
+                {% if resultados.0 %}
+                <div class="resultado-card ouro">
+                    <span class="resultado-posicao">🥇</span>
+                    <div class="resultado-info">
+                        <div class="resultado-titulo">1º Lugar</div>
+                        <div class="resultado-detalhes">{{ resultados.0.nome }} - {{ resultados.0.academia.nome }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                {% if resultados.1 %}
+                <div class="resultado-card prata">
+                    <span class="resultado-posicao">🥈</span>
+                    <div class="resultado-info">
+                        <div class="resultado-titulo">2º Lugar</div>
+                        <div class="resultado-detalhes">{{ resultados.1.nome }} - {{ resultados.1.academia.nome }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                {% if resultados.2 %}
+                <div class="resultado-card bronze">
+                    <span class="resultado-posicao">🥉</span>
+                    <div class="resultado-info">
+                        <div class="resultado-titulo">3º Lugar</div>
+                        <div class="resultado-detalhes">{{ resultados.2.nome }} - {{ resultados.2.academia.nome }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 64px; height: 64px; color: var(--color-gray-400); margin: 0 auto var(--spacing-4);">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+            <p class="text-gray-500" style="font-size: var(--font-size-lg);">
+                Esta chave ainda não possui lutas geradas.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

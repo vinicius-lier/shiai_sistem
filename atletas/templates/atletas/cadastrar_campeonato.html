@@ -1,0 +1,260 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Cadastrar Campeonato - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Cadastrar Campeonato</h1>
+    <p class="page-description">Crie um novo campeonato para organizar sua competição</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Informações do Campeonato</h3>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label class="form-label" for="nome">
+                        Nome do Campeonato
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="text" id="nome" name="nome" class="form-input" required placeholder="Ex: Campeonato Regional de Judô 2024">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="data_inicio">
+                        Data de Início das Inscrições
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    <input type="date" id="data_inicio" name="data_inicio" class="form-input">
+                    <small class="form-help-text">Data em que as inscrições começam a ser aceitas</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="data_limite_inscricao">
+                        Data Limite de Inscrição
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    <input type="date" id="data_limite_inscricao" name="data_limite_inscricao" class="form-input">
+                    <small class="form-help-text">Última data para realizar inscrições</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="data_competicao">
+                        Data da Competição
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    <input type="date" id="data_competicao" name="data_competicao" class="form-input">
+                    <small class="form-help-text">Data em que a competição será realizada</small>
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-2);">
+                        <label class="form-label" for="regulamento" style="margin: 0;">
+                            Regulamento
+                            <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                        </label>
+                        <button type="button" onclick="carregarRegulamentoPadrao()" class="btn btn-secondary btn-sm" style="padding: var(--spacing-2) var(--spacing-3);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-right: var(--spacing-1);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                            Usar Regulamento Padrão
+                        </button>
+                    </div>
+                    <textarea id="regulamento" name="regulamento" class="form-textarea" rows="20" placeholder="Digite o regulamento do campeonato..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="valor_inscricao_federado">
+                        Valor Inscrição - Federado (R$)
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    <input type="number" id="valor_inscricao_federado" name="valor_inscricao_federado" class="form-input" step="0.01" min="0" placeholder="Ex: 50.00">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="valor_inscricao_nao_federado">
+                        Valor Inscrição - Não Federado (R$)
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    <input type="number" id="valor_inscricao_nao_federado" name="valor_inscricao_nao_federado" class="form-input" step="0.01" min="0" placeholder="Ex: 80.00">
+                </div>
+            </div>
+            
+            <!-- Seção de Pagamento -->
+            <div style="margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 2px solid var(--color-gray-200);">
+                <h3 style="font-size: var(--font-size-xl); font-weight: 600; color: var(--color-gray-900); margin-bottom: var(--spacing-4);">
+                    💳 Informações de Pagamento
+                </h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label class="form-label" for="chave_pix">
+                            Chave PIX
+                            <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                        </label>
+                        <input type="text" id="chave_pix" name="chave_pix" class="form-input" placeholder="Ex: 12345678900, email@exemplo.com ou chave aleatória">
+                        <small class="form-help-text">CPF, CNPJ, Email, Telefone ou Chave Aleatória</small>
+                    </div>
+                    
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label class="form-label" for="titular_pix">
+                            Titular da Chave PIX
+                            <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                        </label>
+                        <input type="text" id="titular_pix" name="titular_pix" class="form-input" placeholder="Ex: João Silva">
+                    </div>
+                    
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label class="form-label">
+                            Formas de Pagamento Aceitas
+                            <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                        </label>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-3); margin-top: var(--spacing-2);">
+                            {% for forma in formas_pagamento %}
+                            <label style="display: flex; align-items: center; gap: var(--spacing-2); cursor: pointer; padding: var(--spacing-3); border: 1px solid var(--color-gray-300); border-radius: var(--border-radius-md); transition: all var(--transition-base);">
+                                <input type="checkbox" name="formas_pagamento" value="{{ forma.id }}" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;">
+                                <div>
+                                    <span style="font-size: var(--font-size-sm); font-weight: 500; color: var(--color-gray-700);">
+                                        {{ forma.get_tipo_display }} - {{ forma.nome }}
+                                    </span>
+                                    {% if forma.descricao %}
+                                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-weight: normal;">
+                                        {{ forma.descricao }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </label>
+                            {% empty %}
+                            <p style="color: var(--color-gray-500); font-size: var(--font-size-sm);">
+                                Nenhuma forma de pagamento cadastrada. <a href="{% url 'admin:atletas_formapagamento_add' %}" target="_blank">Cadastrar no Admin</a>
+                            </p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6); margin-top: var(--spacing-8);">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label style="display: flex; align-items: center; gap: var(--spacing-2); cursor: pointer; padding: var(--spacing-3); border: 1px solid var(--color-gray-300); border-radius: var(--border-radius-md); transition: all var(--transition-base);">
+                        <input type="checkbox" id="ativo" name="ativo" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;">
+                        <div>
+                            <span style="font-size: var(--font-size-sm); font-weight: 500; color: var(--color-gray-700);">
+                                Definir como campeonato ativo
+                            </span>
+                            <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-weight: normal;">
+                                (Se marcado, desativará os outros campeonatos ativos)
+                            </small>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end; margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
+                <a href="{% url 'lista_campeonatos' %}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Cadastrar Campeonato
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function carregarRegulamentoPadrao() {
+    const regulamentoPadrao = `REGULAMENTO OFICIAL
+
+1. INSCRIÇÕES
+
+1.1. As inscrições devem ser realizadas pelo responsável pela agremiação ou representante devidamente designado.
+1.2. A organização não se responsabiliza por erros cometidos durante o processo de inscrição.
+1.3. As inscrições devem ser realizadas dentro do prazo estipulado. Inscrições realizadas no dia do evento estarão sujeitas a uma taxa adicional, conforme especificado no item 2.
+1.4. Atletas desclassificados que desejarem se reinscrever deverão pagar o valor integral correspondente à inscrição fora do prazo.
+
+2. TAXA DE INSCRIÇÃO
+
+- Atletas Federados: R$ 100,00 (com bonificação de R$ 10,00)
+- Atletas Não Federados: R$ 110,00
+- Inscrições após o prazo: R$ 125,00 (sem bonificação)
+
+3. DOCUMENTAÇÃO OBRIGATÓRIA
+
+3.1. Para atletas até a classe Sub 13, será permitido o ingresso mediante apresentação de certidão de nascimento.
+3.2. Para atletas a partir da classe Sub 15, será exigido documento oficial com foto. Serão aceitos os seguintes documentos:
+- RG Digital ou Físico;
+- CNH Digital ou Física;
+- GovBR;
+- Carteira de Trabalho;
+- Carteira Escolar do ano vigente (não serão aceitas carteiras de anos anteriores).
+3.3. É OBRIGATÓRIA A APRESENTAÇÃO DO DOCUMENTO NA PESAGEM.
+
+4. ORIENTAÇÕES AOS TÉCNICOS
+
+4.1. Nas Classes Sub 9 e Sub 11 não será permitida a presença de técnicos na área de combate, exceto:
+- Na classe inclusiva, onde o técnico poderá acompanhar o atleta.
+- Nos casos de atletas com necessidades especiais inscritos nas classes regulares, desde que estejam devidamente documentados.
+4.2. A partir da classe Sub 13, cada equipe poderá credenciar até dois técnicos, que deverão portar carteirinha emitida pela organização.
+
+5. CLASSE INCLUSIVA
+
+5.1. Destinada a atletas com espectro autista, TDAH ou outras necessidades especiais que não possuam condições de ingressar na classe regular.
+5.2. Atletas com necessidades especiais poderão competir nas classes regulares, desde que apresentem um termo de responsabilidade assinado pelo professor e pelos responsáveis legais.
+5.3. Os combates desta classe terão regras adaptadas e serão realizados simultaneamente aos da classe Festival.
+
+6. LUTA CASADA
+
+6.1. Poderá ser realizada luta casada a partir da classe Sub 13, apenas em caso de WO.
+
+7. CLASSES E HORÁRIOS
+
+As classes e horários serão definidos e divulgados pela organização do evento.
+
+8. SISTEMA DE CHAVES
+
+8.1. Para chaves com 6 ou mais atletas: sistema de chave simples, com disputa de 3º lugar.
+8.2. Para chaves com 5 atletas ou menos: sistema de rodízio.
+8.3. Para chaves com 2 atletas: melhor de 3.
+8.4. Critérios de desempate:
+- Número de Vitórias
+- Por pontos (Wazari vale 1 PT e IPPON 10 PTS)
+- Confronto direto entre os vencedores (nova luta).
+- Os perdedores dos finalistas disputarão o 3º lugar.
+
+9. TEMPO DE LUTA
+
+Os tempos de luta serão definidos conforme a classe e categoria, de acordo com as regras oficiais da Confederação Brasileira de Judô.
+
+10. ARBITRAGEM
+
+10.1. Somente árbitros com situação regular junto à Federação de Judô do Estado e à Confederação Brasileira de Judô poderão atuar.
+10.2. Árbitros devem estar devidamente credenciados.
+
+11. PREMIAÇÃO
+
+11.1. Festival de Judô: todos os participantes receberão medalhas de "OURO".
+11.2. Classes Sub 9, Sub 10 e Sub 11: os três primeiros colocados receberão medalhas, enquanto os demais participantes receberão medalhas de participação.
+11.3. Nas demais classes, serão premiados o campeão, o vicecampeão e os dois terceiros colocados. Não haverá medalhas de participação.
+11.4. Os atletas deverão estar com judogi completo para receber as premiações.
+
+12. JUDOGI
+
+12.1. O uso de judogi azul e branco será obrigatório a partir da classe Sub 15.
+12.2. O uso de patch não será obrigatório para nenhuma classe.
+
+13. DISPOSIÇÕES GERAIS
+
+13.1. As agremiações são responsáveis pelas condições físicas e mentais de seus atletas, assumindo a responsabilidade por qualquer acidente ocorrido durante o evento.
+13.2. A organização prestará primeiros socorros no local, mas as despesas médicas e hospitalares serão de responsabilidade da agremiação.
+13.3. Os casos omissos serão resolvidos pela Coordenação Geral do evento.`;
+    
+    if (confirm('Deseja carregar o regulamento padrão? Qualquer texto já digitado será substituído.')) {
+        document.getElementById('regulamento').value = regulamentoPadrao;
+    }
+}
+</script>
+{% endblock %}
+

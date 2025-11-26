@@ -1,0 +1,44 @@
+{% extends 'atletas/academia/base_academia.html' %}
+{% load static %}
+
+{% block title %}Selecionar Tipo de Login - SHIAI SISTEM{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="text-center mb-8">
+            <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" style="max-width: 180px; margin-bottom: var(--spacing-6);" onerror="this.style.display='none';">
+            <h1 class="page-title">SHIAI SISTEM</h1>
+            <p class="page-description">Gestão de Competições de Judô</p>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h2 class="text-center mb-6" style="font-size: var(--font-size-lg); font-weight: 600;">Selecione o Tipo de Login</h2>
+                
+                <div class="flex flex-col gap-4">
+                    <a href="{% url 'academia_login' %}" class="btn btn-primary" style="text-decoration: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        Login da Academia
+                    </a>
+                    
+                    <a href="{% url 'login_operacional' %}" class="btn btn-secondary" style="text-decoration: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"></path>
+                        </svg>
+                        Login Operacional
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-8">
+            <p class="text-gray-500" style="font-size: var(--font-size-sm);">Escolha o tipo de acesso ao sistema</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

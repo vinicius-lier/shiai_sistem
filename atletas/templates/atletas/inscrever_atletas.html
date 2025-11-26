@@ -1,0 +1,384 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Inscrever Atletas - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Inscrever Atletas no Campeonato</h1>
+    <p class="page-description">{{ campeonato_ativo.nome }}</p>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Filtros</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-4);">
+            <div class="form-group">
+                <label class="form-label" for="nome">Nome</label>
+                <input type="text" id="nome" name="nome" class="form-input" value="{{ nome_filtro }}" placeholder="Buscar por nome">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="sexo">Sexo</label>
+                <select id="sexo" name="sexo" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
+                    <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="academia">Academia</label>
+                <select id="academia" name="academia" class="form-select">
+                    <option value="">Todas</option>
+                    {% for academia in academias %}
+                    <option value="{{ academia.id }}" {% if academia_filtro == academia.id|stringformat:"s" %}selected{% endif %}>{{ academia.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group" style="display: flex; align-items: flex-end; gap: var(--spacing-2);">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a href="{% url 'inscrever_atletas' %}" class="btn btn-secondary">Limpar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Atletas -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Atletas Disponíveis</h3>
+        <small style="color: var(--color-gray-500);">Total: {{ atletas|length }} atleta(s)</small>
+    </div>
+    <div class="card-body">
+        {% if atletas %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Sexo</th>
+                            <th>Idade/Classe</th>
+                            <th>Academia</th>
+                            <th>Documento</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in atletas %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 500; color: var(--color-gray-900);">{{ item.atleta.nome }}</div>
+                            </td>
+                            <td>
+                                <span class="badge {% if item.atleta.sexo == 'M' %}badge-success{% else %}badge-warning{% endif %}">
+                                    {{ item.atleta.get_sexo_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if item.atleta.data_nascimento and item.atleta.idade %}
+                                    <div>{{ item.atleta.idade }} anos</div>
+                                {% elif item.atleta.data_nascimento %}
+                                    <div>{{ item.atleta.data_nascimento|date:"d/m/Y" }}</div>
+                                {% endif %}
+                                <div><span class="badge badge-info">{{ item.atleta.get_classe_atual }}</span></div>
+                            </td>
+                            <td>{{ item.atleta.academia.nome }}</td>
+                            <td>
+                                {% if item.atleta.tem_documento %}
+                                    <span class="badge badge-success">✓</span>
+                                {% else %}
+                                    <span class="badge badge-warning">⚠</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.total_inscricoes > 0 %}
+                                    <div style="display: flex; flex-direction: column; gap: var(--spacing-1);">
+                                        {% for insc in item.inscricoes %}
+                                        <div style="display: flex; align-items: center; gap: var(--spacing-2);">
+                                            <span class="badge {% if insc.status_inscricao == 'aprovado' %}badge-success{% elif insc.status_inscricao == 'pendente' %}badge-warning{% else %}badge-danger{% endif %}" style="font-size: var(--font-size-xs);">
+                                                {{ insc.classe_escolhida }} - {{ insc.categoria_escolhida }}
+                                            </span>
+                                            {% if insc.status_inscricao == 'aprovado' %}
+                                                <span style="color: var(--color-success); font-size: var(--font-size-xs);">✓</span>
+                                            {% elif insc.status_inscricao == 'pendente' %}
+                                                <span style="color: var(--color-warning); font-size: var(--font-size-xs);">⏳</span>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <small style="color: var(--color-gray-500); font-size: var(--font-size-xs); margin-top: var(--spacing-1);">
+                                        {{ item.total_inscricoes }} inscrição(ões)
+                                    </small>
+                                {% else %}
+                                    <span style="color: var(--color-gray-400);">Não inscrito</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-primary" style="padding: var(--spacing-1) var(--spacing-3); font-size: var(--font-size-sm); cursor: pointer;" onclick="abrirModalInscricao({{ item.atleta.id }}, '{{ item.atleta.nome|escapejs }}', '{{ item.atleta.get_classe_atual|escapejs }}', '{{ item.atleta.sexo }}')" {% if not item.atleta.tem_documento %}title="⚠ Atenção: Atleta sem documento cadastrado. O documento pode ser necessário na pesagem."{% endif %}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle; display: inline-block;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                                    {% if item.total_inscricoes > 0 %}Adicionar Inscrição{% else %}Inscrever{% endif %}
+                                    {% if not item.atleta.tem_documento %}<span style="margin-left: 4px; opacity: 0.8; font-size: 12px;">⚠</span>{% endif %}
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-title">Nenhum atleta encontrado</div>
+                <div class="empty-state-description">Ajuste os filtros ou cadastre novos atletas.</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de Inscrição -->
+<div class="modal-overlay" id="modal-inscricao">
+    <div class="modal" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h3 class="modal-title">Inscrever Atleta</h3>
+            <button class="modal-close" onclick="fecharModalInscricao()" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <form id="form-inscricao" method="post" action="{% url 'inscrever_atletas' %}">
+            {% csrf_token %}
+            <input type="hidden" id="atleta_id_inscricao" name="atleta_id">
+            
+            <div class="modal-body">
+                <div class="form-group mb-4">
+                    <label class="form-label">Atleta</label>
+                    <div style="padding: var(--spacing-3); background: var(--color-gray-50); border-radius: var(--border-radius-md);">
+                        <strong id="atleta_nome_inscricao"></strong>
+                        <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">
+                            Classe Atual: <span id="atleta_classe_inscricao"></span> | 
+                            Sexo: <span id="atleta_sexo_inscricao"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="classe_escolhida">
+                        Classe para Participação
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <select id="classe_escolhida" name="classe_escolhida" class="form-select" required>
+                        <option value="">Selecione a classe</option>
+                    </select>
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">
+                        Escolha a classe em que o atleta vai competir (conforme regras de elegibilidade)
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="categoria_escolhida">
+                        Categoria
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <select id="categoria_escolhida" name="categoria_escolhida" class="form-select" required disabled>
+                        <option value="">Selecione primeiro a classe</option>
+                    </select>
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">
+                        Após selecionar a classe, escolha a categoria de peso
+                    </small>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalInscricao()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Confirmar Inscrição</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const categorias = [
+    {% for categoria in categorias %}
+    {
+        id: {{ categoria.id }},
+        classe: "{{ categoria.classe }}",
+        sexo: "{{ categoria.sexo }}",
+        label: "{{ categoria.label|escapejs }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+let atletaAtual = null;
+let classeAtleta = '';
+let sexoAtleta = '';
+
+function abrirModalInscricao(atletaId, atletaNome, classe, sexo) {
+    console.log('Abrindo modal para atleta:', {atletaId, atletaNome, classe, sexo});
+    
+    atletaAtual = atletaId;
+    classeAtleta = classe;
+    sexoAtleta = sexo;
+    
+    document.getElementById('atleta_id_inscricao').value = atletaId;
+    document.getElementById('atleta_nome_inscricao').textContent = atletaNome;
+    document.getElementById('atleta_classe_inscricao').textContent = classe;
+    document.getElementById('atleta_sexo_inscricao').textContent = sexo === 'M' ? 'Masculino' : 'Feminino';
+    
+    // Determinar classes elegíveis
+    const classesPermitidas = categoriasPermitidas(classe);
+    console.log('Classe do atleta:', classe);
+    console.log('Classes permitidas:', classesPermitidas);
+    console.log('Classes existentes nas categorias:', [...new Set(categorias.map(c => c.classe))]);
+    
+    // Preencher select de classe
+    const classeSelect = document.getElementById('classe_escolhida');
+    if (!classeSelect) {
+        console.error('Select de classe não encontrado!');
+        return;
+    }
+    
+    classeSelect.innerHTML = '<option value="">Selecione a classe</option>';
+    
+    if (classesPermitidas.length === 0) {
+        classeSelect.innerHTML = '<option value="">Nenhuma classe disponível para este atleta</option>';
+        classeSelect.disabled = true;
+    } else {
+        classeSelect.disabled = false;
+        classesPermitidas.forEach(classePermitida => {
+            const option = document.createElement('option');
+            option.value = classePermitida;
+            option.textContent = classePermitida;
+            // Selecionar a primeira opção se houver apenas uma
+            if (classesPermitidas.length === 1) {
+                option.selected = true;
+                // Disparar evento change para carregar categorias
+                setTimeout(() => {
+                    classeSelect.dispatchEvent(new Event('change'));
+                }, 100);
+            }
+            classeSelect.appendChild(option);
+        });
+    }
+    
+    // Limpar e desabilitar categoria
+    const categoriaSelect = document.getElementById('categoria_escolhida');
+    if (categoriaSelect) {
+        categoriaSelect.innerHTML = '<option value="">Selecione primeiro a classe</option>';
+        categoriaSelect.disabled = true;
+        categoriaSelect.removeAttribute('required');
+    }
+    
+    const modal = document.getElementById('modal-inscricao');
+    if (!modal) {
+        console.error('Modal não encontrado!');
+        alert('Erro: Modal não encontrado. Por favor, recarregue a página.');
+        return;
+    }
+    
+    // Mostrar modal
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    console.log('Modal aberto para atleta:', atletaId);
+}
+
+function fecharModalInscricao() {
+    const modal = document.getElementById('modal-inscricao');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    document.body.style.overflow = '';
+    const form = document.getElementById('form-inscricao');
+    if (form) {
+        form.reset();
+    }
+    atletaAtual = null;
+    classeAtleta = '';
+    sexoAtleta = '';
+}
+
+function categoriasPermitidas(classeAtleta) {
+    const classeNormalizada = classeAtleta.toUpperCase().trim();
+    
+    // Obter classes que existem nas categorias disponíveis
+    const classesExistentes = [...new Set(categorias.map(c => c.classe.toUpperCase().trim()))];
+    
+    // Regras de elegibilidade
+    let classesPermitidas = [];
+    
+    if (classeNormalizada === 'VETERANOS' || classeNormalizada === 'VETERANO') {
+        classesPermitidas = ['VETERANOS', 'SÊNIOR'];
+    } else if (classeNormalizada === 'SUB 18' || classeNormalizada === 'SUB18') {
+        classesPermitidas = ['SUB 18', 'SUB 21', 'SÊNIOR'];
+    } else {
+        // Regra padrão: apenas sua própria classe
+        classesPermitidas = [classeAtleta];
+    }
+    
+    // Filtrar apenas classes que existem nas categorias
+    return classesPermitidas.filter(cl => {
+        const clNormalizada = cl.toUpperCase().trim();
+        return classesExistentes.some(ex => ex === clNormalizada);
+    });
+}
+
+// Atualizar categorias quando classe for selecionada
+const classeSelectEl = document.getElementById('classe_escolhida');
+if (classeSelectEl) {
+    classeSelectEl.addEventListener('change', function() {
+        const classeSelecionada = this.value;
+        const categoriaSelect = document.getElementById('categoria_escolhida');
+        
+        categoriaSelect.innerHTML = '<option value="">Selecione uma categoria</option>';
+        
+        if (!classeSelecionada) {
+            categoriaSelect.disabled = true;
+            categoriaSelect.removeAttribute('required');
+            categoriaSelect.innerHTML = '<option value="">Selecione primeiro a classe</option>';
+            return;
+        }
+        
+        // Filtrar categorias pela classe selecionada e sexo
+        const categoriasFiltradas = categorias.filter(cat => {
+            const catClasseNormalizada = cat.classe.toUpperCase().trim();
+            const classeSelecionadaNormalizada = classeSelecionada.toUpperCase().trim();
+            return catClasseNormalizada === classeSelecionadaNormalizada && 
+                   cat.sexo === sexoAtleta;
+        });
+        
+        console.log('Categorias filtradas para', classeSelecionada, '-', sexoAtleta, ':', categoriasFiltradas);
+        
+        categoriaSelect.innerHTML = '<option value="">Selecione uma categoria</option>';
+        
+        if (categoriasFiltradas.length === 0) {
+            categoriaSelect.innerHTML = '<option value="">Nenhuma categoria disponível para ' + classeSelecionada + ' - ' + (sexoAtleta === 'M' ? 'Masculino' : 'Feminino') + '</option>';
+            categoriaSelect.disabled = true;
+            categoriaSelect.removeAttribute('required');
+        } else {
+            categoriaSelect.disabled = false;
+            categoriaSelect.setAttribute('required', 'required');
+            categoriasFiltradas.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.label;
+                categoriaSelect.appendChild(option);
+            });
+        }
+    });
+}
+
+// Fechar modal ao clicar no overlay
+document.getElementById('modal-inscricao').addEventListener('click', function(e) {
+    if (e.target === this) {
+        fecharModalInscricao();
+    }
+});
+</script>
+{% endblock %}
+

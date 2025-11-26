@@ -1,0 +1,121 @@
+{% extends 'atletas/administracao/base_admin.html' %}
+
+{% block admin_page_title %}Conferência de Inscrições{% endblock %}
+{% block admin_page_description %}Revise e confirme as inscrições pendentes da academia{% endblock %}
+
+{% block admin_content %}
+<section class="card" style="margin-bottom: var(--spacing-8);">
+    <div class="card-header">
+        <h3 class="card-title">Conferência de Inscrições</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-4); align-items: center;">
+            <div style="display: flex; align-items: center; gap: var(--spacing-2);">
+                <span style="color: var(--color-gray-600); font-size: var(--font-size-sm); font-weight: 500;">Valor federado:</span>
+                <span style="color: var(--color-primary); font-size: var(--font-size-lg); font-weight: 600;">R$ {{ valor_federado|floatformat:2 }}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: var(--spacing-2);">
+                <span style="color: var(--color-gray-600); font-size: var(--font-size-sm); font-weight: 500;">Valor não federado:</span>
+                <span style="color: var(--color-secondary); font-size: var(--font-size-lg); font-weight: 600;">R$ {{ valor_nao_federado|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if inscricoes_por_academia %}
+    {% for academia_nome, data in inscricoes_por_academia.items %}
+    <section class="card" style="margin-bottom: var(--spacing-6);">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap: var(--spacing-4); flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+                <h3 class="card-title" style="margin:0 0 var(--spacing-1) 0;">{{ academia_nome }}</h3>
+                <p style="margin:0; color: var(--color-gray-600); font-size: var(--font-size-sm);">
+                    Total estimado: <strong style="color: var(--color-primary); font-size: var(--font-size-base);">R$ {{ data.total|floatformat:2 }}</strong>
+                </p>
+            </div>
+            <div style="display:flex; gap: var(--spacing-3); flex-wrap: wrap;">
+                <form method="post" action="{% url 'administracao_confirmar_inscricoes' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="academia_id" value="{{ data.academia.id }}">
+                    <input type="hidden" name="campeonato_id" value="{{ campeonato.id }}">
+                    <button type="submit" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        Confirmar Tudo
+                    </button>
+                </form>
+                {% if data.academia.telefone %}
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-telefone="{{ data.academia.telefone }}"
+                        data-total="{{ data.total|floatformat:2 }}"
+                        data-quantidade="{{ data.inscricoes|length }}"
+                        data-evento="{{ campeonato.nome }}"
+                        data-academia="{{ academia_nome }}"
+                        onclick="enviarWhatsappConfirmacao(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                    </svg>
+                    WhatsApp
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <div style="display:flex; flex-direction:column; gap: var(--spacing-4);">
+                {% for insc in data.inscricoes %}
+                <div class="card" style="padding: var(--spacing-4); border: 1px solid var(--color-gray-200); background: var(--color-gray-50);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: var(--spacing-4); flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <div style="font-weight: 600; font-size: var(--font-size-base); color: var(--color-gray-900); margin-bottom: var(--spacing-2);">{{ insc.atleta.nome }}</div>
+                            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-bottom: var(--spacing-2);">
+                                <span class="badge badge-info" style="margin-right: var(--spacing-2);">{{ insc.classe_escolhida }}</span>
+                                <span class="badge badge-primary">{{ insc.categoria_escolhida }}</span>
+                            </div>
+                            <div style="font-size: var(--font-size-sm); margin-top: var(--spacing-2);">
+                                Situação: <span class="badge badge-warning" style="margin-left: var(--spacing-1);">Pendente</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endfor %}
+{% else %}
+    <section class="card">
+        <div class="card-body">
+            <p style="margin:0; color: var(--color-gray-500); text-align: center; padding: var(--spacing-8) 0;">Não há inscrições pendentes.</p>
+        </div>
+    </section>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function normalizarTelefone(valor) {
+    if (!valor) return null;
+    let numeros = valor.replace(/\D/g, '');
+    if (numeros.startsWith('550')) {
+        numeros = '55' + numeros.slice(3);
+    }
+    if (!numeros.startsWith('55') && (numeros.length === 10 || numeros.length === 11)) {
+        numeros = '55' + numeros;
+    }
+    return numeros.length >= 12 ? numeros : null;
+}
+
+function enviarWhatsappConfirmacao(button) {
+    const telefone = normalizarTelefone(button.dataset.telefone);
+    if (!telefone) {
+        alert('Telefone da academia inválido.');
+        return;
+    }
+    const mensagem = `Olá, Sensei! A inscrição dos atletas da sua academia para o evento *${button.dataset.evento}* foi confirmada.\n\nTotal de atletas confirmados: ${button.dataset.quantidade}\nValor total: R$ ${button.dataset.total}\n\nAgradecemos pela confiança!`;
+    window.open(`https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`, '_blank');
+}
+</script>
+{% endblock %}
+

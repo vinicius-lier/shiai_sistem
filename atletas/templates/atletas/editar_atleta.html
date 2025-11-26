@@ -1,0 +1,237 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Editar Atleta - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Editar Atleta</h1>
+    <p class="page-description">Edite as informações do atleta</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Informações do Atleta</h3>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
+                <div class="form-group">
+                    <label class="form-label" for="nome">
+                        Nome completo
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="text" id="nome" name="nome" class="form-input" required value="{{ atleta.nome }}" placeholder="Digite o nome do atleta">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="data_nascimento">
+                        Data de Nascimento
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="date" id="data_nascimento" name="data_nascimento" class="form-input" required value="{% if atleta.data_nascimento %}{{ atleta.data_nascimento|date:'Y-m-d' }}{% endif %}">
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">A classe será calculada automaticamente</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="sexo">
+                        Sexo
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <select id="sexo" name="sexo" class="form-select" required>
+                        <option value="">Selecione</option>
+                        <option value="M" {% if atleta.sexo == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if atleta.sexo == 'F' %}selected{% endif %}>Feminino</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="academia">
+                        Academia
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <select id="academia" name="academia" class="form-select" required>
+                        <option value="">Selecione uma academia</option>
+                        {% for academia in academias %}
+                        <option value="{{ academia.id }}" {% if atleta.academia.id == academia.id %}selected{% endif %}>{{ academia.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="faixa">
+                        Faixa
+                    </label>
+                    <select id="faixa" name="faixa" class="form-select">
+                        <option value="">Selecione a faixa</option>
+                        <option value="BRANCA" {% if atleta.faixa == 'BRANCA' %}selected{% endif %}>Branca</option>
+                        <option value="P.CINZA" {% if atleta.faixa == 'P.CINZA' %}selected{% endif %}>P. Cinza</option>
+                        <option value="CINZA" {% if atleta.faixa == 'CINZA' %}selected{% endif %}>Cinza</option>
+                        <option value="P.AZUL" {% if atleta.faixa == 'P.AZUL' %}selected{% endif %}>P. Azul</option>
+                        <option value="AZUL" {% if atleta.faixa == 'AZUL' %}selected{% endif %}>Azul</option>
+                        <option value="P.AMARELA" {% if atleta.faixa == 'P.AMARELA' %}selected{% endif %}>P. Amarela</option>
+                        <option value="AMARELA" {% if atleta.faixa == 'AMARELA' %}selected{% endif %}>Amarela</option>
+                        <option value="P.LARANJA" {% if atleta.faixa == 'P.LARANJA' %}selected{% endif %}>P. Laranja</option>
+                        <option value="LARANJA" {% if atleta.faixa == 'LARANJA' %}selected{% endif %}>Laranja</option>
+                        <option value="VERDE" {% if atleta.faixa == 'VERDE' %}selected{% endif %}>Verde</option>
+                        <option value="ROXA" {% if atleta.faixa == 'ROXA' %}selected{% endif %}>Roxa</option>
+                        <option value="MARRON" {% if atleta.faixa == 'MARRON' %}selected{% endif %}>Marrom</option>
+                        <option value="PRETA" {% if atleta.faixa == 'PRETA' %}selected{% endif %}>Preta</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label class="form-label" for="foto_perfil">
+                        Foto de Perfil
+                    </label>
+                    {% if atleta.foto_perfil %}
+                    <div style="margin-bottom: var(--spacing-2); padding: var(--spacing-2); background: var(--color-gray-50); border-radius: var(--border-radius-md);">
+                        <img src="{{ atleta.foto_perfil.url }}" alt="Foto atual" style="max-width: 150px; max-height: 150px; border-radius: var(--border-radius-md); border: 2px solid var(--color-gray-300); margin-bottom: var(--spacing-2);">
+                        <div>
+                            <a href="{{ atleta.foto_perfil.url }}" target="_blank" class="btn btn-secondary" style="padding: var(--spacing-1) var(--spacing-3); font-size: var(--font-size-sm);">
+                                Ver foto atual
+                            </a>
+                        </div>
+                    </div>
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Envie uma nova foto apenas se desejar substituir a foto atual</small>
+                    {% endif %}
+                    <input type="file" id="foto_perfil" name="foto_perfil" class="form-input" accept=".jpg,.jpeg,.png" onchange="previewFoto(this, 'foto-preview')">
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Formatos aceitos: JPG, PNG (máximo 2MB)</small>
+                    <div id="foto-preview" style="margin-top: var(--spacing-3); display: none;">
+                        <img id="foto-preview-img" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: var(--border-radius-md); border: 2px solid var(--color-gray-300);">
+                    </div>
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label class="form-label" for="documento_oficial">
+                        Documento Oficial (RG, CPF ou Certidão)
+                        {% if atleta.documento_oficial %}
+                            <span style="color: var(--color-success); font-weight: normal;">✓ Documento já cadastrado</span>
+                        {% else %}
+                            <span style="color: var(--color-danger);">*</span>
+                        {% endif %}
+                    </label>
+                    {% if atleta.documento_oficial %}
+                    <div style="margin-bottom: var(--spacing-2); padding: var(--spacing-2); background: var(--color-success-light); border-radius: var(--border-radius-md);">
+                        <a href="{{ atleta.documento_oficial.url }}" target="_blank" class="btn btn-secondary" style="padding: var(--spacing-1) var(--spacing-3); font-size: var(--font-size-sm);">
+                            Ver documento atual
+                        </a>
+                    </div>
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Envie um novo arquivo apenas se desejar substituir o documento atual</small>
+                    {% endif %}
+                    <input type="file" id="documento_oficial" name="documento_oficial" class="form-input" accept=".jpg,.jpeg,.png,.pdf" {% if not atleta.documento_oficial %}required{% endif %}>
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Formatos aceitos: JPG, PNG ou PDF (máximo 5MB)</small>
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label style="display: flex; align-items: center; gap: var(--spacing-2); cursor: pointer; padding: var(--spacing-3); border: 1px solid var(--color-gray-300); border-radius: var(--border-radius-md); transition: all var(--transition-base);">
+                        <input type="checkbox" id="federado" name="federado" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;" onchange="toggleZempoField()" {% if atleta.federado %}checked{% endif %}>
+                        <div>
+                            <span style="font-size: var(--font-size-sm); font-weight: 500; color: var(--color-gray-700);">
+                                Atleta Federado
+                            </span>
+                            <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-weight: normal;">
+                                Marque se o atleta possui registro na federação
+                            </small>
+                        </div>
+                    </label>
+                </div>
+                
+                <div class="form-group" id="zempo-group" style="{% if atleta.federado %}display: block;{% else %}display: none;{% endif %}">
+                    <label class="form-label" for="numero_zempo">
+                        Número Zempo
+                        {% if atleta.federado %}<span style="color: var(--color-danger);">*</span>{% endif %}
+                    </label>
+                    <input type="text" id="numero_zempo" name="numero_zempo" class="form-input" value="{% if atleta.numero_zempo %}{{ atleta.numero_zempo }}{% endif %}" placeholder="Digite o número Zempo do atleta">
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Obrigatório para atletas federados</small>
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label style="display: flex; align-items: center; gap: var(--spacing-2); cursor: pointer; padding: var(--spacing-3); border: 1px solid var(--color-gray-300); border-radius: var(--border-radius-md); transition: all var(--transition-base);">
+                        <input type="checkbox" id="status_ativo" name="status_ativo" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;" {% if atleta.status_ativo %}checked{% endif %}>
+                        <div>
+                            <span style="font-size: var(--font-size-sm); font-weight: 500; color: var(--color-gray-700);">
+                                Atleta Ativo
+                            </span>
+                            <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-weight: normal;">
+                                Desmarque para desativar o atleta no sistema
+                            </small>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end; margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
+                <a href="{% url 'lista_atletas' %}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Preview de foto
+function previewFoto(input, previewId) {
+    const preview = document.getElementById(previewId);
+    const previewImg = document.getElementById(previewId + '-img');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+function toggleZempoField() {
+    const federadoCheck = document.getElementById('federado');
+    const zempoGroup = document.getElementById('zempo-group');
+    const zempoInput = document.getElementById('numero_zempo');
+    
+    if (federadoCheck.checked) {
+        zempoGroup.style.display = 'block';
+        zempoInput.required = true;
+        // Adicionar asterisco ao label
+        const label = zempoGroup.querySelector('label');
+        if (!label.innerHTML.includes('*')) {
+            label.innerHTML = label.innerHTML.replace('</label>', '<span style="color: var(--color-danger);">*</span></label>');
+        }
+    } else {
+        zempoGroup.style.display = 'none';
+        zempoInput.required = false;
+        zempoInput.value = '';
+    }
+}
+
+// Validar antes de enviar
+document.querySelector('form').addEventListener('submit', function(e) {
+    const federado = document.getElementById('federado').checked;
+    const numeroZempo = document.getElementById('numero_zempo').value.trim();
+    
+    if (federado && !numeroZempo) {
+        e.preventDefault();
+        alert('Por favor, informe o número Zempo para atletas federados.');
+        document.getElementById('numero_zempo').focus();
+        return false;
+    }
+});
+
+// Inicializar campo Zempo se atleta já for federado
+{% if atleta.federado %}
+document.addEventListener('DOMContentLoaded', function() {
+    toggleZempoField();
+});
+{% endif %}
+</script>
+{% endblock %}
+

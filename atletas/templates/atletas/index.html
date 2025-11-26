@@ -1,5 +1,6 @@
 {% extends 'atletas/base.html' %}
 
+<<<<<<< HEAD
 {% block title %}Dashboard - Sistema de Gestão de Competições de Judô{% endblock %}
 
 {% block content %}
@@ -286,4 +287,43 @@
         }
     }
 </style>
+=======
+{% block title %}Início - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block content %}
+<h1>Sistema de Gestão de Competições de Judô</h1>
+
+<div class="stats">
+    <div class="stat-card">
+        <h3>Total de Atletas</h3>
+        <div class="number">{{ total_atletas }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Total de Academias</h3>
+        <div class="number">{{ total_academias }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Total de Categorias</h3>
+        <div class="number">{{ total_categorias }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Total de Chaves</h3>
+        <div class="number">{{ total_chaves }}</div>
+    </div>
+</div>
+
+<h2>Menu Principal</h2>
+<ul style="list-style: none; padding: 0;">
+    <li style="margin: 10px 0;"><a href="{% url 'cadastrar_atleta' %}" class="btn">Cadastrar Atleta</a></li>
+    <li style="margin: 10px 0;"><a href="{% url 'cadastrar_festival' %}" class="btn">🏅 Cadastrar Festival</a></li>
+    <li style="margin: 10px 0;"><a href="{% url 'lista_atletas' %}" class="btn">Listar Atletas</a></li>
+    <li style="margin: 10px 0;"><a href="{% url 'lista_academias' %}" class="btn">Gerenciar Academias</a></li>
+    <li style="margin: 10px 0;"><a href="{% url 'lista_categorias' %}" class="btn">Gerenciar Categorias</a></li>
+    <li style="margin: 10px 0;"><a href="{% url 'pesagem' %}" class="btn">Pesagem</a></li>
+    <li style="margin: 10px 0;"><a href="{% url 'lista_chaves' %}" class="btn">Gerenciar Chaves</a></li>
+    <li style="margin: 10px 0;"><a href="{% url 'ranking_academias' %}" class="btn">Ranking de Academias</a></li>
+    <li style="margin: 10px 0;"><a href="{% url 'dashboard' %}" class="btn">📊 Dashboard</a></li>
+    <li style="margin: 10px 0;"><a href="{% url 'relatorio_atletas_inscritos' %}" class="btn">Relatórios</a></li>
+</ul>
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 {% endblock %}

@@ -418,6 +418,7 @@
     "limite_max": null,
     "acima": true,
     "sexo": "M/F"
+<<<<<<< HEAD
   },
   {
     "classe": "VETERANOS",
@@ -468,6 +469,8 @@
     "limite_max": null,
     "acima": true,
     "sexo": "M/F"
+=======
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
   }
 ]
 

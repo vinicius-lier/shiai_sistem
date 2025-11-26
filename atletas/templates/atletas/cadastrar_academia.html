@@ -1,5 +1,6 @@
 {% extends 'atletas/base.html' %}
 
+<<<<<<< HEAD
 {% block title %}Cadastrar Academia - Sistema de Gestão de Competições de Judô{% endblock %}
 
 {% block content %}
@@ -134,4 +135,27 @@ function previewFoto(input, previewId) {
 }
 
 </script>
+=======
+{% block title %}Cadastrar Academia{% endblock %}
+
+{% block content %}
+<h1>Cadastrar Academia</h1>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <label for="nome">Nome:</label>
+    <input type="text" id="nome" name="nome" required>
+    
+    <label for="cidade">Cidade:</label>
+    <input type="text" id="cidade" name="cidade" required>
+    
+    <label for="estado">Estado (UF):</label>
+    <input type="text" id="estado" name="estado" maxlength="2" required>
+    
+    <button type="submit">Cadastrar Academia</button>
+</form>
+
+<a href="{% url 'lista_academias' %}" class="btn">Voltar para Lista</a>
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 {% endblock %}

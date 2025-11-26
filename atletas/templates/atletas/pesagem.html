@@ -1,6 +1,10 @@
 {% extends 'atletas/base.html' %}
 
+<<<<<<< HEAD
 {% block title %}Pesagem - Sistema de Gestão de Competições de Judô{% endblock %}
+=======
+{% block title %}Pesagem{% endblock %}
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 
 {% block extra_css %}
 <style>
@@ -15,6 +19,7 @@
         padding: 0;
     }
 
+<<<<<<< HEAD
     .sidebar,
     .navbar,
     .page-header,
@@ -50,11 +55,34 @@
 .input-peso-inline {
     width: 120px;
     min-width: 100px;
+=======
+    nav,
+    .filter-box,
+    .btn,
+    #modal-remanejamento,
+    script {
+        display: none !important;
+    }
+
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+
+    h1 {
+        margin: 0 0 10px 0;
+        border: none;
+    }
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 }
 </style>
 {% endblock %}
 
 {% block content %}
+<<<<<<< HEAD
 <div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
     <div>
         <h1 class="page-title">Pesagem</h1>
@@ -115,6 +143,53 @@
 {% if atletas %}
 <div class="table-container">
     <table class="table">
+=======
+<h1>Pesagem</h1>
+
+<div style="margin-bottom: 15px;">
+    <button type="button" class="btn" onclick="window.print()">🖨 Imprimir tela atual (com filtros)</button>
+</div>
+
+
+<div class="filter-box">
+    <form method="get">
+        <div>
+            <label for="classe">Classe:</label>
+            <select id="classe" name="classe">
+                <option value="">Todas</option>
+                {% for classe in classes %}
+                <option value="{{ classe }}" {% if classe == classe_filtro %}selected{% endif %}>{{ classe }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div>
+            <label for="sexo">Sexo:</label>
+            <select id="sexo" name="sexo">
+                <option value="">Todos</option>
+                <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
+                <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
+            </select>
+        </div>
+        
+        <div>
+            <label for="categoria">Categoria:</label>
+            <select id="categoria" name="categoria">
+                <option value="">Todas</option>
+                {% for categoria in categorias %}
+                <option value="{{ categoria }}" {% if categoria == categoria_filtro %}selected{% endif %}>{{ categoria }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit">Filtrar</button>
+        <a href="{% url 'pesagem' %}" class="btn">Limpar Filtros</a>
+    </form>
+</div>
+
+<div class="table-responsive">
+    <table>
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
         <thead>
             <tr>
                 <th>Nome</th>
@@ -124,12 +199,17 @@
                 <th>Limite (kg)</th>
                 <th>Peso Oficial</th>
                 <th>Status</th>
+<<<<<<< HEAD
                 <th style="min-width: 200px;">Ações</th>
+=======
+                <th>Ações</th>
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
             </tr>
         </thead>
         <tbody>
             {% for atleta in atletas %}
             <tr>
+<<<<<<< HEAD
                 <td>
                     <div style="font-weight: 500; color: var(--color-gray-900);">{{ atleta.nome }}</div>
                     <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">{{ atleta.academia.nome }}</div>
@@ -153,10 +233,23 @@
                         <strong style="color: var(--color-gray-900);">{{ atleta.peso_oficial }}</strong> kg
                     {% else %}
                         <span style="color: var(--color-gray-400);">-</span>
+=======
+                <td>{{ atleta.nome }}</td>
+                <td>{{ atleta.classe }}</td>
+                <td>{{ atleta.get_sexo_display }}</td>
+                <td>{{ atleta.categoria_ajustada|default:atleta.categoria_nome }}</td>
+                <td>{{ atleta.get_limite_categoria }}</td>
+                <td>
+                    {% if atleta.peso_oficial %}
+                        {{ atleta.peso_oficial }} kg
+                    {% else %}
+                        -
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                     {% endif %}
                 </td>
                 <td>
                     {% if atleta.status == 'OK' %}
+<<<<<<< HEAD
                         <span class="badge badge-success">{{ atleta.status }}</span>
                     {% elif 'Eliminado' in atleta.status %}
                         <span class="badge badge-danger">{{ atleta.status }}</span>
@@ -183,10 +276,18 @@
                                     WhatsApp
                                 </a>
                             </div>
+=======
+                        <span class="status-ok">{{ atleta.status }}</span>
+                    {% else %}
+                        <span class="status-eliminado">{{ atleta.status }}</span>
+                        {% if atleta.motivo_ajuste %}
+                            <br><small>{{ atleta.motivo_ajuste }}</small>
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                         {% endif %}
                     {% endif %}
                 </td>
                 <td>
+<<<<<<< HEAD
                     <form class="form-pesagem-inline" method="post" action="{% url 'registrar_peso' atleta.inscricao_obj.id %}" data-inscricao-id="{{ atleta.inscricao_obj.id }}" data-atleta-id="{{ atleta.id }}">
                         {% csrf_token %}
                         <input type="number" 
@@ -211,10 +312,32 @@
                     {% endif %}
                 </td>
             </tr>
+=======
+                    <form class="form-pesagem" method="post" action="{% url 'registrar_peso' atleta.id %}" style="display: inline;" data-atleta-id="{{ atleta.id }}">
+                        {% csrf_token %}
+                        <input type="number" name="peso_oficial" step="0.1" min="0" placeholder="Peso (kg)" 
+                               value="{% if atleta.peso_oficial %}{{ atleta.peso_oficial }}{% endif %}" 
+                               style="width: 110px; display: inline-block; margin-right: 5px;" inputmode="decimal" required>
+                        <button type="submit" style="padding: 8px 12px; margin: 0; min-height: 44px;">Registrar</button>
+                    </form>
+                    {% if 'Pode rebaixar' in atleta.motivo_ajuste %}
+                    <a href="{% url 'rebaixar_categoria' atleta.id %}" class="btn btn-success" style="padding: 8px 12px; margin: 4px 0; min-height: 44px;">Rebaixar</a>
+                    {% endif %}
+                    {% if atleta.remanejado %}
+                    <span style="color: orange; font-size: 12px; display: block; margin-top: 4px;">⚠ Remanejado</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center;">Nenhum atleta encontrado</td>
+            </tr>
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
             {% endfor %}
         </tbody>
     </table>
 </div>
+<<<<<<< HEAD
 {% else %}
 <div class="card">
     <div class="empty-state">
@@ -267,18 +390,41 @@
                 </div>
             </form>
         </div>
+=======
+
+<!-- Modal de Confirmação de Remanejamento -->
+<div id="modal-remanejamento" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        <h2 style="margin-top: 0; color: #dc3545;">⚠ Atenção: Peso fora da categoria!</h2>
+        <div id="modal-conteudo" style="margin: 20px 0;">
+            <!-- Conteúdo será preenchido via JavaScript -->
+        </div>
+        <form id="form-confirmacao" method="post" style="display: flex; gap: 10px; justify-content: flex-end;">
+            {% csrf_token %}
+            <input type="hidden" name="peso_oficial" id="modal-peso">
+            <input type="hidden" name="categoria_nova" id="modal-categoria-nova">
+            <button type="button" class="btn btn-danger" id="btn-desclassificar">Desclassificar</button>
+            <button type="submit" name="acao" value="remanejar" class="btn btn-success">Remanejar</button>
+            <button type="button" class="btn" onclick="fecharModal()">Cancelar</button>
+        </form>
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+<<<<<<< HEAD
     const forms = document.querySelectorAll('.form-pesagem-inline');
+=======
+    const forms = document.querySelectorAll('.form-pesagem');
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     
     forms.forEach(form => {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             
             const formData = new FormData(this);
+<<<<<<< HEAD
             const inscricaoId = this.dataset.inscricaoId;
             const btnSubmit = this.querySelector('button[type="submit"]');
             const originalText = btnSubmit.textContent;
@@ -286,6 +432,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Loading state
             btnSubmit.disabled = true;
             btnSubmit.textContent = 'Salvando...';
+=======
+            const atletaId = this.dataset.atletaId;
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
             
             fetch(this.action, {
                 method: 'POST',
@@ -299,8 +448,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.precisa_confirmacao) {
                     // Mostrar modal de confirmação
                     mostrarModalRemanejamento(data);
+<<<<<<< HEAD
                     btnSubmit.disabled = false;
                     btnSubmit.textContent = originalText;
+=======
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                 } else {
                     // Recarregar página
                     window.location.reload();
@@ -308,8 +460,11 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Erro:', error);
+<<<<<<< HEAD
                 btnSubmit.disabled = false;
                 btnSubmit.textContent = originalText;
+=======
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                 window.location.reload();
             });
         });
@@ -321,7 +476,11 @@ function mostrarModalRemanejamento(data) {
     const conteudo = document.getElementById('modal-conteudo');
     const form = document.getElementById('form-confirmacao');
     
+<<<<<<< HEAD
     form.action = `/pesagem/inscricao/${data.inscricao_id}/confirmar-remanejamento/`;
+=======
+    form.action = `/pesagem/${data.atleta_id}/confirmar-remanejamento/`;
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     document.getElementById('modal-peso').value = data.peso;
     document.getElementById('modal-categoria-nova').value = data.categoria_nova;
     
@@ -334,6 +493,7 @@ function mostrarModalRemanejamento(data) {
         `${data.limite_novo_min} kg ou mais`;
     
     conteudo.innerHTML = `
+<<<<<<< HEAD
         <div style="margin-bottom: var(--spacing-4);">
             <p style="margin-bottom: var(--spacing-2);"><strong>Atleta:</strong> <span style="color: var(--color-gray-900);">${data.atleta_nome}</span></p>
             <p style="margin-bottom: var(--spacing-2);"><strong>Peso registrado:</strong> <span style="color: var(--color-primary); font-weight: 600;">${data.peso} kg</span></p>
@@ -354,6 +514,22 @@ function mostrarModalRemanejamento(data) {
     `;
     
     modal.classList.add('active');
+=======
+        <p><strong>Atleta:</strong> ${data.atleta_nome}</p>
+        <p><strong>Peso registrado:</strong> ${data.peso} kg</p>
+        <hr>
+        <p><strong>Categoria atual:</strong> ${data.categoria_atual} (${limiteAtual})</p>
+        <p><strong>Categoria sugerida:</strong> ${data.categoria_nova} (${limiteNovo})</p>
+        <hr>
+        <p style="color: #dc3545;"><strong>⚠ IMPORTANTE:</strong></p>
+        <ul>
+            <li>Se <strong>Remanejar</strong>: O atleta será remanejado para a nova categoria e a academia <strong>perderá 1 ponto</strong>.</li>
+            <li>Se <strong>Desclassificar</strong>: O atleta será desclassificado por estar fora do peso da categoria.</li>
+        </ul>
+    `;
+    
+    modal.style.display = 'flex';
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     
     // Remover listeners anteriores e adicionar novo
     const btnDesclassificar = document.getElementById('btn-desclassificar');
@@ -375,6 +551,7 @@ function mostrarModalRemanejamento(data) {
 }
 
 function fecharModal() {
+<<<<<<< HEAD
     const modal = document.getElementById('modal-remanejamento');
     modal.classList.remove('active');
 }
@@ -683,6 +860,9 @@ function inicializarFuncoesWhatsApp() {
             fecharModalWhatsApp();
         }
     });
+=======
+    document.getElementById('modal-remanejamento').style.display = 'none';
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 }
 </script>
 {% endblock %}

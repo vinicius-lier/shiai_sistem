@@ -3,7 +3,11 @@ from django.utils.html import format_html
 from django.urls import path
 from django.shortcuts import render
 from django.http import JsonResponse
+<<<<<<< HEAD
 from .models import Academia, Categoria, Atleta, Chave, Luta, AdminLog, Inscricao, Campeonato
+=======
+from .models import Academia, Categoria, Atleta, Chave, Luta, AdminLog
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 
 
 @admin.register(Academia)
@@ -22,6 +26,7 @@ class CategoriaAdmin(admin.ModelAdmin):
 
 @admin.register(Atleta)
 class AtletaAdmin(admin.ModelAdmin):
+<<<<<<< HEAD
     list_display = ('nome', 'idade', 'sexo', 'data_nascimento', 'academia', 'status_ativo', 'tem_documento_display')
     list_filter = ('sexo', 'status_ativo', 'federado', 'academia')
     search_fields = ('nome', 'academia__nome', 'numero_zempo')
@@ -77,6 +82,12 @@ class CampeonatoAdmin(admin.ModelAdmin):
     def get_total_inscricoes(self, obj):
         return obj.inscricoes.count()
     get_total_inscricoes.short_description = 'Total de Inscrições'
+=======
+    list_display = ('nome', 'idade', 'sexo', 'classe', 'categoria_nome', 'academia', 'status', 'peso_oficial')
+    list_filter = ('classe', 'sexo', 'status', 'academia')
+    search_fields = ('nome', 'academia__nome')
+    readonly_fields = ('idade',)
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 
 
 @admin.register(Chave)

@@ -16,16 +16,22 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+<<<<<<< HEAD
 from django.conf import settings
 from django.conf.urls.static import static
+=======
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('atletas.urls')),
 ]
+<<<<<<< HEAD
 
 # Servir arquivos estáticos e media em desenvolvimento
 if settings.DEBUG:
     from django.contrib.staticfiles.urls import staticfiles_urlpatterns
     urlpatterns += staticfiles_urlpatterns()
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+=======
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17

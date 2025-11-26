@@ -1,4 +1,5 @@
 from django.db import models
+<<<<<<< HEAD
 from django.contrib.auth.models import User
 from datetime import date, timedelta
 from django.utils import timezone
@@ -33,10 +34,17 @@ def foto_perfil_academia_upload_path(instance, filename):
         return f'fotos/temp/{uuid.uuid4()}_{filename}'
 
 
+=======
+from datetime import date
+from django.utils import timezone
+
+
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 class Academia(models.Model):
     nome = models.CharField(max_length=200)
     cidade = models.CharField(max_length=100)
     estado = models.CharField(max_length=2)
+<<<<<<< HEAD
     telefone = models.CharField(max_length=20, blank=True, help_text="Telefone de contato da academia")
     responsavel = models.CharField(max_length=200, blank=True, verbose_name="Responsável", help_text="Nome do responsável pela academia")
     endereco = models.CharField(max_length=300, blank=True, verbose_name="Endereço", help_text="Endereço da academia (opcional)")
@@ -58,6 +66,9 @@ class Academia(models.Model):
     # Bônus do professor
     bonus_percentual = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Bônus Percentual (%)", help_text="Percentual de bônus sobre inscrições confirmadas")
     bonus_fixo = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Bônus Fixo por Atleta", help_text="Valor fixo de bônus por atleta confirmado")
+=======
+    pontos = models.IntegerField(default=0)
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 
     class Meta:
         verbose_name = "Academia"
@@ -66,6 +77,7 @@ class Academia(models.Model):
 
     def __str__(self):
         return self.nome
+<<<<<<< HEAD
     
     def verificar_senha(self, senha):
         """Verifica se a senha fornecida corresponde à senha da academia"""
@@ -80,6 +92,8 @@ class Academia(models.Model):
         """Define a senha da academia (com hash)"""
         import hashlib
         self.senha_login = hashlib.sha256(senha.encode()).hexdigest()
+=======
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 
 
 class Categoria(models.Model):
@@ -100,6 +114,7 @@ class Categoria(models.Model):
 
 
 class Atleta(models.Model):
+<<<<<<< HEAD
     """Cadastro global permanente do atleta (não vinculado a evento)"""
     # Campos básicos obrigatórios
     nome = models.CharField(max_length=200, verbose_name="Nome Completo")
@@ -161,6 +176,32 @@ class Atleta(models.Model):
     # Campos de auditoria
     data_cadastro = models.DateTimeField(auto_now_add=True, null=True, blank=True, verbose_name="Data de Cadastro")
     data_atualizacao = models.DateTimeField(auto_now=True, null=True, blank=True, verbose_name="Data de Atualização")
+=======
+    STATUS_CHOICES = [
+        ('OK', 'OK'),
+        ('Eliminado Peso', 'Eliminado por Peso'),
+        ('Eliminado Indisciplina', 'Eliminado por Indisciplina'),
+    ]
+
+    nome = models.CharField(max_length=200)
+    ano_nasc = models.IntegerField()
+    sexo = models.CharField(max_length=1, choices=[('M', 'Masculino'), ('F', 'Feminino')])
+    faixa = models.CharField(max_length=50)
+    academia = models.ForeignKey(Academia, on_delete=models.CASCADE, related_name='atletas')
+    
+    # Campos calculados/setados durante inscrição
+    classe = models.CharField(max_length=20, blank=True)
+    categoria_nome = models.CharField(max_length=100, blank=True)
+    categoria_limite = models.CharField(max_length=50, blank=True)  # "x a y kg"
+    peso_previsto = models.FloatField(null=True, blank=True)
+    
+    # Campos da pesagem
+    peso_oficial = models.FloatField(null=True, blank=True)
+    categoria_ajustada = models.CharField(max_length=100, blank=True)
+    motivo_ajuste = models.TextField(blank=True)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='OK')
+    remanejado = models.BooleanField(default=False)  # Marca se foi remanejado de categoria
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 
     class Meta:
         verbose_name = "Atleta"
@@ -170,6 +211,7 @@ class Atleta(models.Model):
     @property
     def idade(self):
         """Calcula a idade do atleta"""
+<<<<<<< HEAD
         if not self.data_nascimento:
             return None
         hoje = date.today()
@@ -202,6 +244,37 @@ class Atleta(models.Model):
 
 class Chave(models.Model):
     campeonato = models.ForeignKey('Campeonato', on_delete=models.CASCADE, related_name='chaves', verbose_name="Campeonato", null=True, blank=True, help_text="Campeonato ao qual esta chave pertence")
+=======
+        hoje = date.today()
+        return hoje.year - self.ano_nasc
+    
+    def get_categoria_atual(self):
+        """Retorna a categoria atual (ajustada ou original)"""
+        categoria_nome = self.categoria_ajustada if self.categoria_ajustada else self.categoria_nome
+        # Importar aqui para evitar import circular
+        from atletas.models import Categoria as CategoriaModel
+        return CategoriaModel.objects.filter(
+            classe=self.classe,
+            sexo=self.sexo,
+            categoria_nome=categoria_nome
+        ).first()
+    
+    def get_limite_categoria(self):
+        """Retorna o limite correto da categoria atual"""
+        categoria = self.get_categoria_atual()
+        if categoria:
+            if categoria.limite_max >= 999.0:
+                return f"{categoria.limite_min} kg ou mais"
+            else:
+                return f"{categoria.limite_min} a {categoria.limite_max} kg"
+        return self.categoria_limite
+
+    def __str__(self):
+        return f"{self.nome} ({self.classe} - {self.categoria_nome})"
+
+
+class Chave(models.Model):
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     classe = models.CharField(max_length=20)
     sexo = models.CharField(max_length=1, choices=[('M', 'Masculino'), ('F', 'Feminino')])
     categoria = models.CharField(max_length=100)
@@ -211,17 +284,28 @@ class Chave(models.Model):
     class Meta:
         verbose_name = "Chave"
         verbose_name_plural = "Chaves"
+<<<<<<< HEAD
         ordering = ['-campeonato__data_competicao', 'classe', 'sexo', 'categoria']
 
     def __str__(self):
         campeonato_nome = f" - {self.campeonato.nome}" if self.campeonato else ""
         return f"{self.classe} - {self.get_sexo_display()} - {self.categoria}{campeonato_nome}"
+=======
+        ordering = ['classe', 'sexo', 'categoria']
+
+    def __str__(self):
+        return f"{self.classe} - {self.get_sexo_display()} - {self.categoria}"
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 
 
 class Luta(models.Model):
     TIPO_VITORIA_CHOICES = [
         ("IPPON", "Ippon"),
         ("WAZARI", "Wazari"),
+<<<<<<< HEAD
+=======
+        ("WAZARI_WAZARI", "Wazari-Wazari"),
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
         ("YUKO", "Yuko"),
     ]
     
@@ -264,6 +348,7 @@ class AdminLog(models.Model):
         return f"{self.data_hora} - {self.acao}"
 
 
+<<<<<<< HEAD
 class FormaPagamento(models.Model):
     """Formas de pagamento disponíveis no sistema"""
     TIPO_CHOICES = [
@@ -301,6 +386,13 @@ class Campeonato(models.Model):
     chave_pix = models.CharField(max_length=200, blank=True, verbose_name="Chave PIX", help_text="Chave PIX para pagamento (CPF, CNPJ, Email, Telefone ou Chave Aleatória)")
     titular_pix = models.CharField(max_length=200, blank=True, verbose_name="Titular da Chave PIX", help_text="Nome do titular da conta PIX")
     formas_pagamento = models.ManyToManyField('FormaPagamento', blank=True, verbose_name="Formas de Pagamento Aceitas", help_text="Selecione as formas de pagamento aceitas para este evento")
+=======
+class Campeonato(models.Model):
+    nome = models.CharField(max_length=200, default="Campeonato Padrão")
+    data_inicio = models.DateField(null=True, blank=True)
+    data_fim = models.DateField(null=True, blank=True)
+    ativo = models.BooleanField(default=True)
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 
     class Meta:
         verbose_name = "Campeonato"
@@ -311,6 +403,7 @@ class Campeonato(models.Model):
         return self.nome
 
 
+<<<<<<< HEAD
 class Inscricao(models.Model):
     """Inscrição de um atleta em um campeonato específico"""
     STATUS_CHOICES = [
@@ -360,6 +453,8 @@ class Inscricao(models.Model):
         return self.status_inscricao == 'aprovado' and self.peso is not None
 
 
+=======
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 class AcademiaPontuacao(models.Model):
     campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='pontuacoes')
     academia = models.ForeignKey(Academia, on_delete=models.CASCADE, related_name='pontuacoes')
@@ -379,6 +474,7 @@ class AcademiaPontuacao(models.Model):
         ordering = ['-pontos_totais', 'academia__nome']
 
     def __str__(self):
+<<<<<<< HEAD
         return f"{self.academia.nome} - {self.campeonato.nome} ({self.pontos_totais} pts)"
 
 
@@ -580,3 +676,6 @@ class Pagamento(models.Model):
     
     def __str__(self):
         return f"{self.academia.nome} - {self.campeonato.nome} - R$ {self.valor_total}"
+=======
+        return f"{self.academia.nome} - {self.campeonato.nome} ({self.pontos_totais} pts)"
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17

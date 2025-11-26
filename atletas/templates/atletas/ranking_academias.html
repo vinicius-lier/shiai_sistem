@@ -1,5 +1,6 @@
 {% extends 'atletas/base.html' %}
 
+<<<<<<< HEAD
 {% block title %}Ranking de Academias - Sistema de Gestão de Competições de Judô{% endblock %}
 
 {% block extra_css %}
@@ -519,10 +520,45 @@
                         </td>
                     </tr>
                 {% endif %}
+=======
+{% block title %}Ranking de Academias{% endblock %}
+
+{% block content %}
+<h1>Ranking de Academias</h1>
+
+<a href="{% url 'calcular_pontuacao' %}" class="btn btn-success">Recalcular Pontuação</a>
+
+<div class="table-responsive">
+    <table>
+        <thead>
+            <tr>
+                <th>Posição</th>
+                <th>Nome</th>
+                <th>Cidade</th>
+                <th>Estado</th>
+                <th>Pontos</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for academia in academias %}
+            <tr>
+                <td><strong>{{ forloop.counter }}º</strong></td>
+                <td>{{ academia.nome }}</td>
+                <td>{{ academia.cidade }}</td>
+                <td>{{ academia.estado }}</td>
+                <td><strong style="font-size: 18px;">{{ academia.pontos }}</strong></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center;">Nenhuma academia cadastrada</td>
+            </tr>
+            {% endfor %}
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
         </tbody>
     </table>
 </div>
 
+<<<<<<< HEAD
     <!-- Card de Tabela de Pontuação -->
     <div class="scoring-card">
         <h3 class="scoring-title">
@@ -585,4 +621,16 @@
     }
 }
 </style>
+=======
+<div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+    <h3>Tabela de Pontuação</h3>
+    <ul style="list-style: none; padding: 0;">
+        <li><strong>🥇 Ouro (1º lugar):</strong> 10 pontos</li>
+        <li><strong>🥈 Prata (2º lugar):</strong> 5 pontos</li>
+        <li><strong>🥉 Bronze (3º lugar):</strong> 1 ponto (cada)</li>
+        <li><strong>🏅 Festival:</strong> 1 ponto por atleta inscrito (não competem, apenas participam)</li>
+        <li style="color: #dc3545;"><strong>⚠ Remanejamento:</strong> -1 ponto por atleta remanejado</li>
+    </ul>
+</div>
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 {% endblock %}

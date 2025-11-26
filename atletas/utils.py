@@ -1,5 +1,6 @@
 from datetime import date
 from django.db.models import Q
+<<<<<<< HEAD
 from .models import Atleta, Categoria, Chave, Luta, Academia, Campeonato, AcademiaPontuacao, Inscricao
 import random
 
@@ -18,6 +19,13 @@ def calcular_classe(ano_nasc):
     - VETERANOS: 30 anos ou mais (ex: nascido em 1987 ou antes, considerando 2024)
     - SÊNIOR: 21-29 anos
     """
+=======
+from .models import Atleta, Categoria, Chave, Luta, Academia, Campeonato, AcademiaPontuacao
+
+
+def calcular_classe(ano_nasc):
+    """Calcula a classe do atleta baseado no ano de nascimento"""
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     hoje = date.today()
     idade = hoje.year - ano_nasc
     
@@ -35,12 +43,16 @@ def calcular_classe(ano_nasc):
         return "SUB 18"
     elif idade <= 20:
         return "SUB 21"
+<<<<<<< HEAD
     elif idade >= 30:
         return "VETERANOS"
+=======
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     else:
         return "SÊNIOR"
 
 
+<<<<<<< HEAD
 def categorias_permitidas(classe_atleta, categorias_existentes=None):
     """Retorna as classes de categorias que um atleta pode escolher baseado na sua classe
     
@@ -191,6 +203,15 @@ def ajustar_categoria_por_peso(atleta, peso_oficial):
     
     IMPORTANTE: Ao ajustar categoria, só considera categorias elegíveis para a classe do atleta.
     """
+=======
+def get_categorias_disponiveis(classe, sexo):
+    """Retorna as categorias disponíveis para uma classe e sexo"""
+    return Categoria.objects.filter(classe=classe, sexo=sexo).order_by('limite_min')
+
+
+def ajustar_categoria_por_peso(atleta, peso_oficial):
+    """Ajusta a categoria do atleta baseado no peso oficial"""
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     categoria_atual = Categoria.objects.filter(
         classe=atleta.classe,
         sexo=atleta.sexo,
@@ -198,6 +219,7 @@ def ajustar_categoria_por_peso(atleta, peso_oficial):
     ).first()
     
     if not categoria_atual:
+<<<<<<< HEAD
         # Tentar buscar pela categoria_ajustada se existir
         if atleta.categoria_ajustada:
             categoria_atual = Categoria.objects.filter(
@@ -211,11 +233,15 @@ def ajustar_categoria_por_peso(atleta, peso_oficial):
     # Obter classes elegíveis para o atleta
     classes_elegiveis = categorias_permitidas(atleta.classe)
     classes_elegiveis_normalizadas = [c.upper().strip() for c in classes_elegiveis]
+=======
+        return None, "Categoria não encontrada"
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     
     # Verifica se peso está dentro dos limites (limite_max pode ser 999.0 para categorias "acima de")
     limite_max_real = categoria_atual.limite_max if categoria_atual.limite_max < 999.0 else 999999.0
     
     if categoria_atual.limite_min <= peso_oficial <= limite_max_real:
+<<<<<<< HEAD
         # Verificar se a categoria atual é elegível
         if categoria_atual.classe.upper().strip() not in classes_elegiveis_normalizadas:
             # Categoria atual não é elegível, precisa ajustar
@@ -245,17 +271,38 @@ def ajustar_categoria_por_peso(atleta, peso_oficial):
         categorias_elegiveis = get_categorias_elegiveis(atleta.classe, atleta.sexo)
         
         categoria_superior = categorias_elegiveis.filter(
+=======
+        # Peso OK, manter categoria
+        return categoria_atual, "OK"
+    
+    # Peso acima do limite máximo
+    limite_max_real = categoria_atual.limite_max if categoria_atual.limite_max < 999.0 else 999999.0
+    
+    if peso_oficial > limite_max_real:
+        # Buscar próxima categoria superior (excluir categorias "acima de" da busca)
+        categoria_superior = Categoria.objects.filter(
+            classe=atleta.classe,
+            sexo=atleta.sexo,
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
             limite_min__gt=limite_max_real
         ).exclude(limite_max__gte=999.0).order_by('limite_min').first()
         
         if not categoria_superior:
+<<<<<<< HEAD
             # Tentar categoria "acima de" se existir (apenas se elegível)
             categoria_superior = categorias_elegiveis.filter(
+=======
+            # Tentar categoria "acima de" se existir
+            categoria_superior = Categoria.objects.filter(
+                classe=atleta.classe,
+                sexo=atleta.sexo,
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                 limite_min__lte=peso_oficial,
                 limite_max__gte=999.0
             ).order_by('-limite_min').first()
         
         if categoria_superior:
+<<<<<<< HEAD
             # Verificar se é elegível
             if categoria_superior.classe.upper().strip() in classes_elegiveis_normalizadas:
                 # Existe categoria superior elegível, ajustar
@@ -267,6 +314,17 @@ def ajustar_categoria_por_peso(atleta, peso_oficial):
         atleta.status = "Eliminado Peso"
         atleta.motivo_ajuste = f"Peso {peso_oficial}kg acima da última categoria elegível disponível"
         return None, "Eliminado - Peso acima da última categoria elegível"
+=======
+            # Existe categoria superior, ajustar
+            atleta.categoria_ajustada = categoria_superior.categoria_nome
+            atleta.motivo_ajuste = f"Peso {peso_oficial}kg acima do limite máximo ({limite_max_real}kg)"
+            return categoria_superior, "Ajustado para categoria superior"
+        else:
+            # Não existe categoria superior, eliminar
+            atleta.status = "Eliminado Peso"
+            atleta.motivo_ajuste = f"Peso {peso_oficial}kg acima da última categoria disponível"
+            return None, "Eliminado - Peso acima da última categoria"
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     
     # Peso abaixo do limite mínimo - buscar categoria correta que contenha o peso
     if peso_oficial < categoria_atual.limite_min:
@@ -312,6 +370,7 @@ def ajustar_categoria_por_peso(atleta, peso_oficial):
     return categoria_atual, "OK"
 
 
+<<<<<<< HEAD
 def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None):
     """Gera a chave para uma categoria usando inscrições do campeonato
     
@@ -352,28 +411,120 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
     # Criar ou atualizar chave vinculada ao campeonato
     chave, created = Chave.objects.get_or_create(
         campeonato=campeonato,
+=======
+def gerar_chave(categoria_nome, classe, sexo):
+    """Gera a chave automaticamente para uma categoria"""
+    # Buscar atletas aptos (status OK) da categoria
+    # Excluir atletas do Festival (não competem)
+    # Buscar por categoria_nome ou categoria_ajustada
+    atletas = Atleta.objects.filter(
+        classe=classe,
+        sexo=sexo,
+        status='OK'
+    ).exclude(
+        classe='Festival'  # Festival não entra em chaves
+    ).filter(
+        Q(categoria_nome=categoria_nome) | Q(categoria_ajustada=categoria_nome)
+    )
+    
+    atletas_list = list(atletas)
+    num_atletas = len(atletas_list)
+    
+    # Criar ou atualizar chave
+    chave, created = Chave.objects.get_or_create(
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
         classe=classe,
         sexo=sexo,
         categoria=categoria_nome,
         defaults={'estrutura': {}}
     )
     
+<<<<<<< HEAD
     # Garantir que o campeonato está definido (caso a chave já existisse)
     if not chave.campeonato:
         chave.campeonato = campeonato
         chave.save()
     
+=======
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     # Limpar lutas antigas e atletas
     chave.lutas.all().delete()
     chave.atletas.clear()
     chave.atletas.set(atletas_list)
     
+<<<<<<< HEAD
     # Se modelo escolhido manualmente, usar ele
     if modelo_chave and modelo_chave != 'automatico':
         estrutura = gerar_chave_escolhida(chave, atletas_list, modelo_chave)
     else:
         # Comportamento automático baseado no número de atletas
         estrutura = gerar_chave_automatica(chave, atletas_list)
+=======
+    estrutura = {}
+    
+    if num_atletas == 0:
+        # Sem atletas
+        estrutura = {"tipo": "vazia", "atletas": 0}
+    elif num_atletas == 1:
+        # 1 atleta = campeão automático
+        estrutura = {
+            "tipo": "campeao_automatico",
+            "atletas": 1,
+            "vencedor": atletas_list[0].id
+        }
+    elif num_atletas == 2:
+        # 2 atletas = melhor de 3 (até 3 lutas ou 2 vitórias)
+        estrutura = {
+            "tipo": "melhor_de_3",
+            "atletas": 2,
+            "lutas": [],
+            "lutas_detalhes": {}
+        }
+        # Criar 3 lutas para melhor de 3
+        for i in range(3):
+            luta = Luta.objects.create(
+                chave=chave,
+                atleta_a=atletas_list[0],
+                atleta_b=atletas_list[1],
+                round=1,
+                proxima_luta=None
+            )
+            estrutura["lutas"].append(luta.id)
+    elif num_atletas == 3:
+        # 3 atletas = triangular
+        estrutura = {
+            "tipo": "triangular",
+            "atletas": 3,
+            "lutas": [],
+            "lutas_detalhes": {}
+        }
+        # Triangular: 3 lutas (A vs B, A vs C, B vs C)
+        luta1 = Luta.objects.create(
+            chave=chave,
+            atleta_a=atletas_list[0],
+            atleta_b=atletas_list[1],
+            round=1,
+            proxima_luta=None
+        )
+        luta2 = Luta.objects.create(
+            chave=chave,
+            atleta_a=atletas_list[0],
+            atleta_b=atletas_list[2],
+            round=1,
+            proxima_luta=None
+        )
+        luta3 = Luta.objects.create(
+            chave=chave,
+            atleta_a=atletas_list[1],
+            atleta_b=atletas_list[2],
+            round=1,
+            proxima_luta=None
+        )
+        estrutura["lutas"].extend([luta1.id, luta2.id, luta3.id])
+    else:
+        # 4+ atletas = chave olímpica (4, 8, 16...)
+        estrutura = gerar_chave_olimpica(chave, atletas_list)
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     
     chave.estrutura = estrutura
     chave.save()
@@ -381,6 +532,7 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
     return chave
 
 
+<<<<<<< HEAD
 def agrupar_atletas_por_academia(atletas_list):
     """Agrupa atletas por academia e retorna lista embaralhada evitando mesma academia na primeira rodada
     
@@ -862,6 +1014,10 @@ def gerar_chave_escolhida(chave, atletas_list, modelo_chave):
 
 def gerar_chave_olimpica(chave, atletas_list):
     """Gera uma chave olímpica (eliminatória) - comportamento automático"""
+=======
+def gerar_chave_olimpica(chave, atletas_list):
+    """Gera uma chave olímpica (eliminatória)"""
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     num_atletas = len(atletas_list)
     
     # Calcular próximo tamanho de chave (4, 8, 16...)
@@ -874,6 +1030,7 @@ def gerar_chave_olimpica(chave, atletas_list):
     else:
         tamanho_chave = 32
     
+<<<<<<< HEAD
     return gerar_chave_olimpica_manual(chave, atletas_list, tamanho_chave)
 
 
@@ -889,6 +1046,10 @@ def gerar_chave_olimpica_manual(chave, atletas_list, tamanho_chave):
     
     # Preencher com BYEs se necessário
     atletas_com_bye = atletas_organizados + [None] * (tamanho_chave - num_atletas)
+=======
+    # Preencher com BYEs se necessário
+    atletas_com_bye = atletas_list + [None] * (tamanho_chave - num_atletas)
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     
     estrutura = {
         "tipo": "chave_olimpica",
@@ -903,8 +1064,13 @@ def gerar_chave_olimpica_manual(chave, atletas_list, tamanho_chave):
     num_lutas = tamanho_chave // 2
     
     for i in range(0, tamanho_chave, 2):
+<<<<<<< HEAD
         atleta_a = atletas_com_bye[i] if i < len(atletas_organizados) else None
         atleta_b = atletas_com_bye[i + 1] if i + 1 < len(atletas_organizados) else None
+=======
+        atleta_a = atletas_com_bye[i] if i < len(atletas_list) else None
+        atleta_b = atletas_com_bye[i + 1] if i + 1 < len(atletas_list) else None
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
         
         # Se um dos atletas existe, criar luta
         if atleta_a or atleta_b:
@@ -954,6 +1120,7 @@ def gerar_chave_olimpica_manual(chave, atletas_list, tamanho_chave):
 
 
 def atualizar_proxima_luta(luta):
+<<<<<<< HEAD
     """Atualiza a próxima luta quando uma luta é concluída
     Também atualiza lutas de repescagem quando aplicável.
     """
@@ -1007,6 +1174,24 @@ def atualizar_proxima_luta(luta):
                             luta_repescagem.save()
                         except Luta.DoesNotExist:
                             pass
+=======
+    """Atualiza a próxima luta quando uma luta é concluída"""
+    if not luta.vencedor or not luta.proxima_luta:
+        return
+    
+    try:
+        proxima = Luta.objects.get(id=luta.proxima_luta, chave=luta.chave)
+        
+        # Determinar qual posição preencher (A ou B)
+        if proxima.atleta_a is None:
+            proxima.atleta_a = luta.vencedor
+        elif proxima.atleta_b is None:
+            proxima.atleta_b = luta.vencedor
+        
+        proxima.save()
+    except Luta.DoesNotExist:
+        pass
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 
 
 def calcular_pontuacao_academias(campeonato_id=None):
@@ -1039,6 +1224,7 @@ def calcular_pontuacao_academias(campeonato_id=None):
             }
         return pontos_academias[academia.id]
     
+<<<<<<< HEAD
     # 1. Pontos de Festival (através de inscrições)
     inscricoes_festival = Inscricao.objects.filter(
         campeonato=campeonato,
@@ -1057,6 +1243,16 @@ def calcular_pontuacao_academias(campeonato_id=None):
     else:
         # Se não tiver campo campeonato, buscar todas (compatibilidade)
         chaves = Chave.objects.all()
+=======
+    # 1. Pontos de Festival
+    atletas_festival = Atleta.objects.filter(classe='Festival', status='OK')
+    for atleta in atletas_festival:
+        reg = get_registro(atleta.academia)
+        reg['festival'] += 1
+    
+    # 2. Pontos por colocações nas chaves
+    chaves = Chave.objects.all()
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     for chave in chaves:
         # Sempre usar get_resultados_chave:
         # - Conta resultados reais de lutas já decididas
@@ -1104,6 +1300,7 @@ def calcular_pontuacao_academias(campeonato_id=None):
                 reg['quinto'] += 1
     
     # 3. Remanejamentos (-1 ponto por atleta remanejado)
+<<<<<<< HEAD
     inscricoes_remanejadas = Inscricao.objects.filter(
         campeonato=campeonato,
         remanejado=True,
@@ -1112,6 +1309,11 @@ def calcular_pontuacao_academias(campeonato_id=None):
     
     for inscricao in inscricoes_remanejadas:
         reg = get_registro(inscricao.atleta.academia)
+=======
+    atletas_remanejados = Atleta.objects.filter(remanejado=True, status='OK')
+    for atleta in atletas_remanejados:
+        reg = get_registro(atleta.academia)
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
         reg['remanejamento'] += 1
     
     # 4. Calcular pontos totais e salvar registros
@@ -1361,6 +1563,7 @@ def get_resultados_chave(chave):
             return [atleta_id for atleta_id, _ in ordenados_por_pontos[:3]]
         return []
     
+<<<<<<< HEAD
     # Round Robin (todos contra todos)
     if estrutura.get("tipo") == "round_robin":
         lutas = Luta.objects.filter(chave=chave, round=1).order_by('id')
@@ -1485,6 +1688,8 @@ def get_resultados_chave(chave):
         return [primeiro, segundo] if segundo else [primeiro]
     
     # Chave Olímpica e outros tipos de eliminatória
+=======
+>>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
     # Buscar a última luta (final)
     rounds_dict = estrutura.get("rounds", {})
     if not rounds_dict:

@@ -1826,24 +1826,6 @@
             <div class="modal-body">
                 <p style="margin-bottom: var(--spacing-4); color: var(--color-gray-700);">Esta ação irá:</p>
                 <ul style="margin-left: var(--spacing-6); margin-bottom: var(--spacing-4); color: var(--color-gray-700);">
-    <div class="container">
-        <nav>
-            <a href="{% url 'index' %}">Início</a>
-            <a href="{% url 'lista_atletas' %}">Atletas</a>
-            <a href="{% url 'cadastrar_atleta' %}">Cadastrar Atleta</a>
-            <a href="{% url 'cadastrar_festival' %}">🏅 Festival</a>
-            <a href="{% url 'lista_academias' %}">Academias</a>
-            <a href="{% url 'lista_categorias' %}">Categorias</a>
-            <a href="{% url 'pesagem' %}">Pesagem</a>
-            <a href="{% url 'lista_chaves' %}">Chaves</a>
-            <a href="{% url 'ranking_academias' %}">Ranking</a>
-            <a href="{% url 'dashboard' %}">📊 Dashboard</a>
-            <a href="{% url 'relatorio_atletas_inscritos' %}">Relatórios</a>
-            <a href="#" onclick="abrirModalReset(); return false;" style="color: #dc3545; font-weight: bold;">🔄 Resetar Campeonato</a>
-        </nav>
-        
-        {% block content %}{% endblock %}
-        <!-- Modal Reset Campeonato -->
         <div id="modal-reset" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; align-items: center; justify-content: center;">
             <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
                 <h2 style="margin-top: 0; color: #dc3545;">⚠️ Resetar Campeonato</h2>

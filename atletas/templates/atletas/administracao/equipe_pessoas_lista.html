@@ -1,0 +1,389 @@
+{% extends 'atletas/administracao/base_admin.html' %}
+{% load custom_filters %}
+
+{% block admin_page_title %}Lista de Pessoas - Equipe Técnica{% endblock %}
+{% block admin_page_description %}Cadastre e gerencie pessoas que podem fazer parte da equipe técnica dos eventos{% endblock %}
+
+{% block admin_content %}
+<section class="section-spacing">
+    <div class="flex items-center justify-between mb-6" style="flex-wrap: wrap; gap: var(--spacing-4);">
+        <div>
+            <p class="text-gray-600 text-base" style="line-height: 1.6;">
+                Cadastre pessoas uma única vez. Elas poderão ser selecionadas para compor a equipe técnica de qualquer campeonato.
+            </p>
+        </div>
+        <div class="flex gap-3" style="flex-wrap: wrap;">
+            <a href="{% url 'administracao_equipe' %}" class="btn btn-secondary">
+                Voltar
+            </a>
+        </div>
+    </div>
+
+    <!-- Cadastrar Nova Pessoa -->
+    <div class="card mb-6">
+        <div class="card-header">
+            <h3 class="card-title">Cadastrar Nova Pessoa</h3>
+        </div>
+        <div class="card-body">
+            <form method="post" id="form-criar-pessoa">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="criar_pessoa">
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-4);">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="radio" name="tipo_pessoa" value="atleta" id="tipo_atleta" checked onchange="toggleTipoPessoa()">
+                            <span style="margin-left: var(--spacing-2);">Atleta Cadastrado</span>
+                        </label>
+                        <label class="form-label">
+                            <input type="radio" name="tipo_pessoa" value="externa" id="tipo_externa" onchange="toggleTipoPessoa()">
+                            <span style="margin-left: var(--spacing-2);">Pessoa Externa</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Campos para Atleta -->
+                <div id="campos-atleta" style="display: block;">
+                    <div class="form-group">
+                        <label class="form-label" for="atleta_id">Selecionar Atleta *</label>
+                        <select id="atleta_id" name="atleta_id" class="form-select" required>
+                            <option value="">Selecione um atleta</option>
+                            {% for atleta in atletas_elegiveis %}
+                            <option value="{{ atleta.id }}" data-telefone="{{ atleta.telefone|default:'' }}" data-pix="{{ atleta.chave_pix|default:'' }}">
+                                {{ atleta.nome }} - {{ atleta.academia.nome }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if not atletas_elegiveis %}
+                        <small style="color: var(--color-warning); display: block; margin-top: var(--spacing-1);">
+                            Nenhum atleta elegível disponível. Marque atletas como elegíveis no cadastro de atletas.
+                        </small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="telefone_atleta">Telefone/WhatsApp</label>
+                        <input type="text" id="telefone_atleta" name="telefone" class="form-input" placeholder="(99) 99999-9999">
+                        <small style="color: var(--color-gray-500); display: block; margin-top: var(--spacing-1);">
+                            Se não preenchido, será usado o telefone do atleta (se disponível).
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="chave_pix_atleta">Chave PIX</label>
+                        <input type="text" id="chave_pix_atleta" name="chave_pix" class="form-input" placeholder="Chave PIX para pagamento">
+                        <small style="color: var(--color-gray-500); display: block; margin-top: var(--spacing-1);">
+                            Se não preenchido, será usada a chave PIX do atleta (se disponível).
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Campos para Pessoa Externa -->
+                <div id="campos-externa" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label" for="nome_externa">Nome Completo *</label>
+                        <input type="text" id="nome_externa" name="nome" class="form-input" placeholder="Nome completo da pessoa" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="telefone_externa">Telefone/WhatsApp *</label>
+                        <input type="text" id="telefone_externa" name="telefone" class="form-input" placeholder="(99) 99999-9999" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="chave_pix_externa">Chave PIX *</label>
+                        <input type="text" id="chave_pix_externa" name="chave_pix" class="form-input" placeholder="Chave PIX para pagamento" required>
+                    </div>
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1; margin-top: var(--spacing-4);">
+                    <label class="form-label" for="observacao">Observações</label>
+                    <textarea id="observacao" name="observacao" class="form-input" rows="3" placeholder="Observações gerais sobre esta pessoa"></textarea>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Cadastrar Pessoa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Pessoas -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Pessoas Cadastradas</h3>
+            <div class="flex gap-3" style="flex-wrap: wrap;">
+                <form method="get" style="display: flex; gap: var(--spacing-2); align-items: center;">
+                    <input type="text" name="nome" value="{{ nome_filtro }}" placeholder="Buscar por nome..." class="form-input" style="min-width: 200px;">
+                    <select name="tipo" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="atleta" {% if tipo_filtro == 'atleta' %}selected{% endif %}>Atletas</option>
+                        <option value="externa" {% if tipo_filtro == 'externa' %}selected{% endif %}>Externos</option>
+                    </select>
+                    <button type="submit" class="btn btn-secondary">Filtrar</button>
+                    {% if nome_filtro or tipo_filtro %}
+                    <a href="{% url 'administracao_equipe_pessoas_lista' %}" class="btn btn-ghost">Limpar</a>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if pessoas %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Tipo</th>
+                            <th>Telefone/WhatsApp</th>
+                            <th>Chave PIX</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pessoa in pessoas %}
+                        <tr {% if not pessoa.ativo %}style="opacity: 0.6;"{% endif %}>
+                            <td>
+                                <div style="font-weight: 500; color: var(--color-gray-900);">{{ pessoa.nome_completo }}</div>
+                                {% if pessoa.e_atleta %}
+                                <small style="color: var(--color-gray-500);">{{ pessoa.atleta.academia.nome }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if pessoa.e_atleta %}badge-primary{% else %}badge-secondary{% endif %}">
+                                    {% if pessoa.e_atleta %}Atleta{% else %}Externo{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if pessoa.telefone %}
+                                    <a href="https://wa.me/{{ pessoa.telefone|whatsapp_clean }}" target="_blank" style="color: var(--color-success); text-decoration: none;">
+                                        {{ pessoa.telefone }}
+                                    </a>
+                                {% else %}
+                                    <span style="color: var(--color-gray-500);">Não informado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if pessoa.chave_pix %}
+                                    <span class="badge badge-success" style="font-family: monospace; font-size: 0.85em;">{{ pessoa.chave_pix|truncatechars:30 }}</span>
+                                {% else %}
+                                    <span class="badge badge-warning">⚠ Não informado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if pessoa.ativo %}badge-success{% else %}badge-secondary{% endif %}">
+                                    {% if pessoa.ativo %}Ativo{% else %}Inativo{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="flex gap-2" style="flex-wrap: wrap;">
+                                    {% if not pessoa.e_atleta %}
+                                    <button type="button" onclick="editarPessoa({{ pessoa.id }}, '{{ pessoa.nome|escapejs }}', '{{ pessoa.telefone|escapejs }}', '{{ pessoa.chave_pix|escapejs }}', '{{ pessoa.observacao|escapejs }}')" class="btn btn-sm btn-secondary" style="padding: var(--spacing-1) var(--spacing-2); font-size: var(--font-size-xs);">
+                                        Editar
+                                    </button>
+                                    {% else %}
+                                    <small style="color: var(--color-gray-500);">Edite no cadastro de atletas</small>
+                                    {% endif %}
+                                    <form method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="acao" value="toggle_ativo">
+                                        <input type="hidden" name="pessoa_id" value="{{ pessoa.id }}">
+                                        <button type="submit" class="btn btn-sm {% if pessoa.ativo %}btn-secondary{% else %}btn-success{% endif %}" style="padding: var(--spacing-1) var(--spacing-2); font-size: var(--font-size-xs);">
+                                            {% if pessoa.ativo %}Desativar{% else %}Ativar{% endif %}
+                                        </button>
+                                    </form>
+                                    <form method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja remover {{ pessoa.nome_completo }} da lista?');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="acao" value="deletar_pessoa">
+                                        <input type="hidden" name="pessoa_id" value="{{ pessoa.id }}">
+                                        <button type="submit" class="btn btn-sm btn-danger" style="padding: var(--spacing-1) var(--spacing-2); font-size: var(--font-size-xs);">
+                                            Remover
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-title">Nenhuma pessoa cadastrada</div>
+                <div class="empty-state-description">
+                    Use o formulário acima para cadastrar pessoas na lista fixa de equipe técnica.
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Modal de Edição -->
+<div class="modal-overlay" id="modal-editar">
+    <div class="modal" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Editar Pessoa Externa</h3>
+            <button class="modal-close" onclick="fecharModal()" aria-label="Fechar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form method="post" id="form-editar-pessoa">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="editar_pessoa">
+                <input type="hidden" name="pessoa_id" id="editar_pessoa_id">
+                
+                <div class="form-group">
+                    <label class="form-label" for="editar_nome">Nome Completo *</label>
+                    <input type="text" id="editar_nome" name="nome" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="editar_telefone">Telefone/WhatsApp *</label>
+                    <input type="text" id="editar_telefone" name="telefone" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="editar_chave_pix">Chave PIX *</label>
+                    <input type="text" id="editar_chave_pix" name="chave_pix" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="editar_observacao">Observações</label>
+                    <textarea id="editar_observacao" name="observacao" class="form-textarea" rows="3"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" onclick="fecharModal()" class="btn btn-secondary">Cancelar</button>
+            <button type="submit" form="form-editar-pessoa" class="btn btn-primary">Salvar Alterações</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleTipoPessoa() {
+    const tipoAtleta = document.getElementById('tipo_atleta').checked;
+    const camposAtleta = document.getElementById('campos-atleta');
+    const camposExterna = document.getElementById('campos-externa');
+    const atletaId = document.getElementById('atleta_id');
+    const nomeExterna = document.getElementById('nome_externa');
+    const telefoneExterna = document.getElementById('telefone_externa');
+    const chavePixExterna = document.getElementById('chave_pix_externa');
+    
+    if (tipoAtleta) {
+        camposAtleta.style.display = 'block';
+        camposExterna.style.display = 'none';
+        atletaId.required = true;
+        nomeExterna.required = false;
+        telefoneExterna.required = false;
+        chavePixExterna.required = false;
+        // Limpar campos externos
+        nomeExterna.value = '';
+        telefoneExterna.value = '';
+        chavePixExterna.value = '';
+    } else {
+        camposAtleta.style.display = 'none';
+        camposExterna.style.display = 'block';
+        atletaId.required = false;
+        nomeExterna.required = true;
+        telefoneExterna.required = true;
+        chavePixExterna.required = true;
+        // Limpar campo atleta
+        atletaId.value = '';
+    }
+}
+
+// Validação do formulário antes de submeter
+document.getElementById('form-criar-pessoa')?.addEventListener('submit', function(e) {
+    const tipoAtleta = document.getElementById('tipo_atleta').checked;
+    const atletaId = document.getElementById('atleta_id');
+    const nomeExterna = document.getElementById('nome_externa');
+    const telefoneExterna = document.getElementById('telefone_externa');
+    const chavePixExterna = document.getElementById('chave_pix_externa');
+    
+    if (tipoAtleta) {
+        if (!atletaId.value) {
+            e.preventDefault();
+            alert('Por favor, selecione um atleta.');
+            atletaId.focus();
+            return false;
+        }
+    } else {
+        if (!nomeExterna.value.trim()) {
+            e.preventDefault();
+            alert('Por favor, preencha o nome completo.');
+            nomeExterna.focus();
+            return false;
+        }
+        if (!telefoneExterna.value.trim()) {
+            e.preventDefault();
+            alert('Por favor, preencha o telefone.');
+            telefoneExterna.focus();
+            return false;
+        }
+        if (!chavePixExterna.value.trim()) {
+            e.preventDefault();
+            alert('Por favor, preencha a chave PIX.');
+            chavePixExterna.focus();
+            return false;
+        }
+    }
+    
+    // Se chegou aqui, permitir submit
+    return true;
+});
+
+function editarPessoa(id, nome, telefone, chavePix, observacao) {
+    document.getElementById('editar_pessoa_id').value = id;
+    document.getElementById('editar_nome').value = nome;
+    document.getElementById('editar_telefone').value = telefone;
+    document.getElementById('editar_chave_pix').value = chavePix;
+    document.getElementById('editar_observacao').value = observacao || '';
+    
+    const modal = document.getElementById('modal-editar');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function fecharModal() {
+    const modal = document.getElementById('modal-editar');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    const form = document.getElementById('form-editar-pessoa');
+    if (form) {
+        form.reset();
+    }
+}
+
+// Fechar modal ao clicar no overlay
+document.getElementById('modal-editar')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        fecharModal();
+    }
+});
+
+// Preencher telefone e PIX automaticamente ao selecionar atleta
+document.getElementById('atleta_id')?.addEventListener('change', function() {
+    const option = this.options[this.selectedIndex];
+    if (option && option.dataset.telefone) {
+        document.getElementById('telefone_atleta').value = option.dataset.telefone || '';
+        document.getElementById('chave_pix_atleta').value = option.dataset.pix || '';
+    }
+});
+</script>
+{% endblock %}
+
+
+

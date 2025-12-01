@@ -76,9 +76,11 @@ Quando um campeonato é criado, você receberá automaticamente:
 
 Após fazer login, você verá o **Painel da Academia** com:
 
-- **Lista de Eventos Disponíveis**: Campeonatos abertos para inscrição
-- **Eventos em que Participa**: Campeonatos onde você já tem atletas inscritos
+- **Agenda de Eventos**: Todos os eventos futuros (mesmo com inscrições fechadas aparecem aqui)
+- **Eventos Encerrados**: Apenas eventos que já aconteceram (apenas consulta)
 - **Estatísticas**: Quantidade de atletas inscritos por evento
+
+> 📅 **Importante:** Eventos futuros sempre aparecem na "Agenda de Eventos", mesmo que as inscrições já tenham fechado. Apenas eventos que já aconteceram aparecem como "Encerrados".
 
 ---
 
@@ -444,6 +446,28 @@ Se tiver problemas ou dúvidas:
 
 ---
 
-**Última Atualização:** 2024  
-**Versão do Manual:** 1.0
+---
+
+## 10. Atualizações Recentes
+
+### 10.1 Agenda de Eventos
+
+A tela de eventos foi melhorada:
+- ✅ **Agenda de Eventos**: Todos os eventos futuros aparecem aqui, mesmo que as inscrições já tenham fechado
+- ✅ **Eventos Encerrados**: Apenas eventos que já aconteceram aparecem aqui
+- ✅ **Badge Visual**: Quando as inscrições estão fechadas, aparece um badge indicando "Inscrições encerradas"
+
+> 📅 **Dica:** Mesmo que as inscrições tenham fechado, você ainda pode visualizar o evento na agenda para acompanhar informações e chaves.
+
+### 10.2 Modais do Sistema
+
+Todos os modais foram corrigidos e padronizados:
+- ✅ Modais abrem corretamente
+- ✅ Backdrop aparece junto com o modal
+- ✅ Funciona em todos os navegadores e dispositivos móveis
+
+---
+
+**Última Atualização:** Janeiro 2025  
+**Versão do Manual:** 1.1
 

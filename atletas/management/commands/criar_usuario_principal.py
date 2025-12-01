@@ -76,3 +76,6 @@ class Command(BaseCommand):
         self.stdout.write(f'   Validade: Vitalício')
         self.stdout.write(self.style.WARNING('\n⚠️  Guarde estas credenciais com segurança!'))
 
+
+
+

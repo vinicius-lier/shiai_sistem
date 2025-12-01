@@ -26,32 +26,69 @@
 
     /* Header da Academia */
     .academia-header {
-        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
-        color: var(--color-white);
-        padding: var(--spacing-4);
+        background: var(--color-white);
+        border: 1px solid var(--color-gray-200);
         border-radius: var(--border-radius-xl);
         margin-bottom: var(--spacing-6);
-        text-align: center;
-        box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.05);
+        box-shadow: var(--shadow-sm);
+        padding: var(--spacing-6);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-6);
+        flex-wrap: wrap;
     }
 
     @media (min-width: 768px) {
         .academia-header {
-            padding: var(--spacing-6);
+            padding: var(--spacing-8);
+            gap: var(--spacing-8);
         }
     }
 
-    @media (min-width: 1024px) {
-        .academia-header {
-            padding: var(--spacing-8);
+    .academia-header .logo-wrapper {
+        flex-shrink: 0;
+        width: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--color-gray-50);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-3);
+        border: 1px solid var(--color-gray-200);
+    }
+
+    @media (min-width: 768px) {
+        .academia-header .logo-wrapper {
+            width: 120px;
+            height: 120px;
+            padding: var(--spacing-4);
         }
+    }
+
+    .academia-header .logo-wrapper img {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        border-radius: var(--border-radius-md);
+    }
+
+    .academia-header .info-wrapper {
+        flex: 1;
+        min-width: 200px;
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-2);
     }
 
     .academia-header h1 {
-        color: var(--color-white);
+        color: var(--color-gray-900);
         font-size: var(--font-size-xl);
         font-weight: 700;
-        margin-bottom: var(--spacing-2);
+        margin: 0;
+        line-height: 1.2;
     }
 
     @media (min-width: 768px) {
@@ -61,8 +98,16 @@
     }
 
     .academia-header p {
-        opacity: 0.95;
+        color: var(--color-gray-600);
         font-size: var(--font-size-sm);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    @media (min-width: 768px) {
+        .academia-header p {
+            font-size: var(--font-size-base);
+        }
     }
 
     /* Seções */
@@ -118,30 +163,34 @@
     /* Card de Evento Aberto */
     .evento-card {
         background: var(--color-white);
-        border-radius: 12px;
+        border-radius: var(--border-radius-lg);
         border: 1px solid var(--color-gray-200);
-        box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.05);
-        padding: var(--spacing-4);
+        box-shadow: var(--shadow-sm);
+        padding: var(--spacing-6);
         transition: all var(--transition-base);
-        border-left: 4px solid #10b981;
+        border-left: 5px solid #10b981;
         position: relative;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-4);
     }
 
     @media (min-width: 768px) {
         .evento-card {
-            padding: var(--spacing-5);
+            padding: var(--spacing-6);
+            gap: var(--spacing-5);
         }
     }
 
     @media (min-width: 1024px) {
         .evento-card {
-            padding: var(--spacing-7);
+            padding: var(--spacing-6);
         }
     }
 
     .evento-card:hover {
-        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--shadow-md);
         transform: translateY(-2px);
     }
 
@@ -149,7 +198,7 @@
         font-size: var(--font-size-lg);
         font-weight: 600;
         color: var(--color-gray-900);
-        margin-bottom: var(--spacing-3);
+        margin: 0;
         line-height: 1.4;
     }
 
@@ -162,21 +211,24 @@
     .evento-info {
         font-size: var(--font-size-sm);
         color: var(--color-gray-600);
-        margin-bottom: var(--spacing-4);
         display: flex;
         flex-direction: column;
-        gap: var(--spacing-2);
+        gap: var(--spacing-3);
+        margin: 0;
     }
 
     .evento-info-item {
         display: flex;
         align-items: center;
-        gap: var(--spacing-2);
+        gap: var(--spacing-3);
+        line-height: 1.5;
     }
 
     .evento-info-item svg {
         flex-shrink: 0;
         color: var(--color-gray-500);
+        width: 18px;
+        height: 18px;
     }
 
     /* Card de Evento Encerrado */
@@ -219,32 +271,38 @@
         align-items: center;
         justify-content: center;
         gap: var(--spacing-2);
-        padding: var(--spacing-3) var(--spacing-4);
-        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-4) var(--spacing-5);
+        border-radius: var(--border-radius-md);
         font-size: var(--font-size-sm);
-        font-weight: 500;
+        font-weight: 600;
         text-decoration: none;
         transition: all var(--transition-base);
         border: none;
         cursor: pointer;
+        margin-top: auto;
     }
 
     @media (min-width: 768px) {
         .btn-evento {
-            padding: var(--spacing-3) var(--spacing-5);
+            padding: var(--spacing-4) var(--spacing-6);
             font-size: var(--font-size-base);
         }
     }
 
     .btn-evento-primary {
-        background: var(--color-primary);
+        background: #4285F4;
         color: var(--color-white);
     }
 
     .btn-evento-primary:hover {
-        background: var(--color-primary-hover);
+        background: #357AE8;
         transform: translateY(-1px);
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0px 4px 12px rgba(66, 133, 244, 0.3);
+    }
+
+    .btn-evento-primary svg {
+        width: 18px;
+        height: 18px;
     }
 
     .btn-evento-secondary {
@@ -341,15 +399,20 @@
 
 {% block content %}
 <div class="painel-container">
-    <!-- Logo SHIAI -->
-    <div style="text-align: center; margin-bottom: var(--spacing-6);">
-        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" style="max-width: 200px; height: auto;" onerror="this.style.display='none';">
-    </div>
-    
-    <!-- Header da Academia -->
+    <!-- Header da Academia com Logo -->
     <div class="academia-header">
-        <h1>{{ academia.nome }}</h1>
-        <p>{{ academia.cidade }}, {{ academia.estado }}</p>
+        <div class="logo-wrapper">
+            {% if academia.foto_perfil %}
+            <img src="{{ academia.foto_perfil.url }}" alt="{{ academia.nome }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" style="display: none;">
+            {% else %}
+            <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM">
+            {% endif %}
+        </div>
+        <div class="info-wrapper">
+            <h1>{{ academia.nome }}</h1>
+            <p>{{ academia.cidade }}, {{ academia.estado }}</p>
+        </div>
     </div>
     
     <!-- Botão para cadastrar novo atleta -->
@@ -363,7 +426,238 @@
         </a>
     </div>
 
-    <!-- Seção: Eventos Abertos -->
+    <!-- Rankings Lado a Lado - DESTAQUE -->
+    {% if campeonato_ativo %}
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-6); margin-bottom: var(--spacing-8);">
+        <!-- Ranking de Atletas -->
+        <div class="card ranking-card" style="display: flex; flex-direction: column; height: 100%; border-radius: var(--border-radius-lg); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%); color: white; border: none; flex-shrink: 0; border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 class="card-title" style="color: white; margin: 0; font-size: var(--font-size-xl); font-weight: 700;">🏆 Ranking de Atletas</h3>
+                        <p style="margin: var(--spacing-1) 0 0 0; font-size: var(--font-size-sm); opacity: 0.9;">Top atletas do campeonato</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                {% if ranking_global_atletas %}
+                    <!-- Top 3 Destaque -->
+                    <div class="ranking-top3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-3); padding: var(--spacing-4); background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); flex-shrink: 0;">
+                        {% for item in ranking_global_atletas|slice:":3" %}
+                        <div class="ranking-podium-item" style="text-align: center; position: relative;">
+                            <div style="position: relative; display: inline-block; margin-bottom: var(--spacing-2);">
+                                <!-- Avatar -->
+                                <div class="ranking-avatar" style="width: 60px; height: 60px; border-radius: 50%; background: {% if forloop.counter == 1 %}linear-gradient(135deg, #FFD700 0%, #FFA500 100%){% elif forloop.counter == 2 %}linear-gradient(135deg, #C0C0C0 0%, #808080 100%){% else %}linear-gradient(135deg, #CD7F32 0%, #8B4513 100%){% endif %}; display: flex; align-items: center; justify-content: center; font-size: var(--font-size-xl); font-weight: 700; color: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); margin: 0 auto;">
+                                    {% if item.atleta.foto_perfil %}
+                                        <img src="{{ item.atleta.foto_perfil.url }}" alt="{{ item.atleta.nome }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                    {% else %}
+                                        {{ item.atleta.nome|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <!-- Medalha -->
+                                <div style="position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: {% if forloop.counter == 1 %}#FFD700{% elif forloop.counter == 2 %}#C0C0C0{% else %}#CD7F32{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
+                                    {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
+                                </div>
+                            </div>
+                            <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--color-gray-900); margin-bottom: var(--spacing-1); line-height: 1.2;">{{ item.atleta.nome|truncatewords:2 }}</div>
+                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-bottom: var(--spacing-1); line-height: 1.2;">{{ item.atleta.academia.nome|truncatewords:2 }}</div>
+                            <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--color-primary);">
+                                {{ item.total_medalhas }} medalhas
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Lista Rolável (4º em diante) -->
+                    {% if ranking_global_atletas|length > 3 %}
+                    <div class="ranking-scrollable-list" style="flex: 1; overflow-y: auto; padding: var(--spacing-4); min-height: 0;">
+                        <style>
+                            .ranking-scrollable-list::-webkit-scrollbar {
+                                width: 6px;
+                            }
+                            .ranking-scrollable-list::-webkit-scrollbar-track {
+                                background: var(--color-gray-100);
+                                border-radius: 3px;
+                            }
+                            .ranking-scrollable-list::-webkit-scrollbar-thumb {
+                                background: var(--color-gray-400);
+                                border-radius: 3px;
+                            }
+                            .ranking-scrollable-list::-webkit-scrollbar-thumb:hover {
+                                background: var(--color-gray-500);
+                            }
+                        </style>
+                        <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
+                            {% for item in ranking_global_atletas|slice:"3:" %}
+                            <div class="ranking-list-item" style="display: flex; align-items: center; gap: var(--spacing-3); padding: var(--spacing-2); border-radius: var(--border-radius-md); background: var(--color-white); border: 1px solid var(--color-gray-200); transition: all 0.2s ease;">
+                                <div style="width: 32px; text-align: center; font-weight: 600; color: var(--color-gray-600); font-size: var(--font-size-xs); flex-shrink: 0;">
+                                    {{ forloop.counter|add:3 }}º
+                                </div>
+                                <div class="ranking-avatar-small" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%); display: flex; align-items: center; justify-content: center; font-size: var(--font-size-base); font-weight: 600; color: white; flex-shrink: 0;">
+                                    {% if item.atleta.foto_perfil %}
+                                        <img src="{{ item.atleta.foto_perfil.url }}" alt="{{ item.atleta.nome }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                    {% else %}
+                                        {{ item.atleta.nome|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--color-gray-900); margin-bottom: var(--spacing-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.atleta.nome }}</div>
+                                    <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.atleta.academia.nome }}</div>
+                                </div>
+                                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: var(--spacing-1); flex-shrink: 0;">
+                                    <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--color-primary);">
+                                        {{ item.total_medalhas }}
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-1);">
+                                        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥇{{ item.ouro }}</span>
+                                        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥈{{ item.prata }}</span>
+                                        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥉{{ item.bronze }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state" style="padding: var(--spacing-8); text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin: 0 auto var(--spacing-3); color: var(--color-gray-400);">
+                            <line x1="12" y1="20" x2="12" y2="10"></line>
+                            <line x1="18" y1="20" x2="18" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="16"></line>
+                        </svg>
+                        <div class="empty-state-title" style="font-size: var(--font-size-base);">Nenhum ranking disponível</div>
+                        <div class="empty-state-description" style="font-size: var(--font-size-sm);">O ranking aparecerá após gerar chaves e registrar resultados</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Ranking de Academias -->
+        <div class="card ranking-card" style="display: flex; flex-direction: column; height: 100%; border-radius: var(--border-radius-lg); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%); color: white; border: none; flex-shrink: 0; border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 class="card-title" style="color: white; margin: 0; font-size: var(--font-size-xl); font-weight: 700;">🏅 Ranking de Academias</h3>
+                        <p style="margin: var(--spacing-1) 0 0 0; font-size: var(--font-size-sm); opacity: 0.9;">Top academias do campeonato</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                {% if ranking_academias_completo %}
+                    <!-- Top 3 Destaque -->
+                    <div class="ranking-top3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-3); padding: var(--spacing-4); background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); flex-shrink: 0;">
+                        {% for item in ranking_academias_completo|slice:":3" %}
+                        <div class="ranking-podium-item" style="text-align: center; position: relative;">
+                            <div style="position: relative; display: inline-block; margin-bottom: var(--spacing-2);">
+                                <!-- Avatar Academia -->
+                                <div class="ranking-avatar" style="width: 60px; height: 60px; border-radius: 50%; background: {% if forloop.counter == 1 %}linear-gradient(135deg, #FFD700 0%, #FFA500 100%){% elif forloop.counter == 2 %}linear-gradient(135deg, #C0C0C0 0%, #808080 100%){% else %}linear-gradient(135deg, #CD7F32 0%, #8B4513 100%){% endif %}; display: flex; align-items: center; justify-content: center; font-size: var(--font-size-xl); font-weight: 700; color: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); margin: 0 auto;">
+                                    {% if item.academia.foto_perfil %}
+                                        <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                    {% else %}
+                                        {{ item.academia.nome|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <!-- Medalha -->
+                                <div style="position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: {% if forloop.counter == 1 %}#FFD700{% elif forloop.counter == 2 %}#C0C0C0{% else %}#CD7F32{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
+                                    {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
+                                </div>
+                            </div>
+                            <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--color-gray-900); margin-bottom: var(--spacing-1); line-height: 1.2;">{{ item.academia.nome|truncatewords:3 }}</div>
+                            <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--color-primary); margin-bottom: var(--spacing-1);">
+                                {{ item.pontos_totais }} pts
+                            </div>
+                            {% if item.total_atletas_ativos %}
+                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-600);">
+                                {{ item.total_atletas_ativos }} atleta{{ item.total_atletas_ativos|pluralize:"s" }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Lista Rolável (4º em diante) -->
+                    {% if ranking_academias_completo|length > 3 %}
+                    <div class="ranking-scrollable-list" style="flex: 1; overflow-y: auto; padding: var(--spacing-4); min-height: 0;">
+                        <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
+                            {% for item in ranking_academias_completo|slice:"3:" %}
+                            <div class="ranking-list-item" style="display: flex; align-items: center; gap: var(--spacing-3); padding: var(--spacing-2); border-radius: var(--border-radius-md); background: var(--color-white); border: 1px solid var(--color-gray-200); transition: all 0.2s ease;">
+                                <div style="width: 32px; text-align: center; font-weight: 600; color: var(--color-gray-600); font-size: var(--font-size-xs); flex-shrink: 0;">
+                                    {{ forloop.counter|add:3 }}º
+                                </div>
+                                <div class="ranking-avatar-small" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%); display: flex; align-items: center; justify-content: center; font-size: var(--font-size-base); font-weight: 600; color: white; flex-shrink: 0;">
+                                    {% if item.academia.foto_perfil %}
+                                        <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                    {% else %}
+                                        {{ item.academia.nome|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--color-gray-900); margin-bottom: var(--spacing-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.academia.nome }}</div>
+                                    {% if item.total_atletas_ativos %}
+                                    <div style="font-size: var(--font-size-xs); color: var(--color-gray-600);">
+                                        {{ item.total_atletas_ativos }} atleta{{ item.total_atletas_ativos|pluralize:"s" }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: var(--spacing-1); flex-shrink: 0;">
+                                    <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--color-secondary);">
+                                        {{ item.pontos_totais }} pts
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-1);">
+                                        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥇{{ item.ouro }}</span>
+                                        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥈{{ item.prata }}</span>
+                                        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥉{{ item.bronze }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state" style="padding: var(--spacing-8); text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin: 0 auto var(--spacing-3); color: var(--color-gray-400);">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        <div class="empty-state-title" style="font-size: var(--font-size-base);">Nenhum ranking disponível</div>
+                        <div class="empty-state-description" style="font-size: var(--font-size-sm);">O ranking aparecerá após gerar chaves e registrar resultados</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <style>
+    /* Responsividade para Rankings */
+    @media (max-width: 992px) {
+        .ranking-card {
+            grid-column: 1 / -1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .ranking-top3 {
+            grid-template-columns: 1fr !important;
+            gap: var(--spacing-4) !important;
+        }
+        
+        .ranking-podium-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-3);
+            text-align: left !important;
+        }
+        
+        .ranking-podium-item > div:first-child {
+            margin-bottom: 0 !important;
+        }
+    }
+    </style>
+    {% endif %}
+
+    <!-- Seção: Agenda de Eventos (Futuros) -->
     {% if eventos_abertos %}
     <section class="section">
         <h2 class="section-title">
@@ -371,7 +665,7 @@
                 <circle cx="12" cy="12" r="10"></circle>
                 <polyline points="12 6 12 12 16 14"></polyline>
             </svg>
-            Eventos Abertos
+            Agenda de Eventos
         </h2>
         
         <div class="events-grid">
@@ -397,6 +691,9 @@
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
                         <span>Inscrições até: {{ evento.data_limite_inscricao|date:"d/m/Y" }}</span>
+                        {% if evento.data_limite_inscricao < hoje %}
+                        <span class="badge" style="background: var(--color-warning-light); color: #92400E; font-size: var(--font-size-xs); margin-left: var(--spacing-2);">Inscrições encerradas</span>
+                        {% endif %}
                     </div>
                     {% endif %}
                 </div>
@@ -419,7 +716,7 @@
                 <circle cx="12" cy="12" r="10"></circle>
                 <polyline points="12 6 12 12 16 14"></polyline>
             </svg>
-            Eventos Abertos
+            Agenda de Eventos
         </h2>
         <div class="empty-state">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -427,7 +724,7 @@
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            <p>Nenhum evento aberto no momento.</p>
+            <p>Nenhum evento na agenda no momento.</p>
         </div>
     </section>
     {% endif %}

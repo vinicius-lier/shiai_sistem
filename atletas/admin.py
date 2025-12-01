@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.urls import path
 from django.shortcuts import render
 from django.http import JsonResponse
-from .models import Academia, Categoria, Atleta, Chave, Luta, AdminLog, Inscricao, Campeonato
+from .models import Academia, Categoria, Atleta, Chave, Luta, AdminLog, Inscricao, Campeonato, EquipeTecnicaCampeonato, PessoaEquipeTecnica, PesagemHistorico
 
 
 @admin.register(Academia)
@@ -34,7 +34,11 @@ class AtletaAdmin(admin.ModelAdmin):
             'fields': ('documento_oficial', 'documento_preview')
         }),
         ('Informações Adicionais', {
-            'fields': ('federado', 'numero_zempo')
+            'fields': ('federado', 'numero_zempo', 'faixa')
+        }),
+        ('Equipe Técnica', {
+            'fields': ('pode_ser_equipe_tecnica', 'funcao_equipe_tecnica', 'telefone', 'chave_pix'),
+            'description': 'Marque se esta pessoa pode fazer parte da equipe técnica em eventos. Chave PIX é obrigatória para pagamento.'
         }),
         ('Status', {
             'fields': ('status_ativo',)
@@ -97,6 +101,28 @@ class LutaAdmin(admin.ModelAdmin):
     search_fields = ('atleta_a__nome', 'atleta_b__nome', 'vencedor__nome')
 
 
+@admin.register(PessoaEquipeTecnica)
+class PessoaEquipeTecnicaAdmin(admin.ModelAdmin):
+    list_display = ('nome_completo', 'telefone', 'chave_pix', 'e_atleta_display', 'ativo', 'data_cadastro')
+    list_filter = ('ativo', 'atleta', 'data_cadastro')
+    search_fields = ('nome', 'atleta__nome', 'telefone', 'chave_pix')
+    readonly_fields = ('data_cadastro', 'nome_completo', 'e_atleta_display')
+    date_hierarchy = 'data_cadastro'
+    
+    def e_atleta_display(self, obj):
+        return 'Sim' if obj.e_atleta else 'Não'
+    e_atleta_display.short_description = 'É Atleta'
+
+
+@admin.register(EquipeTecnicaCampeonato)
+class EquipeTecnicaCampeonatoAdmin(admin.ModelAdmin):
+    list_display = ('pessoa', 'campeonato', 'funcao', 'funcao_customizada', 'ativo', 'data_vinculacao')
+    list_filter = ('campeonato', 'funcao', 'ativo', 'data_vinculacao')
+    search_fields = ('pessoa__nome', 'pessoa__atleta__nome', 'campeonato__nome', 'funcao_customizada')
+    readonly_fields = ('data_vinculacao',)
+    date_hierarchy = 'data_vinculacao'
+
+
 @admin.register(AdminLog)
 class AdminLogAdmin(admin.ModelAdmin):
     list_display = ('data_hora', 'acao', 'usuario_ip')
@@ -106,6 +132,16 @@ class AdminLogAdmin(admin.ModelAdmin):
     
     def has_add_permission(self, request):
         return False
+
+
+@admin.register(PesagemHistorico)
+class PesagemHistoricoAdmin(admin.ModelAdmin):
+    list_display = ('inscricao', 'campeonato', 'peso_registrado', 'pesado_por', 'data_hora')
+    list_filter = ('campeonato', 'data_hora', 'pesado_por')
+    search_fields = ('inscricao__atleta__nome', 'campeonato__nome', 'observacoes')
+    readonly_fields = ('data_hora',)
+    date_hierarchy = 'data_hora'
+    ordering = ['-data_hora']
 
 
 class JudoAdminSite(admin.AdminSite):

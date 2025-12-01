@@ -12,7 +12,7 @@
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-card-header">
-            <span class="stat-card-title">Total de Atletas</span>
+            <span class="stat-card-title">Total de Atletas Inscritos</span>
             <div class="stat-card-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -22,8 +22,17 @@
                 </svg>
             </div>
         </div>
-        <div class="stat-card-value">{{ total_atletas }}</div>
-        <div class="stat-card-change">Atletas cadastrados</div>
+        <div class="stat-card-value">{{ total_inscricoes }}</div>
+        <div class="stat-card-change" style="display: flex; flex-direction: column; gap: var(--spacing-1); margin-top: var(--spacing-2);">
+            <div style="display: flex; justify-content: space-between; font-size: var(--font-size-sm);">
+                <span style="color: var(--color-success);">✓ Federados:</span>
+                <strong style="color: var(--color-success);">{{ inscricoes_federados }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: var(--font-size-sm);">
+                <span style="color: var(--color-gray-600);">○ Não Federados:</span>
+                <strong style="color: var(--color-gray-600);">{{ inscricoes_nao_federados }}</strong>
+            </div>
+        </div>
     </div>
 
     <div class="stat-card">
@@ -42,22 +51,6 @@
 
     <div class="stat-card">
         <div class="stat-card-header">
-            <span class="stat-card-title">Total de Categorias</span>
-            <div class="stat-card-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-            </div>
-        </div>
-        <div class="stat-card-value">{{ total_categorias }}</div>
-        <div class="stat-card-change">Categorias disponíveis</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-card-header">
             <span class="stat-card-title">Total de Chaves</span>
             <div class="stat-card-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
@@ -69,6 +62,247 @@
         <div class="stat-card-change">Chaves geradas</div>
     </div>
 </div>
+
+<!-- Rankings Lado a Lado - DESTAQUE -->
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-6); margin-bottom: var(--spacing-8);">
+    <!-- Ranking de Atletas -->
+    <div class="card ranking-card" style="display: flex; flex-direction: column; height: 100%;">
+        <div class="card-header" style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%); color: white; border: none; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 class="card-title" style="color: white; margin: 0; font-size: var(--font-size-xl); font-weight: 700;">🏆 Ranking de Atletas</h3>
+                    <p style="margin: var(--spacing-1) 0 0 0; font-size: var(--font-size-sm); opacity: 0.9;">Top atletas do campeonato</p>
+                </div>
+                <a href="{% url 'ranking_global' %}" class="btn" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.3); padding: var(--spacing-2) var(--spacing-3); font-size: var(--font-size-xs);">
+                    Ver Completo
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-left: 4px;">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        <div class="card-body" style="padding: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            {% if ranking_global_atletas %}
+                <!-- Top 3 Destaque -->
+                <div class="ranking-top3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-3); padding: var(--spacing-4); background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); flex-shrink: 0;">
+                    {% for item in ranking_global_atletas|slice:":3" %}
+                    <div class="ranking-podium-item" style="text-align: center; position: relative;">
+                        <div style="position: relative; display: inline-block; margin-bottom: var(--spacing-2);">
+                            <!-- Avatar -->
+                            <div class="ranking-avatar" style="width: 60px; height: 60px; border-radius: 50%; background: {% if forloop.counter == 1 %}linear-gradient(135deg, #FFD700 0%, #FFA500 100%){% elif forloop.counter == 2 %}linear-gradient(135deg, #C0C0C0 0%, #808080 100%){% else %}linear-gradient(135deg, #CD7F32 0%, #8B4513 100%){% endif %}; display: flex; align-items: center; justify-content: center; font-size: var(--font-size-xl); font-weight: 700; color: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); margin: 0 auto;">
+                                {% if item.atleta.foto_perfil %}
+                                    <img src="{{ item.atleta.foto_perfil.url }}" alt="{{ item.atleta.nome }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                {% else %}
+                                    {{ item.atleta.nome|first|upper }}
+                                {% endif %}
+                            </div>
+                            <!-- Medalha -->
+                            <div style="position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: {% if forloop.counter == 1 %}#FFD700{% elif forloop.counter == 2 %}#C0C0C0{% else %}#CD7F32{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
+                                {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
+                            </div>
+                        </div>
+                        <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--color-gray-900); margin-bottom: var(--spacing-1); line-height: 1.2;">{{ item.atleta.nome|truncatewords:2 }}</div>
+                        <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-bottom: var(--spacing-1); line-height: 1.2;">{{ item.atleta.academia.nome|truncatewords:2 }}</div>
+                        <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--color-primary);">
+                            {{ item.total_medalhas }} medalhas
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Lista Rolável (4º em diante) -->
+                {% if ranking_global_atletas|length > 3 %}
+                <div class="ranking-scrollable-list" style="flex: 1; overflow-y: auto; padding: var(--spacing-4); min-height: 0;">
+                    <style>
+                        .ranking-scrollable-list::-webkit-scrollbar {
+                            width: 6px;
+                        }
+                        .ranking-scrollable-list::-webkit-scrollbar-track {
+                            background: var(--color-gray-100);
+                            border-radius: 3px;
+                        }
+                        .ranking-scrollable-list::-webkit-scrollbar-thumb {
+                            background: var(--color-gray-400);
+                            border-radius: 3px;
+                        }
+                        .ranking-scrollable-list::-webkit-scrollbar-thumb:hover {
+                            background: var(--color-gray-500);
+                        }
+                    </style>
+                    <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
+                        {% for item in ranking_global_atletas|slice:"3:" %}
+                        <div class="ranking-list-item" style="display: flex; align-items: center; gap: var(--spacing-3); padding: var(--spacing-2); border-radius: var(--border-radius-md); background: var(--color-white); border: 1px solid var(--color-gray-200); transition: all 0.2s ease;">
+                            <div style="width: 32px; text-align: center; font-weight: 600; color: var(--color-gray-600); font-size: var(--font-size-xs); flex-shrink: 0;">
+                                {{ forloop.counter|add:3 }}º
+                            </div>
+                            <div class="ranking-avatar-small" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%); display: flex; align-items: center; justify-content: center; font-size: var(--font-size-base); font-weight: 600; color: white; flex-shrink: 0;">
+                                {% if item.atleta.foto_perfil %}
+                                    <img src="{{ item.atleta.foto_perfil.url }}" alt="{{ item.atleta.nome }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                {% else %}
+                                    {{ item.atleta.nome|first|upper }}
+                                {% endif %}
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--color-gray-900); margin-bottom: var(--spacing-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.atleta.nome }}</div>
+                                <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.atleta.academia.nome }}</div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: var(--spacing-1); flex-shrink: 0;">
+                                <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--color-primary);">
+                                    {{ item.total_medalhas }}
+                                </div>
+                                <div style="display: flex; align-items: center; gap: var(--spacing-1);">
+                                    <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥇{{ item.ouro }}</span>
+                                    <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥈{{ item.prata }}</span>
+                                    <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥉{{ item.bronze }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="empty-state" style="padding: var(--spacing-8); text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                    <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin: 0 auto var(--spacing-3); color: var(--color-gray-400);">
+                        <line x1="12" y1="20" x2="12" y2="10"></line>
+                        <line x1="18" y1="20" x2="18" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="16"></line>
+                    </svg>
+                    <div class="empty-state-title" style="font-size: var(--font-size-base);">Nenhum ranking disponível</div>
+                    <div class="empty-state-description" style="font-size: var(--font-size-sm);">O ranking aparecerá após gerar chaves e registrar resultados</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Ranking de Academias -->
+    <div class="card ranking-card" style="display: flex; flex-direction: column; height: 100%;">
+        <div class="card-header" style="background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%); color: white; border: none; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 class="card-title" style="color: white; margin: 0; font-size: var(--font-size-xl); font-weight: 700;">🏅 Ranking de Academias</h3>
+                    <p style="margin: var(--spacing-1) 0 0 0; font-size: var(--font-size-sm); opacity: 0.9;">Top academias do campeonato</p>
+                </div>
+                <a href="{% url 'ranking_academias' %}" class="btn" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.3); padding: var(--spacing-2) var(--spacing-3); font-size: var(--font-size-xs);">
+                    Ver Completo
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-left: 4px;">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        <div class="card-body" style="padding: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            {% if ranking_academias_completo %}
+                <!-- Top 3 Destaque -->
+                <div class="ranking-top3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-3); padding: var(--spacing-4); background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); flex-shrink: 0;">
+                    {% for item in ranking_academias_completo|slice:":3" %}
+                    <div class="ranking-podium-item" style="text-align: center; position: relative;">
+                        <div style="position: relative; display: inline-block; margin-bottom: var(--spacing-2);">
+                            <!-- Avatar Academia -->
+                            <div class="ranking-avatar" style="width: 60px; height: 60px; border-radius: 50%; background: {% if forloop.counter == 1 %}linear-gradient(135deg, #FFD700 0%, #FFA500 100%){% elif forloop.counter == 2 %}linear-gradient(135deg, #C0C0C0 0%, #808080 100%){% else %}linear-gradient(135deg, #CD7F32 0%, #8B4513 100%){% endif %}; display: flex; align-items: center; justify-content: center; font-size: var(--font-size-xl); font-weight: 700; color: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); margin: 0 auto;">
+                                {% if item.academia.foto_perfil %}
+                                    <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                {% else %}
+                                    {{ item.academia.nome|first|upper }}
+                                {% endif %}
+                            </div>
+                            <!-- Medalha -->
+                            <div style="position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: {% if forloop.counter == 1 %}#FFD700{% elif forloop.counter == 2 %}#C0C0C0{% else %}#CD7F32{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
+                                {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
+                            </div>
+                        </div>
+                        <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--color-gray-900); margin-bottom: var(--spacing-1); line-height: 1.2;">{{ item.academia.nome|truncatewords:3 }}</div>
+                        <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--color-primary); margin-bottom: var(--spacing-1);">
+                            {{ item.pontos_totais }} pts
+                        </div>
+                        {% if item.total_atletas_ativos %}
+                        <div style="font-size: var(--font-size-xs); color: var(--color-gray-600);">
+                            {{ item.total_atletas_ativos }} atleta{{ item.total_atletas_ativos|pluralize:"s" }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Lista Rolável (4º em diante) -->
+                {% if ranking_academias_completo|length > 3 %}
+                <div class="ranking-scrollable-list" style="flex: 1; overflow-y: auto; padding: var(--spacing-4); min-height: 0;">
+                    <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
+                        {% for item in ranking_academias_completo|slice:"3:" %}
+                        <div class="ranking-list-item" style="display: flex; align-items: center; gap: var(--spacing-3); padding: var(--spacing-2); border-radius: var(--border-radius-md); background: var(--color-white); border: 1px solid var(--color-gray-200); transition: all 0.2s ease;">
+                            <div style="width: 32px; text-align: center; font-weight: 600; color: var(--color-gray-600); font-size: var(--font-size-xs); flex-shrink: 0;">
+                                {{ forloop.counter|add:3 }}º
+                            </div>
+                            <div class="ranking-avatar-small" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%); display: flex; align-items: center; justify-content: center; font-size: var(--font-size-base); font-weight: 600; color: white; flex-shrink: 0;">
+                                {% if item.academia.foto_perfil %}
+                                    <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                {% else %}
+                                    {{ item.academia.nome|first|upper }}
+                                {% endif %}
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--color-gray-900); margin-bottom: var(--spacing-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.academia.nome }}</div>
+                                {% if item.total_atletas_ativos %}
+                                <div style="font-size: var(--font-size-xs); color: var(--color-gray-600);">
+                                    {{ item.total_atletas_ativos }} atleta{{ item.total_atletas_ativos|pluralize:"s" }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: var(--spacing-1); flex-shrink: 0;">
+                                <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--color-secondary);">
+                                    {{ item.pontos_totais }} pts
+                                </div>
+                                <div style="display: flex; align-items: center; gap: var(--spacing-1);">
+                                    <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥇{{ item.ouro }}</span>
+                                    <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥈{{ item.prata }}</span>
+                                    <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥉{{ item.bronze }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="empty-state" style="padding: var(--spacing-8); text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                    <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin: 0 auto var(--spacing-3); color: var(--color-gray-400);">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <div class="empty-state-title" style="font-size: var(--font-size-base);">Nenhum ranking disponível</div>
+                    <div class="empty-state-description" style="font-size: var(--font-size-sm);">O ranking aparecerá após gerar chaves e registrar resultados</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* Responsividade para Rankings */
+@media (max-width: 992px) {
+    .ranking-card {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .ranking-top3 {
+        grid-template-columns: 1fr !important;
+        gap: var(--spacing-4) !important;
+    }
+    
+    .ranking-podium-item {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-3);
+        text-align: left !important;
+    }
+    
+    .ranking-podium-item > div:first-child {
+        margin-bottom: 0 !important;
+    }
+}
+</style>
 
 <!-- Action Cards -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--spacing-6); margin-bottom: var(--spacing-8);">
@@ -133,117 +367,6 @@
     </div>
 </div>
 
-<!-- Two Column Layout -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-6); margin-bottom: var(--spacing-8);">
-    <!-- Últimos Atletas -->
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Últimos Atletas Cadastrados</h3>
-        </div>
-        <div class="card-body" style="padding: 0;">
-            {% if ultimos_atletas %}
-                <div class="table-container" style="border: none; border-radius: 0;">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Classe</th>
-                                <th>Academia</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for atleta in ultimos_atletas %}
-                            <tr>
-                                <td>
-                                    <div style="font-weight: 500; color: var(--color-gray-900);">{{ atleta.nome }}</div>
-                                    <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">{{ atleta.get_sexo_display }}</div>
-                                </td>
-                                <td>
-                                    <span class="badge badge-success">{{ atleta.classe }}</span>
-                                </td>
-                                <td style="font-size: var(--font-size-sm); color: var(--color-gray-600);">{{ atleta.academia.nome }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-state" style="padding: var(--spacing-8);">
-                    <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                    </svg>
-                    <div class="empty-state-title">Nenhum atleta cadastrado</div>
-                    <div class="empty-state-description">Comece cadastrando seu primeiro atleta</div>
-                    <a href="{% url 'cadastrar_atleta' %}" class="btn btn-primary">Cadastrar Atleta</a>
-                </div>
-            {% endif %}
-        </div>
-        {% if ultimos_atletas %}
-        <div class="card-footer">
-            <a href="{% url 'lista_atletas' %}" class="btn btn-ghost" style="width: 100%; justify-content: center;">Ver Todos os Atletas</a>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Ranking Preview -->
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Ranking de Academias</h3>
-        </div>
-        <div class="card-body" style="padding: 0;">
-            {% if ranking_preview %}
-                <div class="table-container" style="border: none; border-radius: 0;">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th style="width: 40px;">#</th>
-                                <th>Academia</th>
-                                <th style="text-align: right;">Pontos</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for academia in ranking_preview %}
-                            <tr>
-                                <td style="font-weight: 600; color: var(--color-gray-900);">
-                                    {% if forloop.counter == 1 %}🥇
-                                    {% elif forloop.counter == 2 %}🥈
-                                    {% elif forloop.counter == 3 %}🥉
-                                    {% else %}{{ forloop.counter }}{% endif %}
-                                </td>
-                                <td>
-                                    <div style="font-weight: 500; color: var(--color-gray-900);">{{ academia.nome }}</div>
-                                    {% if academia.cidade %}<div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">{{ academia.cidade }}{% if academia.estado %}, {{ academia.estado }}{% endif %}</div>{% endif %}
-                                </td>
-                                <td style="text-align: right;">
-                                    <span style="font-weight: 600; color: var(--color-primary);">{{ academia.pontos }}</span>
-                                    <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);"> pts</span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-state" style="padding: var(--spacing-8);">
-                    <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="20" x2="12" y2="10"></line>
-                        <line x1="18" y1="20" x2="18" y2="4"></line>
-                        <line x1="6" y1="20" x2="6" y2="16"></line>
-                    </svg>
-                    <div class="empty-state-title">Nenhuma pontuação ainda</div>
-                    <div class="empty-state-description">As pontuações aparecerão após gerar chaves e registrar resultados</div>
-                </div>
-            {% endif %}
-        </div>
-        {% if ranking_preview %}
-        <div class="card-footer">
-            <a href="{% url 'ranking_academias' %}" class="btn btn-ghost" style="width: 100%; justify-content: center;">Ver Ranking Completo</a>
-        </div>
-        {% endif %}
-    </div>
-</div>
-
 <!-- Quick Actions -->
 <div class="card">
     <div class="card-header">
@@ -280,9 +403,85 @@
 </div>
 
 <style>
-    @media (max-width: 1024px) {
-        div[style*="grid-template-columns: 1fr 1fr"] {
+    /* Ranking Global Card Styles */
+    .ranking-global-card {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        border: none;
+        overflow: hidden;
+    }
+    
+    .ranking-top3 {
+        position: relative;
+    }
+    
+    @media (max-width: 768px) {
+        .ranking-top3 {
             grid-template-columns: 1fr !important;
+            gap: var(--spacing-6) !important;
+        }
+        
+        .ranking-podium-item {
+            padding: var(--spacing-4);
+            background: var(--color-white);
+            border-radius: var(--border-radius-lg);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+    }
+    
+    /* Scroll Customizado para Lista Rolável */
+    .ranking-scrollable-list {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-primary) var(--color-gray-200);
+    }
+    
+    .ranking-scrollable-list::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .ranking-scrollable-list::-webkit-scrollbar-track {
+        background: var(--color-gray-100);
+        border-radius: 4px;
+    }
+    
+    .ranking-scrollable-list::-webkit-scrollbar-thumb {
+        background: var(--color-primary);
+        border-radius: 4px;
+    }
+    
+    .ranking-scrollable-list::-webkit-scrollbar-thumb:hover {
+        background: var(--color-primary-hover);
+    }
+    
+    /* Hover effect nos itens da lista */
+    .ranking-list-item:hover {
+        background: var(--color-gray-50) !important;
+        border-color: var(--color-primary) !important;
+        transform: translateX(4px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Responsividade do card */
+    @media (max-width: 480px) {
+        .ranking-global-card .card-header {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: var(--spacing-3);
+        }
+        
+        .ranking-global-card .card-header .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .ranking-list-item {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: var(--spacing-2) !important;
+        }
+        
+        .ranking-list-item > div:last-child {
+            width: 100%;
+            justify-content: space-between;
         }
     }
 </style>

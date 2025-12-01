@@ -1,0 +1,175 @@
+{% extends 'atletas/academia/base_academia.html' %}
+{% load static %}
+
+{% block title %}Tabela de Categorias de Peso - SHIAI SISTEM{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tabela-container {
+        overflow-x: auto;
+        margin: var(--spacing-6) 0;
+    }
+    
+    .tabela-categorias {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--color-white);
+        border-radius: var(--border-radius-md);
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .tabela-categorias thead {
+        background: var(--color-gray-100);
+    }
+    
+    .tabela-categorias th {
+        padding: var(--spacing-3) var(--spacing-4);
+        text-align: left;
+        font-weight: 600;
+        font-size: var(--font-size-sm);
+        color: var(--color-gray-900);
+        border-bottom: 2px solid var(--color-gray-300);
+        white-space: nowrap;
+    }
+    
+    .tabela-categorias td {
+        padding: var(--spacing-3) var(--spacing-4);
+        text-align: left;
+        font-size: var(--font-size-sm);
+        color: var(--color-gray-700);
+        border-bottom: 1px solid var(--color-gray-200);
+        background: var(--color-white);
+    }
+    
+    .tabela-categorias td.categoria-nome {
+        font-weight: 500;
+        color: var(--color-gray-900);
+    }
+    
+    .tabela-categorias td.peso {
+        font-family: 'Courier New', monospace;
+        font-size: var(--font-size-sm);
+        color: var(--color-gray-600);
+    }
+    
+    .tabela-categorias tbody tr:hover {
+        background: var(--color-gray-50);
+    }
+    
+    .tabela-categorias tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .secao-classe {
+        margin-bottom: var(--spacing-8);
+    }
+    
+    .secao-classe h3 {
+        font-size: var(--font-size-xl);
+        font-weight: 700;
+        color: var(--color-gray-900);
+        margin-bottom: var(--spacing-4);
+        padding-bottom: var(--spacing-2);
+        border-bottom: 2px solid var(--color-gray-300);
+    }
+    
+    .secao-sexo {
+        margin-bottom: var(--spacing-6);
+    }
+    
+    .secao-sexo h4 {
+        font-size: var(--font-size-lg);
+        font-weight: 600;
+        color: var(--color-gray-800);
+        margin-bottom: var(--spacing-3);
+    }
+    
+    @media (max-width: 768px) {
+        .tabela-categorias {
+            font-size: var(--font-size-xs);
+        }
+        
+        .tabela-categorias th,
+        .tabela-categorias td {
+            padding: var(--spacing-2);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Tabela de Categorias de Peso</h1>
+        <p class="page-description">Consulte as categorias de peso por classe e sexo</p>
+    </div>
+    <a href="javascript:window.close()" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+        Fechar
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% for classe, sexos_data in categorias_por_classe %}
+        <div class="secao-classe">
+            <h3>{{ classe }}</h3>
+            
+            {% for sexo_display, categorias_list in sexos_data %}
+            <div class="secao-sexo">
+                <h4>{{ sexo_display }}</h4>
+                
+                <div class="tabela-container">
+                    <table class="tabela-categorias">
+                        <thead>
+                            <tr>
+                                <th>Categoria</th>
+                                <th style="text-align: center;">Peso Mínimo (kg)</th>
+                                <th style="text-align: center;">Peso Máximo (kg)</th>
+                                <th style="text-align: center;">Faixa de Peso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for categoria in categorias_list %}
+                            <tr>
+                                <td class="categoria-nome">{{ categoria.categoria_nome }}</td>
+                                <td class="peso" style="text-align: center;">
+                                    {% if categoria.limite_min == 0 %}
+                                        -
+                                    {% else %}
+                                        {{ categoria.limite_min|floatformat:1 }}
+                                    {% endif %}
+                                </td>
+                                <td class="peso" style="text-align: center;">
+                                    {% if categoria.limite_max >= 999 %}
+                                        +
+                                    {% else %}
+                                        {{ categoria.limite_max|floatformat:1 }}
+                                    {% endif %}
+                                </td>
+                                <td class="peso" style="text-align: center;">
+                                    {% if categoria.limite_min == 0 %}
+                                        Até {{ categoria.limite_max|floatformat:1 }} kg
+                                    {% elif categoria.limite_max >= 999 %}
+                                        +{{ categoria.limite_min|floatformat:1 }} kg
+                                    {% else %}
+                                        {{ categoria.limite_min|floatformat:1 }} a {{ categoria.limite_max|floatformat:1 }} kg
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+

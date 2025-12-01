@@ -327,29 +327,67 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
     Returns:
         Chave criada ou atualizada
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     from .models import Inscricao
     
+    print(f"\n{'='*80}")
+    print(f"🔍 AUDITORIA: Iniciando geração de chave")
+    print(f"{'='*80}")
+    print(f"📋 Parâmetros recebidos:")
+    print(f"   - Categoria: {categoria_nome}")
+    print(f"   - Classe: {classe}")
+    print(f"   - Sexo: {sexo}")
+    print(f"   - Modelo: {modelo_chave}")
+    print(f"   - Campeonato: {campeonato}")
+    
     if not campeonato:
+        print(f"❌ ERRO: Campeonato não fornecido")
         raise ValueError("Campeonato é obrigatório para gerar chaves")
     
-    # Buscar inscrições aprovadas do campeonato
+    # Buscar inscrições aprovadas do campeonato COM PESO CONFIRMADO
     # Filtrar por classe_escolhida, sexo do atleta, e categoria (escolhida ou ajustada)
+    # Apenas atletas com peso registrado podem entrar na chave
+    print(f"\n🔍 Buscando inscrições...")
     inscricoes = Inscricao.objects.filter(
         campeonato=campeonato,
         classe_escolhida=classe,
         atleta__sexo=sexo,
-        status_inscricao='aprovado'
+        status_inscricao='aprovado',
+        peso__isnull=False  # Peso deve estar registrado
     ).exclude(
         classe_escolhida='Festival'  # Festival não entra em chaves
+    ).exclude(
+        peso=0  # Peso zero não é válido
     ).filter(
         Q(categoria_escolhida=categoria_nome) | Q(categoria_ajustada=categoria_nome)
     ).select_related('atleta', 'atleta__academia')
     
+    inscricoes_count = inscricoes.count()
+    print(f"   ✅ Encontradas {inscricoes_count} inscrições elegíveis")
+    
+    if inscricoes_count == 0:
+        print(f"   ⚠️  Nenhuma inscrição encontrada com os critérios:")
+        print(f"      - Campeonato: {campeonato.id} ({campeonato.nome})")
+        print(f"      - Classe: {classe}")
+        print(f"      - Sexo: {sexo}")
+        print(f"      - Categoria: {categoria_nome}")
+        print(f"      - Status: aprovado")
+        print(f"      - Peso: não nulo e != 0")
+    
     # Extrair lista de atletas das inscrições
     atletas_list = [inscricao.atleta for inscricao in inscricoes]
     num_atletas = len(atletas_list)
+    print(f"   ✅ {num_atletas} atletas extraídos")
+    
+    if num_atletas > 0:
+        print(f"   📝 Atletas:")
+        for idx, atleta in enumerate(atletas_list, 1):
+            print(f"      {idx}. {atleta.nome} (ID: {atleta.id}, Academia: {atleta.academia.nome})")
     
     # Criar ou atualizar chave vinculada ao campeonato
+    print(f"\n🔍 Criando/atualizando chave no banco...")
     chave, created = Chave.objects.get_or_create(
         campeonato=campeonato,
         classe=classe,
@@ -358,25 +396,60 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
         defaults={'estrutura': {}}
     )
     
+    print(f"   {'✅ Chave criada' if created else '🔄 Chave existente encontrada'} (ID: {chave.id})")
+    
     # Garantir que o campeonato está definido (caso a chave já existisse)
     if not chave.campeonato:
         chave.campeonato = campeonato
         chave.save()
+        print(f"   ✅ Campeonato vinculado à chave")
     
     # Limpar lutas antigas e atletas
+    print(f"\n🧹 Limpando dados antigos...")
+    lutas_antigas_count = chave.lutas.count()
+    atletas_antigos_count = chave.atletas.count()
+    print(f"   - Lutas antigas: {lutas_antigas_count}")
+    print(f"   - Atletas antigos: {atletas_antigos_count}")
+    
     chave.lutas.all().delete()
     chave.atletas.clear()
-    chave.atletas.set(atletas_list)
+    print(f"   ✅ Dados antigos removidos")
+    
+    # Vincular novos atletas
+    if atletas_list:
+        chave.atletas.set(atletas_list)
+        print(f"   ✅ {len(atletas_list)} atletas vinculados à chave")
+    else:
+        print(f"   ⚠️  Nenhum atleta para vincular")
     
     # Se modelo escolhido manualmente, usar ele
     if modelo_chave and modelo_chave != 'automatico':
+        print(f"\n🎯 Gerando chave com modelo manual: {modelo_chave}")
         estrutura = gerar_chave_escolhida(chave, atletas_list, modelo_chave)
     else:
         # Comportamento automático baseado no número de atletas
+        print(f"\n🎯 Gerando chave automática para {num_atletas} atleta(s)")
         estrutura = gerar_chave_automatica(chave, atletas_list)
+    
+    print(f"   ✅ Estrutura gerada: tipo={estrutura.get('tipo')}, atletas={estrutura.get('atletas', 0)}")
+    
+    # Verificar se lutas foram criadas
+    lutas_criadas_count = chave.lutas.count()
+    print(f"   ✅ Lutas criadas no banco: {lutas_criadas_count}")
+    
+    if lutas_criadas_count == 0 and num_atletas > 0:
+        print(f"   ⚠️  ATENÇÃO: Nenhuma luta foi criada, mas há {num_atletas} atleta(s)!")
+        print(f"   ⚠️  Tipo de estrutura: {estrutura.get('tipo')}")
+        if 'lutas' in estrutura:
+            print(f"   ⚠️  IDs de lutas na estrutura: {estrutura.get('lutas', [])}")
     
     chave.estrutura = estrutura
     chave.save()
+    print(f"   ✅ Chave salva no banco")
+    
+    print(f"\n{'='*80}")
+    print(f"✅ Geração de chave concluída (ID: {chave.id})")
+    print(f"{'='*80}\n")
     
     return chave
 
@@ -440,28 +513,46 @@ def agrupar_atletas_por_academia(atletas_list):
 
 def gerar_melhor_de_3(chave, atletas_list):
     """Gera chave tipo Melhor de 3"""
+    print(f"   🔧 gerar_melhor_de_3: {len(atletas_list)} atleta(s)")
+    
+    if len(atletas_list) < 2:
+        print(f"   ❌ ERRO: Melhor de 3 requer pelo menos 2 atletas")
+        return {"tipo": "vazia", "atletas": len(atletas_list)}
+    
     estrutura = {
         "tipo": "melhor_de_3",
         "atletas": len(atletas_list),
         "lutas": [],
         "lutas_detalhes": {}
     }
+    
     # Criar 3 lutas
+    print(f"   🔧 Criando 3 lutas entre {atletas_list[0].nome} e {atletas_list[1].nome}")
     for i in range(3):
-        luta = Luta.objects.create(
-            chave=chave,
-            atleta_a=atletas_list[0],
-            atleta_b=atletas_list[1],
-            round=1,
-            proxima_luta=None
-        )
-        estrutura["lutas"].append(luta.id)
+        try:
+            luta = Luta.objects.create(
+                chave=chave,
+                atleta_a=atletas_list[0],
+                atleta_b=atletas_list[1],
+                round=1,
+                proxima_luta=None
+            )
+            estrutura["lutas"].append(luta.id)
+            print(f"      ✅ Luta {i+1} criada (ID: {luta.id})")
+        except Exception as e:
+            print(f"      ❌ ERRO ao criar luta {i+1}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+    
+    print(f"   ✅ Melhor de 3 gerado: {len(estrutura['lutas'])} lutas criadas")
     return estrutura
 
 
 def gerar_round_robin(chave, atletas_list):
     """Gera chave tipo Round Robin (todos contra todos - Rodízio)"""
     num_atletas = len(atletas_list)
+    print(f"   🔧 gerar_round_robin: {num_atletas} atleta(s)")
+    
     estrutura = {
         "tipo": "round_robin",
         "atletas": num_atletas,
@@ -471,20 +562,30 @@ def gerar_round_robin(chave, atletas_list):
     
     # Gerar todas as combinações possíveis (todos contra todos)
     lutas_ids = []
+    total_combinacoes = (num_atletas * (num_atletas - 1)) // 2
+    print(f"   🔧 Criando {total_combinacoes} combinações de lutas")
+    
     for i in range(num_atletas):
         for j in range(i + 1, num_atletas):
-            luta = Luta.objects.create(
-                chave=chave,
-                atleta_a=atletas_list[i],
-                atleta_b=atletas_list[j],
-                round=1,
-                proxima_luta=None
-            )
-            lutas_ids.append(luta.id)
+            try:
+                luta = Luta.objects.create(
+                    chave=chave,
+                    atleta_a=atletas_list[i],
+                    atleta_b=atletas_list[j],
+                    round=1,
+                    proxima_luta=None
+                )
+                lutas_ids.append(luta.id)
+                print(f"      ✅ Luta criada: {atletas_list[i].nome} vs {atletas_list[j].nome} (ID: {luta.id})")
+            except Exception as e:
+                print(f"      ❌ ERRO ao criar luta {atletas_list[i].nome} vs {atletas_list[j].nome}: {str(e)}")
+                import traceback
+                traceback.print_exc()
     
     estrutura["lutas"] = lutas_ids
     estrutura["rounds"][1] = lutas_ids
     
+    print(f"   ✅ Round Robin gerado: {len(lutas_ids)} lutas criadas")
     return estrutura
 
 
@@ -495,12 +596,15 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
     Atletas da mesma academia não se enfrentam na primeira rodada.
     """
     num_atletas = len(atletas_list)
+    print(f"   🔧 gerar_eliminatoria_repescagem: {num_atletas} atleta(s), tamanho_chave={tamanho_chave}")
     
     # Organizar atletas para evitar mesma academia na 1ª rodada
     atletas_organizados = agrupar_atletas_por_academia(atletas_list)
+    print(f"   🔧 Atletas organizados: {len(atletas_organizados)}")
     
     # Preencher com BYEs se necessário
     atletas_com_bye = atletas_organizados + [None] * (tamanho_chave - num_atletas)
+    print(f"   🔧 Atletas com BYEs: {len(atletas_com_bye)} (BYEs: {tamanho_chave - num_atletas})")
     
     estrutura = {
         "tipo": "eliminatoria_repescagem",
@@ -513,22 +617,33 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
     # Criar lutas do primeiro round
     round_num = 1
     lutas_round = []
+    num_lutas_round1 = tamanho_chave // 2
+    print(f"   🔧 Criando {num_lutas_round1} lutas do Round {round_num}")
     
     for i in range(0, tamanho_chave, 2):
         atleta_a = atletas_com_bye[i] if i < len(atletas_organizados) else None
         atleta_b = atletas_com_bye[i + 1] if i + 1 < len(atletas_organizados) else None
         
-        # Criar luta mesmo que um dos atletas seja None (BYE)
-        luta = Luta.objects.create(
-            chave=chave,
-            atleta_a=atleta_a,
-            atleta_b=atleta_b,
-            round=round_num,
-            proxima_luta=None
-        )
-        lutas_round.append(luta.id)
+        try:
+            # Criar luta mesmo que um dos atletas seja None (BYE)
+            luta = Luta.objects.create(
+                chave=chave,
+                atleta_a=atleta_a,
+                atleta_b=atleta_b,
+                round=round_num,
+                proxima_luta=None
+            )
+            lutas_round.append(luta.id)
+            nome_a = atleta_a.nome if atleta_a else "BYE"
+            nome_b = atleta_b.nome if atleta_b else "BYE"
+            print(f"      ✅ Luta Round {round_num} criada: {nome_a} vs {nome_b} (ID: {luta.id})")
+        except Exception as e:
+            print(f"      ❌ ERRO ao criar luta Round {round_num}: {str(e)}")
+            import traceback
+            traceback.print_exc()
     
     estrutura["rounds"][round_num] = lutas_round
+    print(f"   ✅ Round {round_num} criado: {len(lutas_round)} lutas")
     
     # Criar lutas dos rounds seguintes e vincular
     lutas_anteriores = lutas_round
@@ -536,16 +651,23 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
         round_num += 1
         num_lutas = len(lutas_anteriores) // 2
         lutas_novo_round = []
+        print(f"   🔧 Criando Round {round_num}: {num_lutas} lutas")
         
         for i in range(num_lutas):
-            luta = Luta.objects.create(
-                chave=chave,
-                atleta_a=None,
-                atleta_b=None,
-                round=round_num,
-                proxima_luta=None
-            )
-            lutas_novo_round.append(luta.id)
+            try:
+                luta = Luta.objects.create(
+                    chave=chave,
+                    atleta_a=None,
+                    atleta_b=None,
+                    round=round_num,
+                    proxima_luta=None
+                )
+                lutas_novo_round.append(luta.id)
+                print(f"      ✅ Luta Round {round_num} criada (ID: {luta.id})")
+            except Exception as e:
+                print(f"      ❌ ERRO ao criar luta Round {round_num}: {str(e)}")
+                import traceback
+                traceback.print_exc()
         
         # Vincular lutas
         for idx, luta_ant_id in enumerate(lutas_anteriores):
@@ -556,9 +678,10 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
                     luta_ant.proxima_luta = lutas_novo_round[proxima_luta_idx]
                     luta_ant.save()
             except Luta.DoesNotExist:
-                pass
+                print(f"      ⚠️  Luta anterior {luta_ant_id} não encontrada para vincular")
         
         estrutura["rounds"][round_num] = lutas_novo_round
+        print(f"   ✅ Round {round_num} criado: {len(lutas_novo_round)} lutas")
         lutas_anteriores = lutas_novo_round
     
     # Criar repescagem para 3º lugar (perdedores das semifinais)
@@ -571,17 +694,26 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
         semifinal_lutas = estrutura["rounds"][semifinal_round]
         
         if len(semifinal_lutas) == 2:
-            # Criar luta de repescagem para 3º lugar
-            repescagem_luta = Luta.objects.create(
-                chave=chave,
-                atleta_a=None,  # Será preenchido com perdedor da semifinal 1
-                atleta_b=None,  # Será preenchido com perdedor da semifinal 2
-                round=999,  # Round especial para repescagem
-                proxima_luta=None
-            )
-            estrutura["repescagem"]["3_lugar"] = repescagem_luta.id
-            estrutura["rounds"][999] = [repescagem_luta.id]
+            print(f"   🔧 Criando luta de repescagem para 3º lugar")
+            try:
+                # Criar luta de repescagem para 3º lugar
+                repescagem_luta = Luta.objects.create(
+                    chave=chave,
+                    atleta_a=None,  # Será preenchido com perdedor da semifinal 1
+                    atleta_b=None,  # Será preenchido com perdedor da semifinal 2
+                    round=999,  # Round especial para repescagem
+                    proxima_luta=None
+                )
+                estrutura["repescagem"]["3_lugar"] = repescagem_luta.id
+                estrutura["rounds"][999] = [repescagem_luta.id]
+                print(f"      ✅ Luta de repescagem criada (ID: {repescagem_luta.id})")
+            except Exception as e:
+                print(f"      ❌ ERRO ao criar luta de repescagem: {str(e)}")
+                import traceback
+                traceback.print_exc()
     
+    total_lutas = sum(len(lutas) for lutas in estrutura["rounds"].values())
+    print(f"   ✅ Eliminatória com repescagem gerada: {total_lutas} lutas totais")
     return estrutura
 
 

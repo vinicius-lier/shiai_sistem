@@ -1,0 +1,271 @@
+{% extends 'atletas/administracao/base_admin.html' %}
+{% load custom_filters %}
+
+{% block admin_page_title %}Gerenciar Equipe Técnica{% endblock %}
+{% block admin_page_description %}{{ campeonato.nome }}{% endblock %}
+
+{% block admin_content %}
+<section class="section-spacing">
+    <div class="flex items-center justify-between mb-6" style="flex-wrap: wrap; gap: var(--spacing-4);">
+        <div>
+            <p class="text-gray-600 text-base" style="line-height: 1.6;">
+                Selecione pessoas elegíveis para compor a equipe técnica deste campeonato.
+            </p>
+        </div>
+        <div class="flex gap-3" style="flex-wrap: wrap;">
+            <a href="{% url 'administracao_equipe_pessoas_lista' %}" class="btn btn-secondary">
+                Gerenciar Lista de Pessoas
+            </a>
+            <a href="{% url 'administracao_equipe' %}" class="btn btn-secondary">
+                Voltar
+            </a>
+        </div>
+    </div>
+
+    <!-- Adicionar Pessoa à Equipe -->
+    <div class="card mb-6">
+        <div class="card-header">
+            <h3 class="card-title">Adicionar Pessoa à Equipe Técnica</h3>
+        </div>
+        <div class="card-body">
+            <form method="post" id="form-adicionar">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="adicionar">
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-4);">
+                    <div class="form-group">
+                        <label class="form-label" for="pessoa_id">Pessoa *</label>
+                        <select id="pessoa_id" name="pessoa_id" class="form-select" required>
+                            <option value="">Selecione uma pessoa</option>
+                            {% for pessoa in pessoas_disponiveis %}
+                            <option value="{{ pessoa.id }}" data-telefone="{{ pessoa.telefone|default:'Não informado' }}" data-pix="{{ pessoa.chave_pix|default:'Não informado' }}">
+                                {{ pessoa.nome_completo }}{% if pessoa.e_atleta %} (Atleta - {{ pessoa.atleta.academia.nome }}){% else %} (Externo){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if not pessoas_disponiveis %}
+                        <small style="color: var(--color-warning); display: block; margin-top: var(--spacing-1);">
+                            Nenhuma pessoa disponível. <a href="{% url 'administracao_equipe_pessoas_lista' %}" style="color: var(--color-primary); text-decoration: underline;">Cadastre pessoas na lista fixa</a>.
+                        </small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="funcao">Função no Evento *</label>
+                        <select id="funcao" name="funcao" class="form-select" required>
+                            <option value="">Selecione a função</option>
+                            {% for valor, label in funcoes %}
+                            <option value="{{ valor }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="funcao-customizada-group" style="display: none;">
+                        <label class="form-label" for="funcao_customizada">Função Customizada *</label>
+                        <input type="text" id="funcao_customizada" name="funcao_customizada" class="form-input" placeholder="Especifique a função">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="pro_labore">Pró-Labore (R$)</label>
+                        <input type="number" step="0.01" id="pro_labore" name="pro_labore" class="form-input" placeholder="0.00" value="0">
+                        <small style="color: var(--color-gray-500); display: block; margin-top: var(--spacing-1);">
+                            Valor será contabilizado automaticamente como despesa
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="form-group mt-4">
+                    <label class="form-label" for="observacao">Observação</label>
+                    <textarea id="observacao" name="observacao" class="form-input" rows="3" placeholder="Observações sobre a participação desta pessoa na equipe técnica"></textarea>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" {% if not pessoas_disponiveis %}disabled{% endif %}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Adicionar à Equipe
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Equipe Técnica Atual -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Equipe Técnica do Campeonato</h3>
+            <small style="color: var(--color-gray-500);">Total: {{ equipe|length }} membro(s)</small>
+        </div>
+        <div class="card-body">
+            {% if equipe %}
+                {% for funcao_display, membros in equipe_por_funcao.items %}
+                <div class="mb-6" style="border-bottom: 1px solid var(--color-gray-200); padding-bottom: var(--spacing-4);">
+                    <h4 class="text-lg font-semibold mb-4" style="color: var(--color-gray-900);">{{ funcao_display }} ({{ membros|length }})</h4>
+                    
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Documento</th>
+                                    <th>Telefone</th>
+                                    <th>Chave PIX</th>
+                                    <th>Pró-Labore</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for membro in membros %}
+                                <tr {% if not membro.ativo %}style="opacity: 0.6;"{% endif %}>
+                                    <td>
+                                        <div style="font-weight: 500; color: var(--color-gray-900);">{{ membro.nome_completo }}</div>
+                                        {% if membro.pessoa.e_atleta %}
+                                        <small style="color: var(--color-gray-500);">{{ membro.pessoa.atleta.academia.nome }}</small>
+                                        {% else %}
+                                        <small style="color: var(--color-gray-500);">Pessoa Externa</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if membro.pessoa.e_atleta and membro.pessoa.atleta.tem_documento %}
+                                            <span class="badge badge-success">Documento cadastrado</span>
+                                        {% else %}
+                                            <span class="badge badge-warning">Sem documento</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if membro.telefone %}
+                                            <a href="https://wa.me/{{ membro.telefone|whatsapp_clean }}" target="_blank" style="color: var(--color-success); text-decoration: none;">
+                                                {{ membro.telefone }}
+                                            </a>
+                                        {% else %}
+                                            Não informado
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if membro.chave_pix %}
+                                            <span class="badge badge-success" style="font-family: monospace; font-size: 0.85em;">{{ membro.chave_pix|truncatechars:30 }}</span>
+                                        {% else %}
+                                            <span class="badge badge-warning">⚠ Não informado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <form method="post" style="display: flex; gap: var(--spacing-2); align-items: center;" onsubmit="return atualizarProLabore(event, this);">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="acao" value="atualizar_pro_labore">
+                                            <input type="hidden" name="vinculo_id" value="{{ membro.id }}">
+                                            <input type="number" step="0.01" name="pro_labore" class="form-input" value="{{ membro.pro_labore|default:0 }}" style="width: 100px; padding: var(--spacing-1) var(--spacing-2); font-size: var(--font-size-sm);" placeholder="0.00">
+                                            <button type="submit" class="btn btn-sm btn-primary" style="padding: var(--spacing-1) var(--spacing-2); font-size: var(--font-size-xs);" title="Salvar pró-labore">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
+                                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                                    <polyline points="7 3 7 8 15 8"></polyline>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                        {% if membro.despesa_gerada %}
+                                        <small style="display: block; margin-top: var(--spacing-1); color: var(--color-success);">
+                                            ✓ Despesa gerada
+                                        </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if membro.ativo %}badge-success{% else %}badge-secondary{% endif %}">
+                                            {% if membro.ativo %}Ativo{% else %}Inativo{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="flex gap-2" style="flex-wrap: wrap;">
+                                            <form method="post" style="display: inline;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="acao" value="toggle_ativo">
+                                                <input type="hidden" name="vinculo_id" value="{{ membro.id }}">
+                                                <button type="submit" class="btn btn-sm {% if membro.ativo %}btn-secondary{% else %}btn-success{% endif %}" style="padding: var(--spacing-1) var(--spacing-2); font-size: var(--font-size-xs);">
+                                                    {% if membro.ativo %}Desativar{% else %}Ativar{% endif %}
+                                                </button>
+                                            </form>
+                                            <form method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja remover {{ membro.nome_completo }} da equipe técnica?');">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="acao" value="remover">
+                                                <input type="hidden" name="vinculo_id" value="{{ membro.id }}">
+                                                <button type="submit" class="btn btn-sm btn-danger" style="padding: var(--spacing-1) var(--spacing-2); font-size: var(--font-size-xs);">
+                                                    Remover
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-title">Nenhum membro na equipe técnica</div>
+                    <div class="empty-state-description">
+                        Adicione pessoas elegíveis à equipe técnica usando o formulário acima.
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<script>
+// Mostrar/ocultar campo de função customizada
+document.getElementById('funcao').addEventListener('change', function() {
+    const funcaoCustomizadaGroup = document.getElementById('funcao-customizada-group');
+    const funcaoCustomizada = document.getElementById('funcao_customizada');
+    
+    if (this.value === 'outro') {
+        funcaoCustomizadaGroup.style.display = 'block';
+        funcaoCustomizada.required = true;
+    } else {
+        funcaoCustomizadaGroup.style.display = 'none';
+        funcaoCustomizada.required = false;
+        funcaoCustomizada.value = '';
+    }
+});
+
+// Validação do formulário
+document.getElementById('form-adicionar').addEventListener('submit', function(e) {
+    const pessoaId = document.getElementById('pessoa_id').value;
+    const funcao = document.getElementById('funcao').value;
+    const funcaoCustomizada = document.getElementById('funcao_customizada').value;
+    
+    if (!pessoaId || !funcao) {
+        e.preventDefault();
+        alert('Por favor, preencha todos os campos obrigatórios.');
+        return false;
+    }
+    
+    if (funcao === 'outro' && !funcaoCustomizada.trim()) {
+        e.preventDefault();
+        alert('Por favor, especifique a função customizada.');
+        return false;
+    }
+});
+
+// Função para atualizar pró-labore via AJAX
+function atualizarProLabore(event, form) {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const proLaboreInput = form.querySelector('input[name="pro_labore"]');
+    const valor = parseFloat(proLaboreInput.value) || 0;
+    
+    if (valor < 0) {
+        alert('O valor do pró-labore não pode ser negativo.');
+        return false;
+    }
+    
+    // Enviar formulário normalmente
+    form.submit();
+    return true;
+}
+</script>
+{% endblock %}
+

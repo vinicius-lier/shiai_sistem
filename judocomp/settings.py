@@ -19,6 +19,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Carregar variáveis de ambiente
 RESET_ADMIN_PASSWORD = os.environ.get('RESET_ADMIN_PASSWORD')
 
+# Senha obrigatória para acesso ao módulo operacional
+# Esta senha deve ser definida como variável de ambiente ou alterada aqui
+SENHA_OPERACIONAL = os.environ.get('SENHA_OPERACIONAL', 'SHIAI2024')
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -138,9 +142,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configurações de Sessão - Segurança
-# Sessões expiram quando o navegador fecha (não persistem)
+# Sessões expiram quando o navegador fecha (não persistem) - NUNCA salvar senha em cache
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-# Sessões expiram após 1 hora de inatividade
+# Sessões expiram após 1 hora de inatividade - Se expirar, exigir login novamente
 SESSION_COOKIE_AGE = 3600  # 1 hora em segundos
 # Cookie de sessão só via HTTPS em produção (ajustar quando tiver SSL)
 SESSION_COOKIE_SECURE = False  # Mudar para True em produção com HTTPS
@@ -150,3 +154,4 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 # Não salvar sessão em cada requisição (melhor performance e segurança)
 SESSION_SAVE_EVERY_REQUEST = False
+# NUNCA permitir login automático - sempre exigir usuário e senha

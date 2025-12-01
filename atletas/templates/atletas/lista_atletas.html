@@ -3,32 +3,16 @@
 {% block title %}Atletas - Sistema de Gestão de Competições de Judô{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">Atletas</h1>
-    <p class="page-description">Gerencie todos os atletas cadastrados no sistema</p>
-    <div style="display: flex; flex-direction: column; gap: var(--spacing-3); margin-top: var(--spacing-4);">
-        <a href="{% url 'cadastrar_atleta' %}" class="btn btn-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Novo Atleta
-        </a>
+<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
+    <div>
+        <h1 class="page-title">Atletas</h1>
+        <p class="page-description">Gerencie todos os atletas cadastrados no sistema</p>
     </div>
+    <a href="{% url 'cadastrar_atleta' %}" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Novo Atleta
+    </a>
 </div>
-
-<style>
-@media (min-width: 768px) {
-    .page-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: var(--spacing-4);
-    }
-    .page-header > div:last-child {
-        flex-direction: row;
-        margin-top: 0;
-    }
-}
-</style>
 
 {% if total_encontrados > 0 %}
 <div style="margin-bottom: var(--spacing-6);">
@@ -140,9 +124,6 @@
             {% if atleta.get_classe_atual %}
                 <span class="badge badge-info">{{ atleta.get_classe_atual }}</span>
             {% endif %}
-            {% if atleta.faixa %}
-                <span class="badge badge-primary">{{ atleta.get_faixa_display }}</span>
-            {% endif %}
             {% if atleta.data_nascimento and atleta.idade %}
                 <span>{{ atleta.idade }} anos</span>
             {% elif atleta.ano_nasc %}
@@ -152,12 +133,6 @@
         <div class="list-item-subtitle">
             <strong>Academia:</strong> {{ atleta.academia.nome }}
         </div>
-        {% if atleta.federado %}
-        <div class="list-item-subtitle">
-            <span class="badge badge-primary">Federado</span>
-            {% if atleta.numero_zempo %}<span>(Zempo: {{ atleta.numero_zempo }})</span>{% endif %}
-        </div>
-        {% endif %}
         {% if atleta.documento_oficial %}
         <div class="list-item-subtitle">
             <span class="badge badge-success">✓ Documento</span>
@@ -189,13 +164,12 @@
             <tr>
                 <th>Nome</th>
                 <th>Sexo</th>
-                    <th>Idade</th>
+                <th>Idade</th>
                 <th>Classe</th>
                 <th>Academia</th>
-                    <th>Federado</th>
-                    <th>Documento</th>
+                <th>Documento</th>
                 <th>Status</th>
-                    <th>Ações</th>
+                <th>Ações</th>
             </tr>
         </thead>
         <tbody>
@@ -238,21 +212,8 @@
                         {% else %}
                             <span style="color: var(--color-gray-400);">-</span>
                         {% endif %}
-                        {% if atleta.faixa %}
-                            <div style="margin-top: var(--spacing-1);">
-                                <span class="badge badge-primary">{{ atleta.get_faixa_display }}</span>
-                            </div>
-                        {% endif %}
                     </td>
                     <td style="font-size: var(--font-size-sm); color: var(--color-gray-700);">{{ atleta.academia.nome }}</td>
-                    <td>
-                        {% if atleta.federado %}
-                            <span class="badge badge-primary">Sim</span>
-                            {% if atleta.numero_zempo %}<div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">{{ atleta.numero_zempo }}</div>{% endif %}
-                        {% else %}
-                            <span style="color: var(--color-gray-400);">Não</span>
-                        {% endif %}
-                    </td>
                 <td>
                         {% if atleta.tem_documento %}
                             <span class="badge badge-success">✓</span>

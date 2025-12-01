@@ -1,0 +1,91 @@
+{% extends 'atletas/administracao/base_admin.html' %}
+
+{% block admin_page_title %}Conferência de Pagamentos{% endblock %}
+{% block admin_page_description %}Lista de academias com status de pagamento para conferência manual{% endblock %}
+
+{% block admin_content %}
+<section class="section-spacing">
+    <!-- Seleção de Evento -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <label class="form-label">Selecione o Evento</label>
+            <select class="form-select" onchange="window.location.href='?campeonato_id='+this.value">
+                <option value="">Selecione um evento...</option>
+                {% for camp in campeonatos %}
+                <option value="{{ camp.id }}" {% if campeonato_selecionado and campeonato_selecionado.id == camp.id %}selected{% endif %}>{{ camp.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    {% if campeonato_selecionado %}
+    <!-- Lista de Academias -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Academias - {{ campeonato_selecionado.nome }}</h2>
+        </div>
+        <div class="card-body">
+            {% if academias %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Academia</th>
+                            <th>Qtd. Atletas</th>
+                            <th>Valor Esperado</th>
+                            <th>Valor Recebido</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in academias %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.academia.nome }}</strong><br>
+                                <small class="text-muted">{{ item.academia.cidade }}, {{ item.academia.estado }}</small>
+                            </td>
+                            <td>{{ item.qtd_atletas }}</td>
+                            <td><strong>R$ {{ item.valor_esperado|floatformat:2 }}</strong></td>
+                            <td>
+                                {% if item.valor_recebido %}
+                                R$ {{ item.valor_recebido|floatformat:2 }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.status == 'CONFIRMADO' %}
+                                <span class="badge badge-success">Confirmado</span>
+                                {% elif item.status == 'DIVERGENTE' %}
+                                <span class="badge badge-danger">Divergente</span>
+                                {% else %}
+                                <span class="badge badge-warning">Pendente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'conferencia_pagamentos_detalhe' item.academia.id campeonato_selecionado.id %}" class="btn btn-sm btn-primary">Conferir</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <p class="text-muted">Nenhuma academia com inscrições encontrada para este evento.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <p class="text-muted">Selecione um evento para visualizar as academias.</p>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+

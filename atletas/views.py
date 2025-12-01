@@ -2,8 +2,6 @@
 from atletas.views_ajuda import ajuda_manual, ajuda_manual_web, ajuda_documentacao_tecnica
 
 # Importar todas as views principais de um arquivo separado
-# Por enquanto, vamos criar stubs para que o sistema rode
-# TODO: Restaurar views completas de backup ou recriar
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -18,13 +16,31 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import (
     Academia, Atleta, Chave, Luta, Inscricao, Campeonato, 
-    Categoria, AcademiaPontuacao, Despesa, CadastroOperacional,
-    UsuarioOperacional, AcademiaCampeonatoSenha, FormaPagamento, Pagamento
+    Categoria, AcademiaPontuacao, AcademiaCampeonato, Despesa,
+    UsuarioOperacional, AcademiaCampeonatoSenha, FormaPagamento,
+    EquipeTecnicaCampeonato, PessoaEquipeTecnica, CategoriaInsumo, InsumoEstrutura,
+    PesagemHistorico, ConferenciaPagamento, HistoricoSistema, Ocorrencia
 )
 from .academia_auth import academia_required, operacional_required, pode_resetar_required, pode_criar_usuarios_required
 from .utils import gerar_chave, get_resultados_chave, calcular_pontuacao_academias
+from .utils_historico import registrar_historico
 from datetime import datetime, timedelta, date
 import json
+
+# Importar views de conferência de pagamentos e ocorrências
+from .views_conferencia_pagamentos import (
+    conferencia_pagamentos_lista,
+    conferencia_pagamentos_detalhe,
+    conferencia_pagamentos_salvar,
+    gerar_mensagem_whatsapp,
+    calcular_valor_esperado_academia,
+)
+from .views_ocorrencias import (
+    ocorrencias_lista,
+    ocorrencias_criar,
+    ocorrencias_detalhe,
+    ocorrencias_historico,
+)
 
 # ========== LOGIN E AUTENTICAÇÃO ==========
 
@@ -33,24 +49,35 @@ def selecionar_tipo_login(request):
     return render(request, 'atletas/academia/selecionar_login.html')
 
 def login_operacional(request):
-    """Login operacional - exige usuário e senha do Django"""
+    """Login operacional - SEMPRE exige usuário e senha do Django (sem cache, sem login automático)"""
+    # Se está logado como academia, redirecionar
     if request.session.get('academia_id'):
         return redirect('academia_painel')
     
+    # Se já está autenticado, verificar perfil e redirecionar
+    # IMPORTANTE: Mesmo autenticado, se a sessão expirar, será redirecionado aqui novamente
     if request.user.is_authenticated:
         try:
             perfil = request.user.perfil_operacional
-            is_expirado = hasattr(perfil, 'esta_expirado') and perfil.esta_expirado
-            if not perfil.ativo or is_expirado:
+            
+            # Verificar se está ativo
+            if not perfil.ativo:
                 django_logout(request)
-                if is_expirado:
-                    messages.error(request, f'Seu acesso expirou em {perfil.data_expiracao.strftime("%d/%m/%Y")}.')
-                else:
-                    messages.error(request, 'Seu acesso foi desativado.')
+                messages.error(request, 'Seu acesso operacional foi desativado.')
                 return render(request, 'atletas/login_operacional.html')
+            
+            # Verificar expiração (apenas para usuários temporários)
+            # Usuários com data_expiracao=None são vitalícios e nunca expiram
+            if perfil.esta_expirado:
+                django_logout(request)
+                messages.error(request, f'Seu acesso operacional expirou em {perfil.data_expiracao.strftime("%d/%m/%Y")}.')
+                return render(request, 'atletas/login_operacional.html')
+            
+            # Usuário válido e autenticado - redirecionar para dashboard
+            return redirect('index')
         except UsuarioOperacional.DoesNotExist:
+            # Usuário não tem perfil operacional - permitir criar ao fazer login
             pass
-        return redirect('index')
     
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
@@ -60,53 +87,85 @@ def login_operacional(request):
             messages.error(request, 'Por favor, preencha usuário e senha.')
             return render(request, 'atletas/login_operacional.html')
         
+        # Autenticar usuário (sem cache, sem login automático)
         user = authenticate(request, username=username, password=password)
         
         if user is not None:
+            # Verificar perfil operacional e status
             try:
                 perfil = user.perfil_operacional
+                
+                # Verificar se está ativo
                 if not perfil.ativo:
-                    messages.error(request, 'Seu acesso foi desativado.')
+                    messages.error(request, 'Seu acesso operacional foi desativado.')
                     return render(request, 'atletas/login_operacional.html')
-                is_expirado = hasattr(perfil, 'esta_expirado') and perfil.esta_expirado
-                if is_expirado:
-                    messages.error(request, f'Seu acesso expirou em {perfil.data_expiracao.strftime("%d/%m/%Y")}.')
+                
+                # Verificar expiração (apenas para usuários temporários)
+                # Usuários com data_expiracao=None são vitalícios e nunca expiram
+                if perfil.esta_expirado:
+                    messages.error(request, f'Seu acesso operacional expirou em {perfil.data_expiracao.strftime("%d/%m/%Y")}.')
                     return render(request, 'atletas/login_operacional.html')
+                
             except UsuarioOperacional.DoesNotExist:
-                UsuarioOperacional.objects.create(
+                # Usuário não tem perfil operacional - criar um padrão (30 dias, temporário)
+                from datetime import timedelta
+                perfil = UsuarioOperacional.objects.create(
                     user=user,
                     pode_resetar_campeonato=False,
                     pode_criar_usuarios=False,
-                    data_expiracao=timezone.now() + timedelta(days=30),
+                    data_expiracao=timezone.now() + timedelta(days=30),  # Temporário por padrão
                     ativo=True
                 )
                 messages.info(request, 'Perfil operacional criado. Acesso válido por 30 dias.')
             
+            # Fazer login (sem cache, sem login automático)
+            # A sessão expira conforme configuração do Django (SESSION_COOKIE_AGE)
             django_login(request, user)
+            
+            # Limpar qualquer flag de validação de senha operacional (não usamos mais)
+            if 'senha_operacional_validada' in request.session:
+                del request.session['senha_operacional_validada']
+            
             messages.success(request, f'Bem-vindo, {user.username}!')
             return redirect('index')
         else:
             messages.error(request, 'Usuário ou senha incorretos.')
             return render(request, 'atletas/login_operacional.html')
     
+    # GET: Sempre mostrar tela de login (nunca permitir acesso direto)
     return render(request, 'atletas/login_operacional.html')
 
 def logout_geral(request):
-    """Realiza o logout tanto da sessão de academia quanto da sessão operacional"""
+    """Realiza o logout tanto da sessão de academia quanto da sessão operacional - SEM cache, SEM login automático"""
+    # Limpar sessão de academia
     if 'academia_id' in request.session:
         del request.session['academia_id']
     if 'academia_nome' in request.session:
         del request.session['academia_nome']
+    if 'campeonato_id_ativo' in request.session:
+        del request.session['campeonato_id_ativo']
+    if 'campeonato_nome_ativo' in request.session:
+        del request.session['campeonato_nome_ativo']
+    if 'credencial_id' in request.session:
+        del request.session['credencial_id']
     
+    # Limpar qualquer flag de validação de senha operacional (não usamos mais)
+    if 'senha_operacional_validada' in request.session:
+        del request.session['senha_operacional_validada']
+    
+    # Fazer logout do Django (limpa autenticação)
     if request.user.is_authenticated:
         django_logout(request)
     
+    # Limpar flags antigas
     if 'operacional_logado' in request.session:
         del request.session['operacional_logado']
     
+    # Limpar toda a sessão (SEM cache)
     request.session.flush()
     request.session.delete()
     
+    # Deletar cookies (garantir que não há login automático)
     response = redirect('selecionar_tipo_login')
     response.delete_cookie('sessionid')
     response.delete_cookie('csrftoken')
@@ -226,21 +285,131 @@ def index(request):
     # Estatísticas básicas
     total_atletas = Atleta.objects.count()
     total_academias = Academia.objects.count()
-    total_inscricoes = Inscricao.objects.filter(campeonato=campeonato_ativo).count() if campeonato_ativo else 0
-    total_chaves = Chave.objects.filter(campeonato=campeonato_ativo).count() if campeonato_ativo else 0
     
-    # Ranking top 5
-    top_academias = AcademiaPontuacao.objects.filter(
-        campeonato=campeonato_ativo
-    ).order_by('-pontos_totais')[:5] if campeonato_ativo else []
+    # Ranking Global de Atletas
+    ranking_global_atletas = []
+    if campeonato_ativo:
+        from .utils import calcular_pontuacao_academias, get_resultados_chave
+        
+        # Calcular pontuação das academias primeiro
+        calcular_pontuacao_academias(campeonato_ativo.id)
+        
+        academias_permitidas_ids = list(AcademiaCampeonato.objects.filter(
+            campeonato=campeonato_ativo,
+            permitido=True
+        ).values_list('academia_id', flat=True))
+        
+        # Contar inscrições
+        inscricoes_query = Inscricao.objects.filter(campeonato=campeonato_ativo)
+        if academias_permitidas_ids:
+            inscricoes_query = inscricoes_query.filter(atleta__academia_id__in=academias_permitidas_ids)
+        total_inscricoes = inscricoes_query.count()
+        
+        # Contar federados e não federados
+        inscricoes_federados = inscricoes_query.filter(atleta__federado=True).count()
+        inscricoes_nao_federados = total_inscricoes - inscricoes_federados
+        
+        total_chaves = Chave.objects.filter(campeonato=campeonato_ativo).count()
+        
+        # Ranking completo de academias
+        ranking_academias_completo = AcademiaPontuacao.objects.filter(
+            campeonato=campeonato_ativo
+        ).select_related('academia')
+        
+        # Se houver academias permitidas, filtrar por elas
+        if academias_permitidas_ids:
+            ranking_academias_completo = ranking_academias_completo.filter(academia_id__in=academias_permitidas_ids)
+        
+        ranking_academias_completo = ranking_academias_completo.order_by('-pontos_totais', '-ouro', '-prata', '-bronze')
+        
+        # Preparar dados do ranking de academias
+        ranking_academias_list = []
+        for pontuacao in ranking_academias_completo:
+            # Contar atletas ativos da academia no campeonato
+            total_atletas_ativos = Inscricao.objects.filter(
+                campeonato=campeonato_ativo,
+                atleta__academia=pontuacao.academia,
+                status_inscricao='aprovado'
+            ).count()
+            
+            ranking_academias_list.append({
+                'academia': pontuacao.academia,
+                'ouro': pontuacao.ouro,
+                'prata': pontuacao.prata,
+                'bronze': pontuacao.bronze,
+                'pontos_totais': pontuacao.pontos_totais,
+                'total_atletas_ativos': total_atletas_ativos,
+            })
+        
+        # Ranking top 5 apenas de academias permitidas (para compatibilidade)
+        top_academias = ranking_academias_completo[:5]
+        
+        # Calcular ranking global de atletas
+        chaves = Chave.objects.filter(campeonato=campeonato_ativo)
+        medalhas_por_atleta = {}
+        
+        for chave in chaves:
+            resultados = get_resultados_chave(chave)
+            if not resultados:
+                continue
+            
+            # 1º lugar = ouro, 2º lugar = prata, 3º lugar = bronze
+            for idx, atleta_id in enumerate(resultados[:3], 1):
+                if not atleta_id:
+                    continue
+                
+                if atleta_id not in medalhas_por_atleta:
+                    try:
+                        atleta = Atleta.objects.get(id=atleta_id)
+                        medalhas_por_atleta[atleta_id] = {
+                            'atleta': atleta,
+                            'ouro': 0,
+                            'prata': 0,
+                            'bronze': 0,
+                            'total_medalhas': 0,
+                        }
+                    except Atleta.DoesNotExist:
+                        continue
+                
+                if idx == 1:
+                    medalhas_por_atleta[atleta_id]['ouro'] += 1
+                elif idx == 2:
+                    medalhas_por_atleta[atleta_id]['prata'] += 1
+                elif idx == 3:
+                    medalhas_por_atleta[atleta_id]['bronze'] += 1
+                
+                medalhas_por_atleta[atleta_id]['total_medalhas'] = (
+                    medalhas_por_atleta[atleta_id]['ouro'] +
+                    medalhas_por_atleta[atleta_id]['prata'] +
+                    medalhas_por_atleta[atleta_id]['bronze']
+                )
+        
+        # Ordenar por total de medalhas (ouro > prata > bronze)
+        ranking_global_atletas = sorted(
+            medalhas_por_atleta.values(),
+            key=lambda x: (x['total_medalhas'], x['ouro'], x['prata'], x['bronze']),
+            reverse=True
+        )
+    else:
+        total_inscricoes = 0
+        inscricoes_federados = 0
+        inscricoes_nao_federados = 0
+        total_chaves = 0
+        top_academias = []
+        ranking_academias_list = []
+        ranking_global_atletas = []
     
     context = {
         'campeonato_ativo': campeonato_ativo,
         'total_atletas': total_atletas,
         'total_academias': total_academias,
         'total_inscricoes': total_inscricoes,
+        'inscricoes_federados': inscricoes_federados,
+        'inscricoes_nao_federados': inscricoes_nao_federados,
         'total_chaves': total_chaves,
         'top_academias': top_academias,
+        'ranking_global_atletas': ranking_global_atletas,
+        'ranking_academias_completo': ranking_academias_list if campeonato_ativo else [],
     }
     
     return render(request, 'atletas/index.html', context)
@@ -250,7 +419,11 @@ def index(request):
 # Por enquanto, retornam mensagens de erro ou redirecionam
 
 def lista_academias(request):
-    return render(request, 'atletas/lista_academias.html', {'academias': Academia.objects.all()})
+    """Lista todas as academias com contagem de atletas"""
+    academias = Academia.objects.annotate(
+        total_atletas=Count('atletas', filter=Q(atletas__status_ativo=True))
+    ).order_by('nome')
+    return render(request, 'atletas/lista_academias.html', {'academias': academias})
 
 @operacional_required
 def cadastrar_academia(request):
@@ -273,7 +446,55 @@ def cadastrar_academia(request):
                 academia.foto_perfil = request.FILES['foto_perfil']
                 academia.save()
             
+            # Vincular automaticamente ao campeonato ativo (se houver) e gerar senha
+            campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
+            if campeonato_ativo:
+                # Vincular ao campeonato
+                AcademiaCampeonato.objects.get_or_create(
+                    academia=academia,
+                    campeonato=campeonato_ativo,
+                    defaults={'permitido': True}
+                )
+                
+                # Gerar senha temporária para o campeonato
+                import random
+                import string
+                from datetime import timedelta
+                from datetime import datetime as dt
+                
+                login = f"ACADEMIA_{academia.id:03d}"
+                senha_plana = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+                
+                # Calcular data de expiração (5 dias após término do campeonato)
+                data_expiracao = None
+                if campeonato_ativo.data_competicao:
+                    data_expiracao = timezone.make_aware(
+                        dt.combine(campeonato_ativo.data_competicao, dt.min.time())
+                    ) + timedelta(days=5)
+                
+                # Criar ou atualizar senha
+                senha_obj, created = AcademiaCampeonatoSenha.objects.get_or_create(
+                    academia=academia,
+                    campeonato=campeonato_ativo,
+                    defaults={
+                        'login': login,
+                        'senha_plana': senha_plana,
+                        'data_expiracao': data_expiracao,
+                    }
+                )
+                
+                if not created:
+                    senha_obj.login = login
+                    senha_obj.senha_plana = senha_plana
+                    senha_obj.data_expiracao = data_expiracao
+                    senha_obj.save()
+                
+                senha_obj.definir_senha(senha_plana)
+                senha_obj.save()
+            
             messages.success(request, f'Academia "{academia.nome}" cadastrada com sucesso!')
+            if campeonato_ativo:
+                messages.info(request, f'Academia automaticamente vinculada ao campeonato ativo: {campeonato_ativo.nome}. Senha temporária gerada.')
             return redirect('lista_academias')
         except Exception as e:
             messages.error(request, f'Erro ao cadastrar academia: {str(e)}')
@@ -281,8 +502,26 @@ def cadastrar_academia(request):
     return render(request, 'atletas/cadastrar_academia.html')
 
 def detalhe_academia(request, academia_id):
+    """Exibe detalhes da academia incluindo lista de atletas"""
     academia = get_object_or_404(Academia, id=academia_id)
-    return render(request, 'atletas/detalhe_academia.html', {'academia': academia})
+    
+    # Buscar todos os atletas da academia (incluindo inativos)
+    atletas = Atleta.objects.filter(academia=academia).order_by('nome')
+    
+    # Calcular estatísticas
+    total_atletas = atletas.count()
+    total_atletas_ativos = atletas.filter(status_ativo=True).count()
+    total_federados = atletas.filter(federado=True).count()
+    
+    context = {
+        'academia': academia,
+        'atletas': atletas,
+        'total_atletas': total_atletas,
+        'total_atletas_ativos': total_atletas_ativos,
+        'total_federados': total_federados,
+    }
+    
+    return render(request, 'atletas/detalhe_academia.html', context)
 
 @operacional_required
 def editar_academia(request, academia_id):
@@ -327,7 +566,9 @@ def cadastrar_categoria(request):
     return render(request, 'atletas/cadastrar_categoria.html')
 
 def lista_atletas(request):
-    return render(request, 'atletas/lista_atletas.html', {'atletas': Atleta.objects.all()})
+    """Lista todos os atletas cadastrados com relacionamentos otimizados"""
+    atletas = Atleta.objects.select_related('academia').order_by('academia__nome', 'nome')
+    return render(request, 'atletas/lista_atletas.html', {'atletas': atletas})
 
 @operacional_required
 def cadastrar_atleta(request):
@@ -391,6 +632,23 @@ def editar_atleta(request, atleta_id):
             atleta.faixa = request.POST.get('faixa', '').strip() or None
             atleta.numero_zempo = request.POST.get('numero_zempo', '').strip() or None
             
+            # Campos de equipe técnica
+            atleta.pode_ser_equipe_tecnica = request.POST.get('pode_ser_equipe_tecnica') == 'on'
+            atleta.funcao_equipe_tecnica = request.POST.get('funcao_equipe_tecnica', '').strip() or None
+            atleta.telefone = request.POST.get('telefone', '').strip() or None
+            chave_pix = request.POST.get('chave_pix', '').strip() or None
+            
+            # Validar chave PIX se marcado como equipe técnica
+            if atleta.pode_ser_equipe_tecnica and not chave_pix:
+                messages.error(request, 'Chave PIX é obrigatória para pessoas que podem fazer parte da equipe técnica.')
+                academias = Academia.objects.filter(ativo_login=True).order_by('nome')
+                return render(request, 'atletas/editar_atleta.html', {
+                    'atleta': atleta,
+                    'academias': academias
+                })
+            
+            atleta.chave_pix = chave_pix
+            
             if academia_id:
                 atleta.academia = get_object_or_404(Academia, id=academia_id)
             
@@ -409,7 +667,7 @@ def editar_atleta(request, atleta_id):
             messages.error(request, f'Erro ao atualizar atleta: {str(e)}')
     
     # GET: Buscar academias para o select
-        academias = Academia.objects.filter(ativo_login=True).order_by('nome')
+    academias = Academia.objects.filter(ativo_login=True).order_by('nome')
     return render(request, 'atletas/editar_atleta.html', {
         'atleta': atleta,
         'academias': academias
@@ -425,27 +683,151 @@ def get_categorias_ajax(request):
     return JsonResponse({'categorias': []})
 
 def get_categorias_por_sexo(request):
-    return JsonResponse({'categorias': []})
+    """Retorna categorias filtradas por sexo e classe, apenas com atletas com peso confirmado"""
+    try:
+        sexo = request.GET.get('sexo', '').strip()
+        classe = request.GET.get('classe', '').strip()
+        
+        if not sexo:
+            return JsonResponse({'categorias': []})
+        
+        campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
+        if not campeonato_ativo:
+            return JsonResponse({'categorias': []})
+        
+        # Buscar inscrições com peso confirmado
+        inscricoes_com_peso = Inscricao.objects.filter(
+            campeonato=campeonato_ativo,
+            status_inscricao='aprovado',
+            atleta__sexo=sexo,
+            peso__isnull=False
+        ).exclude(
+            classe_escolhida='Festival'
+        ).exclude(
+            peso=0
+        )
+        
+        # Filtrar por classe se fornecida
+        if classe:
+            inscricoes_com_peso = inscricoes_com_peso.filter(classe_escolhida=classe)
+        
+        # Obter categorias únicas (escolhida ou ajustada) que têm atletas com peso confirmado
+        categorias_nomes = set()
+        for insc in inscricoes_com_peso:
+            if insc.categoria_escolhida:
+                categorias_nomes.add(insc.categoria_escolhida)
+            if insc.categoria_ajustada:
+                categorias_nomes.add(insc.categoria_ajustada)
+        
+        # Buscar informações das categorias no banco
+        from .models import Categoria
+        categorias = []
+        for cat_nome in sorted(categorias_nomes):
+            if not cat_nome or not cat_nome.strip():
+                continue
+                
+            # Tentar encontrar a categoria no banco
+            # O nome pode estar no formato "CLASSE - Nome da Categoria"
+            categoria_obj = None
+            try:
+                if ' - ' in cat_nome:
+                    partes = cat_nome.split(' - ', 1)
+                    classe_cat = partes[0].strip()
+                    nome_cat = partes[1].strip()
+                    categoria_obj = Categoria.objects.filter(
+                        classe=classe_cat,
+                        sexo=sexo,
+                        nome=nome_cat
+                    ).first()
+                else:
+                    # Tentar buscar pelo nome direto
+                    categoria_obj = Categoria.objects.filter(
+                        sexo=sexo,
+                        nome=cat_nome
+                    ).first()
+                
+                if categoria_obj:
+                    categorias.append({
+                        'nome': cat_nome,
+                        'label': f"{categoria_obj.classe} - {categoria_obj.nome} ({categoria_obj.limite_min}-{categoria_obj.limite_max}kg)"
+                    })
+                else:
+                    # Se não encontrou no banco, usar o nome como está
+                    categorias.append({
+                        'nome': cat_nome,
+                        'label': cat_nome
+                    })
+            except Exception as e:
+                # Em caso de erro, adicionar a categoria mesmo assim
+                categorias.append({
+                    'nome': cat_nome,
+                    'label': cat_nome
+                })
+        
+        return JsonResponse({'categorias': categorias})
+    except Exception as e:
+        import traceback
+        print(f"Erro em get_categorias_por_sexo: {str(e)}")
+        print(traceback.format_exc())
+        return JsonResponse({'categorias': [], 'error': str(e)})
 
 @operacional_required
 def pesagem(request):
-    """Página de pesagem - lista inscrições do campeonato ativo"""
-    campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
+    """Página de pesagem - lista inscrições do evento selecionado"""
+    # Permitir seleção de evento via GET ou usar o ativo
+    campeonato_id = request.GET.get('campeonato_id')
+    if campeonato_id:
+        try:
+            campeonato_selecionado = Campeonato.objects.get(id=campeonato_id)
+        except Campeonato.DoesNotExist:
+            campeonato_selecionado = None
+    else:
+        campeonato_selecionado = Campeonato.objects.filter(ativo=True).first()
     
-    if not campeonato_ativo:
-        messages.warning(request, 'Nenhum campeonato ativo encontrado.')
+    if not campeonato_selecionado:
+        messages.warning(request, 'Nenhum evento selecionado ou encontrado.')
+        # Listar todos os campeonatos para seleção
+        campeonatos = Campeonato.objects.all().order_by('-data_competicao', '-data_inicio')
         return render(request, 'atletas/pesagem.html', {
             'atletas': [],
             'campeonato_ativo': None,
+            'campeonato_selecionado': None,
+            'campeonatos': campeonatos,
             'classes': [],
             'categorias': [],
         })
     
-    # Buscar inscrições aprovadas do campeonato ativo
+    # Buscar academias permitidas no campeonato
+    academias_permitidas_ids = list(AcademiaCampeonato.objects.filter(
+        campeonato=campeonato_selecionado,
+        permitido=True
+    ).values_list('academia_id', flat=True))
+    
+    # Buscar inscrições do evento selecionado
+    # Apenas inscrições com pagamento confirmado (aprovado) podem ser pesadas
+    # E apenas de academias com conferência CONFIRMADA
     inscricoes = Inscricao.objects.filter(
-        campeonato=campeonato_ativo,
+        campeonato=campeonato_selecionado,
         status_inscricao='aprovado'
-    ).select_related('atleta', 'atleta__academia').order_by('atleta__nome')
+    ).select_related('atleta', 'atleta__academia')
+    
+    # Filtrar apenas academias com conferência CONFIRMADA
+    academias_confirmadas_ids = list(ConferenciaPagamento.objects.filter(
+        campeonato=campeonato_selecionado,
+        status='CONFIRMADO'
+    ).values_list('academia_id', flat=True))
+    
+    if academias_confirmadas_ids:
+        inscricoes = inscricoes.filter(atleta__academia_id__in=academias_confirmadas_ids)
+    else:
+        # Se não houver conferências confirmadas, não mostrar nenhum atleta
+        inscricoes = inscricoes.none()
+    
+    # Se houver academias permitidas, também filtrar por elas (intersecção)
+    if academias_permitidas_ids:
+        inscricoes = inscricoes.filter(atleta__academia_id__in=academias_permitidas_ids)
+    
+    inscricoes = inscricoes.order_by('atleta__nome')
     
     # Aplicar filtros
     classe_filtro = request.GET.get('classe', '').strip()
@@ -464,21 +846,118 @@ def pesagem(request):
     for inscricao in inscricoes:
         atleta = inscricao.atleta
         
-        # Buscar categoria para obter limite
+        # Buscar categoria para obter limite (usar sexo e classe para garantir categoria correta)
         limite_categoria = '-'
-        categoria_nome = inscricao.categoria_ajustada or inscricao.categoria_escolhida or ''
-        if categoria_nome:
+        categoria_nome_raw = inscricao.categoria_ajustada or inscricao.categoria_escolhida or ''
+        classe_atleta = inscricao.classe_escolhida or atleta.get_classe_atual()
+        
+        # Limpar categoria_nome: remover prefixo da classe se existir (ex: "VETERANOS - Meio Pesado" -> "Meio Pesado")
+        categoria_nome = categoria_nome_raw
+        if ' - ' in categoria_nome:
+            categoria_nome = categoria_nome.split(' - ', 1)[-1].strip()
+        
+        if categoria_nome and classe_atleta:
             try:
-                categoria = Categoria.objects.filter(categoria_nome=categoria_nome).first()
+                # Tentar buscar categoria exata primeiro (categoria_nome, classe, sexo)
+                categoria = Categoria.objects.filter(
+                    categoria_nome=categoria_nome,
+                    classe=classe_atleta,
+                    sexo=atleta.sexo
+                ).first()
+                
+                # Se não encontrar, tentar buscar apenas por categoria_nome e sexo (pode haver variação na classe)
+                if not categoria:
+                    categoria = Categoria.objects.filter(
+                        categoria_nome=categoria_nome,
+                        sexo=atleta.sexo
+                    ).first()
+                
+                # Se ainda não encontrar, tentar buscar por classe e sexo (pode haver variação no nome)
+                if not categoria:
+                    categoria = Categoria.objects.filter(
+                        classe=classe_atleta,
+                        sexo=atleta.sexo
+                    ).order_by('limite_min').first()
+                
                 if categoria:
-                    limite_categoria = f"{categoria.limite_min:.1f} - {categoria.limite_max:.1f} kg"
-            except:
+                    # Formatar limite igual à tabela de categorias
+                    if categoria.limite_min == 0:
+                        limite_categoria = f"Até {categoria.limite_max:.1f} kg"
+                    elif categoria.limite_max >= 999:
+                        limite_categoria = f"+{categoria.limite_min:.1f} kg"
+                    else:
+                        limite_categoria = f"{categoria.limite_min:.1f} a {categoria.limite_max:.1f} kg"
+                    # Limite encontrado para categoria
+                else:
+                    # Categoria não encontrada
+                    pass
+            except Exception:
+                # Erro ao buscar categoria (silencioso em produção)
                 pass
         
+        # Buscar histórico de pesagem para esta inscrição
+        historico_pesagens = PesagemHistorico.objects.filter(
+            inscricao=inscricao,
+            campeonato=campeonato_selecionado
+        ).order_by('-data_hora')[:5]  # Últimas 5 pesagens
+        
+        # Calcular status baseado na validação do peso
+        status_pesagem = 'Pendente'
+        peso_fora_categoria = False
+        
+        if inscricao.peso:
+            # Verificar se o peso está dentro dos limites da categoria
+            categoria_para_validacao_raw = inscricao.categoria_ajustada or inscricao.categoria_escolhida or ''
+            # Limpar categoria_nome: remover prefixo da classe se existir
+            categoria_para_validacao = categoria_para_validacao_raw
+            if ' - ' in categoria_para_validacao:
+                categoria_para_validacao = categoria_para_validacao.split(' - ', 1)[-1].strip()
+            
+            if categoria_para_validacao and limite_categoria != '-':
+                try:
+                    # Buscar categoria para validar (usar a mesma lógica de busca)
+                    categoria_validacao = Categoria.objects.filter(
+                        categoria_nome=categoria_para_validacao,
+                        classe=inscricao.classe_escolhida or atleta.get_classe_atual(),
+                        sexo=atleta.sexo
+                    ).first()
+                    
+                    if not categoria_validacao:
+                        categoria_validacao = Categoria.objects.filter(
+                            categoria_nome=categoria_para_validacao,
+                            sexo=atleta.sexo
+                        ).first()
+                    
+                    if categoria_validacao:
+                        limite_max_real = categoria_validacao.limite_max if categoria_validacao.limite_max < 999.0 else 999999.0
+                        if categoria_validacao.limite_min <= inscricao.peso <= limite_max_real:
+                            status_pesagem = 'OK'
+                        else:
+                            status_pesagem = 'Fora da Categoria'
+                            peso_fora_categoria = True
+                            # Peso fora da categoria
+                    else:
+                        # Se não encontrou categoria, mas tem peso, marca como OK (pode ser categoria customizada)
+                        # Categoria não encontrada para validação
+                        status_pesagem = 'OK'
+                except Exception:
+                    # Em caso de erro, se tem peso, marca como OK
+                    status_pesagem = 'OK'
+            else:
+                # Se tem peso mas não tem categoria definida, marca como OK
+                if not categoria_para_validacao:
+                    # Categoria não definida para inscrição
+                    pass
+                status_pesagem = 'OK'
+        
         # Criar objeto com atributos necessários
+        # Capturar limite_categoria em uma variável local para evitar problemas de closure
+        limite_categoria_final = limite_categoria
+        
         atleta_pesagem = type('AtletaPesagem', (), {
             'id': atleta.id,
             'inscricao_id': inscricao.id,
+            'inscricao_obj': inscricao,
             'nome': atleta.nome,
             'academia': atleta.academia,
             'sexo': atleta.sexo,
@@ -487,20 +966,36 @@ def pesagem(request):
             'categoria_ajustada': inscricao.categoria_ajustada or '',
             'peso_oficial': inscricao.peso,
             'remanejado': inscricao.remanejado,
-            'status': 'OK' if inscricao.peso else 'Pendente',
+            'motivo_ajuste': inscricao.motivo_ajuste or '',
+            'status': status_pesagem,
+            'peso_fora_categoria': peso_fora_categoria,
+            'historico_pesagens': historico_pesagens,
             'get_sexo_display': lambda: atleta.get_sexo_display(),
-            'get_limite_categoria': lambda: limite_categoria,
+            'get_limite_categoria': lambda: limite_categoria_final,
+            'limite_categoria': limite_categoria_final,  # Adicionar também como atributo direto
         })()
         
         atletas.append(atleta_pesagem)
     
-    # Obter classes e categorias disponíveis
-    classes = sorted(set([insc.classe_escolhida for insc in Inscricao.objects.filter(campeonato=campeonato_ativo, status_inscricao='aprovado').exclude(classe_escolhida='').values_list('classe_escolhida', flat=True)]))
-    categorias = sorted(set([insc.categoria_escolhida for insc in Inscricao.objects.filter(campeonato=campeonato_ativo, status_inscricao='aprovado').exclude(categoria_escolhida='').values_list('categoria_escolhida', flat=True)]))
+    # Obter classes e categorias disponíveis (apenas confirmados e aprovados)
+    classes = sorted(set(Inscricao.objects.filter(
+        campeonato=campeonato_selecionado, 
+        status_inscricao__in=['confirmado', 'aprovado']
+    ).exclude(classe_escolhida='').values_list('classe_escolhida', flat=True).distinct()))
+    
+    categorias = sorted(set(Inscricao.objects.filter(
+        campeonato=campeonato_selecionado, 
+        status_inscricao__in=['confirmado', 'aprovado']
+    ).exclude(categoria_escolhida='').values_list('categoria_escolhida', flat=True).distinct()))
+    
+    # Listar todos os campeonatos para seleção
+    campeonatos = Campeonato.objects.all().order_by('-data_competicao', '-data_inicio')
     
     context = {
         'atletas': atletas,
-        'campeonato_ativo': campeonato_ativo,
+        'campeonato_ativo': Campeonato.objects.filter(ativo=True).first(),
+        'campeonato_selecionado': campeonato_selecionado,
+        'campeonatos': campeonatos,
         'classes': classes,
         'categorias': categorias,
         'classe_filtro': classe_filtro,
@@ -513,8 +1008,170 @@ def pesagem(request):
 def pesagem_mobile_view(request):
     return render(request, 'atletas/pesagem_mobile.html')
 
+@operacional_required
+@require_http_methods(["POST"])
 def registrar_peso(request, inscricao_id):
-    return JsonResponse({'success': False})
+    """Registra peso oficial de uma inscrição e cria histórico"""
+    try:
+        inscricao = get_object_or_404(Inscricao, id=inscricao_id)
+        campeonato = inscricao.campeonato
+        
+        # Validar que a inscrição pertence ao evento correto
+        peso_oficial = float(request.POST.get('peso_oficial', 0))
+        categoria_ajustada = request.POST.get('categoria_ajustada', '').strip()
+        motivo_ajuste = request.POST.get('motivo_ajuste', '').strip()
+        observacoes = request.POST.get('observacoes', '').strip()
+        
+        if peso_oficial <= 0:
+            return JsonResponse({'success': False, 'message': 'Peso inválido. Deve ser maior que zero.'})
+        
+        # Buscar categoria para validar limites (usar classe e sexo para garantir categoria correta)
+        categoria_nome_raw = categoria_ajustada or inscricao.categoria_escolhida or ''
+        # Limpar categoria_nome: remover prefixo da classe se existir (ex: "VETERANOS - Meio Pesado" -> "Meio Pesado")
+        categoria_nome = categoria_nome_raw
+        if ' - ' in categoria_nome:
+            categoria_nome = categoria_nome.split(' - ', 1)[-1].strip()
+        
+        classe_atleta = inscricao.classe_escolhida
+        categoria_ok = True
+        mensagem_validacao = ''
+        categoria_encontrada = None
+        precisa_remanejamento = False
+        categoria_sugerida = None
+        
+        if categoria_nome and classe_atleta:
+            try:
+                # Buscar categoria exata (categoria_nome, classe, sexo)
+                categoria_encontrada = Categoria.objects.filter(
+                    categoria_nome=categoria_nome,
+                    classe=classe_atleta,
+                    sexo=inscricao.atleta.sexo
+                ).first()
+                
+                # Se não encontrar, tentar apenas por categoria_nome e sexo
+                if not categoria_encontrada:
+                    categoria_encontrada = Categoria.objects.filter(
+                        categoria_nome=categoria_nome,
+                        sexo=inscricao.atleta.sexo
+                    ).first()
+                
+                if categoria_encontrada:
+                    limite_max_real = categoria_encontrada.limite_max if categoria_encontrada.limite_max < 999.0 else 999999.0
+                    
+                    if categoria_encontrada.limite_min <= peso_oficial <= limite_max_real:
+                        categoria_ok = True
+                        mensagem_validacao = 'OK'
+                    elif peso_oficial > limite_max_real:
+                        categoria_ok = False
+                        precisa_remanejamento = True
+                        mensagem_validacao = f'Peso {peso_oficial}kg acima do limite máximo ({limite_max_real}kg)'
+                        # Buscar categoria superior
+                        categoria_sugerida = Categoria.objects.filter(
+                            classe=classe_atleta,
+                            sexo=inscricao.atleta.sexo,
+                            limite_min__lte=peso_oficial,
+                            limite_max__gte=peso_oficial
+                        ).exclude(categoria_nome=categoria_nome).first()
+                    else:
+                        categoria_ok = False
+                        precisa_remanejamento = True
+                        mensagem_validacao = f'Peso {peso_oficial}kg abaixo do limite mínimo ({categoria_encontrada.limite_min}kg)'
+                        # Buscar categoria inferior
+                        categoria_sugerida = Categoria.objects.filter(
+                            classe=classe_atleta,
+                            sexo=inscricao.atleta.sexo,
+                            limite_min__lte=peso_oficial,
+                            limite_max__gte=peso_oficial
+                        ).exclude(categoria_nome=categoria_nome).first()
+            except Exception as e:
+                import traceback
+                print(f"Erro ao validar categoria no registrar_peso: {e}")
+                traceback.print_exc()
+                pass
+        
+        # Atualizar inscrição
+        inscricao.peso = peso_oficial
+        inscricao.data_pesagem = timezone.now()
+        
+        # Atualizar status baseado na validação
+        if categoria_ok:
+            # Peso dentro dos limites - OK
+            inscricao.status_inscricao = 'aprovado'
+            inscricao.remanejado = False
+        else:
+            # Peso fora dos limites - manter como aprovado mas marcar para remanejamento
+            inscricao.status_inscricao = 'aprovado'  # Mantém aprovado para permitir remanejamento
+            inscricao.remanejado = False  # Será marcado como remanejado apenas após confirmação
+        
+        if categoria_ajustada:
+            inscricao.categoria_ajustada = categoria_ajustada
+        if motivo_ajuste:
+            inscricao.motivo_ajuste = motivo_ajuste
+        
+        inscricao.save()
+        
+        # Criar registro no histórico de pesagem
+        historico = PesagemHistorico.objects.create(
+            inscricao=inscricao,
+            campeonato=campeonato,
+            peso_registrado=peso_oficial,
+            categoria_ajustada=categoria_ajustada or '',
+            motivo_ajuste=motivo_ajuste or '',
+            observacoes=observacoes or '',
+            pesado_por=request.user if request.user.is_authenticated else None
+        )
+        
+        # Registrar no histórico do sistema
+        registrar_historico(
+            tipo_acao='PESAGEM',
+            descricao=f'Pesagem registrada: {inscricao.atleta.nome} - {peso_oficial}kg - {categoria_ajustada or inscricao.categoria_escolhida} - Status: {"OK" if categoria_ok else "Fora da Categoria"}',
+            usuario=request.user if request.user.is_authenticated else None,
+            campeonato=campeonato,
+            academia=inscricao.atleta.academia,
+            atleta=inscricao.atleta,
+            dados_extras={'peso': peso_oficial, 'categoria_ajustada': categoria_ajustada, 'inscricao_id': inscricao.id, 'categoria_ok': categoria_ok},
+            request=request
+        )
+        
+        # Preparar resposta
+        response_data = {
+            'success': True,
+            'message': f'Peso {peso_oficial}kg registrado com sucesso!',
+            'categoria_ok': categoria_ok,
+            'mensagem_validacao': mensagem_validacao,
+            'historico_id': historico.id,
+            'peso': peso_oficial,
+            'inscricao_id': inscricao.id,
+            'atleta_nome': inscricao.atleta.nome,
+            'categoria_atual': categoria_nome_raw,  # Usar o nome original para exibição
+            'precisa_confirmacao': precisa_remanejamento and not categoria_ajustada,  # Só precisa confirmação se não foi ajustado manualmente
+        }
+        
+        # Validação de categoria e remanejamento
+        
+        # Se precisa remanejamento, adicionar informações da categoria sugerida
+        if precisa_remanejamento:
+            if categoria_sugerida:
+                response_data['categoria_nova'] = categoria_sugerida.categoria_nome
+                response_data['limite_atual_min'] = categoria_encontrada.limite_min if categoria_encontrada else 0
+                response_data['limite_atual_max'] = categoria_encontrada.limite_max if categoria_encontrada else 999
+                response_data['limite_novo_min'] = categoria_sugerida.limite_min
+                response_data['limite_novo_max'] = categoria_sugerida.limite_max
+                # Categoria sugerida encontrada
+            else:
+                # Mesmo sem categoria sugerida, marcar como precisa confirmação
+                response_data['precisa_confirmacao'] = True
+                response_data['categoria_nova'] = None
+                # Precisa remanejamento mas categoria sugerida não encontrada
+        
+        # Response preparado com flag de confirmação
+        
+        return JsonResponse(response_data)
+        
+    except ValueError:
+        return JsonResponse({'success': False, 'message': 'Peso inválido. Use apenas números.'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Erro ao registrar peso: {str(e)}'})
 
 def confirmar_remanejamento(request, inscricao_id):
     return JsonResponse({'success': False})
@@ -555,8 +1212,8 @@ def lista_chaves(request):
     chaves = list(chaves_query)
     
     # Obter classes, sexos e categorias disponíveis
-    classes = sorted(set([ch.classe for ch in Chave.objects.filter(campeonato=campeonato_ativo).exclude(classe='').values_list('classe', flat=True)]))
-    categorias = sorted(set([ch.categoria for ch in Chave.objects.filter(campeonato=campeonato_ativo).exclude(categoria='').values_list('categoria', flat=True)]))
+    classes = sorted(set(Chave.objects.filter(campeonato=campeonato_ativo).exclude(classe='').values_list('classe', flat=True).distinct()))
+    categorias = sorted(set(Chave.objects.filter(campeonato=campeonato_ativo).exclude(categoria='').values_list('categoria', flat=True).distinct()))
     
     context = {
         'chaves': chaves,
@@ -571,24 +1228,366 @@ def lista_chaves(request):
     
     return render(request, 'atletas/lista_chaves.html', context)
 
+@operacional_required
 def gerar_chave_view(request):
-    return render(request, 'atletas/gerar_chave.html')
+    """Gerar chave - mostra apenas classes/categorias com atletas com peso confirmado"""
+    campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
+    
+    if not campeonato_ativo:
+        messages.warning(request, 'Nenhum campeonato ativo encontrado.')
+        return redirect('lista_campeonatos')
+    
+    # Processar POST para gerar chave
+    if request.method == 'POST':
+        classe = request.POST.get('classe', '').strip()
+        sexo = request.POST.get('sexo', '').strip()
+        categoria_nome = request.POST.get('categoria', '').strip()
+        modelo_chave = request.POST.get('modelo_chave', 'automatico')
+        
+        if not classe or not sexo or not categoria_nome:
+            messages.error(request, 'Preencha todos os campos obrigatórios.')
+        else:
+            try:
+                from .utils import gerar_chave
+                chave = gerar_chave(
+                    categoria_nome=categoria_nome,
+                    classe=classe,
+                    sexo=sexo,
+                    modelo_chave=modelo_chave if modelo_chave != 'automatico' else None,
+                    campeonato=campeonato_ativo
+                )
+                messages.success(request, f'Chave gerada com sucesso para {categoria_nome}!')
+                return redirect('detalhe_chave', chave_id=chave.id)
+            except Exception as e:
+                messages.error(request, f'Erro ao gerar chave: {str(e)}')
+    
+    # GET: Buscar classes que têm atletas com peso confirmado
+    # Atletas com peso confirmado = inscrições aprovadas com peso registrado
+    inscricoes_com_peso = Inscricao.objects.filter(
+        campeonato=campeonato_ativo,
+        status_inscricao='aprovado',
+        peso__isnull=False
+    ).exclude(
+        classe_escolhida='Festival'
+    ).exclude(
+        peso=0
+    )
+    
+    # Obter classes únicas que têm atletas com peso confirmado
+    classes_com_peso = sorted(set(inscricoes_com_peso.values_list('classe_escolhida', flat=True).distinct()))
+    
+    context = {
+        'classes': classes_com_peso,
+        'campeonato_ativo': campeonato_ativo,
+    }
+    
+    return render(request, 'atletas/gerar_chave.html', context)
 
+@operacional_required
 def gerar_chave_manual(request):
-    return render(request, 'atletas/gerar_chave_manual.html')
+    """Gerar lutas casadas (chave manual) - apenas atletas com peso confirmado"""
+    campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
+    
+    if not campeonato_ativo:
+        messages.warning(request, 'Nenhum campeonato ativo encontrado.')
+        return redirect('lista_campeonatos')
+    
+    # Processar POST para criar chave manual
+    if request.method == 'POST':
+        nome_chave = request.POST.get('nome_chave', '').strip()
+        classe_chave = request.POST.get('classe_chave', '').strip()
+        sexo_chave = request.POST.get('sexo_chave', '').strip()
+        atletas_ids = request.POST.getlist('atletas')
+        
+        if not nome_chave or not sexo_chave or not atletas_ids:
+            messages.error(request, 'Preencha todos os campos obrigatórios e selecione pelo menos um atleta.')
+        else:
+            try:
+                from .models import Chave, Luta
+                
+                # Criar chave manual
+                chave = Chave.objects.create(
+                    campeonato=campeonato_ativo,
+                    classe=classe_chave or 'Lutas Casadas',
+                    sexo=sexo_chave,
+                    categoria=nome_chave,
+                    estrutura={'tipo': 'manual', 'atletas': len(atletas_ids)}
+                )
+                
+                # Adicionar atletas à chave
+                atletas = Atleta.objects.filter(id__in=atletas_ids)
+                chave.atletas.set(atletas)
+                
+                # Criar lutas pareadas (1x2, 3x4, 5x6, etc.)
+                atletas_list = list(atletas)
+                lutas_criadas = []
+                for i in range(0, len(atletas_list), 2):
+                    atleta_a = atletas_list[i] if i < len(atletas_list) else None
+                    atleta_b = atletas_list[i + 1] if i + 1 < len(atletas_list) else None
+                    
+                    if atleta_a or atleta_b:
+                        luta = Luta.objects.create(
+                            chave=chave,
+                            atleta_a=atleta_a,
+                            atleta_b=atleta_b,
+                            round=1
+                        )
+                        lutas_criadas.append(luta.id)
+                
+                # Atualizar estrutura da chave
+                chave.estrutura = {
+                    'tipo': 'manual',
+                    'atletas': len(atletas_list),
+                    'lutas': lutas_criadas,
+                    'rounds': {1: lutas_criadas}
+                }
+                chave.save()
+                
+                messages.success(request, f'Chave "{nome_chave}" criada com sucesso!')
+                return redirect('detalhe_chave', chave_id=chave.id)
+            except Exception as e:
+                messages.error(request, f'Erro ao criar chave: {str(e)}')
+    
+    # GET: Buscar atletas com peso confirmado
+    # Filtros
+    nome_filtro = request.GET.get('nome', '').strip()
+    classe_filtro = request.GET.get('classe', '').strip()
+    sexo_filtro = request.GET.get('sexo', '').strip()
+    academia_filtro = request.GET.get('academia', '').strip()
+    
+    # Buscar inscrições com peso confirmado
+    inscricoes = Inscricao.objects.filter(
+        campeonato=campeonato_ativo,
+        status_inscricao='aprovado',
+        peso__isnull=False
+    ).exclude(
+        peso=0
+    ).select_related('atleta', 'atleta__academia')
+    
+    # Aplicar filtros
+    if nome_filtro:
+        inscricoes = inscricoes.filter(atleta__nome__icontains=nome_filtro)
+    if classe_filtro:
+        inscricoes = inscricoes.filter(classe_escolhida=classe_filtro)
+    if sexo_filtro:
+        inscricoes = inscricoes.filter(atleta__sexo=sexo_filtro)
+    if academia_filtro:
+        inscricoes = inscricoes.filter(atleta__academia_id=academia_filtro)
+    
+    # Extrair atletas únicos
+    atletas_ids = inscricoes.values_list('atleta_id', flat=True).distinct()
+    atletas = Atleta.objects.filter(id__in=atletas_ids).select_related('academia').order_by('nome')
+    
+    # Obter classes e academias para filtros
+    classes = sorted(set(inscricoes.values_list('classe_escolhida', flat=True).distinct()))
+    academias = Academia.objects.filter(
+        id__in=inscricoes.values_list('atleta__academia_id', flat=True).distinct()
+    ).order_by('nome')
+    
+    context = {
+        'atletas': atletas,
+        'classes': classes,
+        'academias': academias,
+        'nome_filtro': nome_filtro,
+        'classe_filtro': classe_filtro,
+        'sexo_filtro': sexo_filtro,
+        'academia_filtro': academia_filtro,
+        'campeonato_ativo': campeonato_ativo,
+    }
+    
+    return render(request, 'atletas/gerar_chave_manual.html', context)
 
 def detalhe_chave(request, chave_id):
+    """Exibe detalhes da chave com lutas e resultados"""
     chave = get_object_or_404(Chave, id=chave_id)
-    return render(request, 'atletas/detalhe_chave.html', {'chave': chave})
+    
+    # Buscar lutas da chave ordenadas por round e ID
+    lutas = chave.lutas.all().order_by('round', 'id').select_related('atleta_a', 'atleta_b', 'vencedor', 'atleta_a__academia', 'atleta_b__academia')
+    
+    # Buscar resultados finais usando a função utilitária
+    from .utils import get_resultados_chave
+    resultados_ids = get_resultados_chave(chave)
+    
+    # Converter IDs de resultados em objetos Atleta com academias
+    resultados = []
+    for atleta_id in resultados_ids:
+        try:
+            atleta = Atleta.objects.select_related('academia').get(id=atleta_id)
+            resultados.append(atleta)
+        except Atleta.DoesNotExist:
+            continue
+    
+    context = {
+        'chave': chave,
+        'lutas': lutas,
+        'resultados': resultados,
+    }
+    
+    return render(request, 'atletas/detalhe_chave.html', context)
 
 def imprimir_chave(request, chave_id):
-    return render(request, 'atletas/imprimir_chave.html', {'chave': get_object_or_404(Chave, id=chave_id)})
+    """View para impressão de chave - layout minimalista para anotação manual"""
+    chave = get_object_or_404(Chave, id=chave_id)
+    
+    # Obter tipo da chave da estrutura
+    estrutura = chave.estrutura or {}
+    tipo_chave = estrutura.get('tipo', 'vazia')
+    
+    # Obter lista de atletas (apenas para contar, não mostrar nomes)
+    lista_atletas = list(chave.atletas.all())
+    num_atletas = len(lista_atletas)
+    
+    # Determinar número de atletas para estrutura eliminatória
+    if tipo_chave in ['eliminatoria_repescagem', 'eliminatoria_simples']:
+        tamanho_chave = estrutura.get('tamanho_chave', num_atletas)
+        if tamanho_chave < 8:
+            tamanho_chave = 8
+        elif tamanho_chave < 16:
+            tamanho_chave = 16
+        else:
+            tamanho_chave = 32
+    else:
+        tamanho_chave = num_atletas
+    
+    context = {
+        'chave': chave,
+        'tipo_chave': tipo_chave,
+        'lista_atletas': lista_atletas,  # Para contar linhas na tabela round-robin
+        'num_atletas': num_atletas,
+        'tamanho_chave': tamanho_chave,
+    }
+    
+    return render(request, 'atletas/imprimir_chave.html', context)
 
 def chave_mobile_view(request, chave_id):
     return render(request, 'atletas/chave_mobile.html', {'chave': get_object_or_404(Chave, id=chave_id)})
 
+@operacional_required
 def registrar_vencedor(request, luta_id):
-    return JsonResponse({'success': False})
+    """Registra o vencedor de uma luta e atualiza a chave"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método não permitido'})
+    
+    try:
+        luta = get_object_or_404(Luta, id=luta_id)
+        
+        # Validar que a luta tem dois atletas
+        if not luta.atleta_a or not luta.atleta_b:
+            return JsonResponse({
+                'success': False,
+                'message': 'Luta não pode ser registrada: faltam atletas'
+            })
+        
+        # Validar que a luta não está concluída
+        if luta.concluida:
+            return JsonResponse({
+                'success': False,
+                'message': 'Esta luta já foi concluída'
+            })
+        
+        # Obter dados do POST
+        vencedor_id = request.POST.get('vencedor')
+        tipo_vitoria = request.POST.get('tipo_vitoria', 'IPPON')
+        
+        if not vencedor_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Selecione o vencedor'
+            })
+        
+        # Validar que o vencedor é um dos atletas da luta
+        vencedor_id = int(vencedor_id)
+        if vencedor_id not in [luta.atleta_a.id, luta.atleta_b.id]:
+            return JsonResponse({
+                'success': False,
+                'message': 'Vencedor inválido: deve ser um dos atletas da luta'
+            })
+        
+        # Obter objeto do vencedor
+        vencedor = Atleta.objects.get(id=vencedor_id)
+        perdedor = luta.atleta_b if vencedor_id == luta.atleta_a.id else luta.atleta_a
+        
+        # Calcular pontos baseado no tipo de vitória
+        pontos_vencedor = 0
+        pontos_perdedor = 0
+        ippon_count = 0
+        wazari_count = 0
+        yuko_count = 0
+        
+        if tipo_vitoria == 'IPPON':
+            pontos_vencedor = 10
+            pontos_perdedor = 0
+            ippon_count = 1
+        elif tipo_vitoria == 'WAZARI' or tipo_vitoria == 'WAZARI_WAZARI':
+            pontos_vencedor = 7
+            pontos_perdedor = 0
+            wazari_count = 1 if tipo_vitoria == 'WAZARI' else 2
+        elif tipo_vitoria == 'YUKO':
+            pontos_vencedor = 1
+            pontos_perdedor = 0
+            yuko_count = 1
+        
+        # Atualizar luta
+        luta.vencedor = vencedor
+        luta.tipo_vitoria = tipo_vitoria
+        luta.pontos_vencedor = pontos_vencedor
+        luta.pontos_perdedor = pontos_perdedor
+        luta.ippon_count = ippon_count
+        luta.wazari_count = wazari_count
+        luta.yuko_count = yuko_count
+        luta.concluida = True
+        luta.save()
+        
+        # Atualizar próxima luta e repescagem
+        from .utils import atualizar_proxima_luta
+        atualizar_proxima_luta(luta)
+        
+        # Registrar histórico
+        from .utils_historico import registrar_historico
+        campeonato = luta.chave.campeonato if luta.chave.campeonato else None
+        registrar_historico(
+            tipo_acao='LUTA_REGISTRADA',
+            descricao=f'Luta registrada: {vencedor.nome} venceu {perdedor.nome} por {luta.get_tipo_vitoria_display()} na chave {luta.chave.categoria}',
+            usuario=request.user if request.user.is_authenticated else None,
+            campeonato=campeonato,
+            dados_extras={
+                'luta_id': luta.id,
+                'vencedor_id': vencedor.id,
+                'perdedor_id': perdedor.id,
+                'tipo_vitoria': tipo_vitoria,
+                'pontos_vencedor': pontos_vencedor
+            }
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Resultado registrado: {vencedor.nome} venceu por {luta.get_tipo_vitoria_display()}',
+            'vencedor': {
+                'id': vencedor.id,
+                'nome': vencedor.nome
+            },
+            'tipo_vitoria': tipo_vitoria,
+            'pontos': pontos_vencedor
+        })
+        
+    except Atleta.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Atleta não encontrado'
+        })
+    except ValueError as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Erro de validação: {str(e)}'
+        })
+    except Exception as e:
+        import traceback
+        print(f"ERRO ao registrar vencedor: {str(e)}")
+        print(traceback.format_exc())
+        return JsonResponse({
+            'success': False,
+            'message': f'Erro ao registrar resultado: {str(e)}'
+        })
 
 def luta_mobile_view(request, luta_id):
     return render(request, 'atletas/luta_mobile.html', {'luta': get_object_or_404(Luta, id=luta_id)})
@@ -622,15 +1621,20 @@ def ranking_global(request):
         campeonato=campeonato_ativo
     ).select_related('academia').order_by('-pontos_totais', '-ouro', '-prata', '-bronze')
     
-    top3_academias = []
-    for pontuacao in pontuacoes[:3]:
-        top3_academias.append({
+    # Preparar ranking completo de academias
+    ranking_academias_completo = []
+    for pontuacao in pontuacoes:
+        ranking_academias_completo.append({
             'academia': pontuacao.academia,
             'ouro': pontuacao.ouro,
             'prata': pontuacao.prata,
             'bronze': pontuacao.bronze,
+            'festival': pontuacao.festival or 0,
             'pontos_totais': pontuacao.pontos_totais,
         })
+    
+    # Top 3 academias para os cards
+    top3_academias = ranking_academias_completo[:3]
     
     # Buscar resultados de todas as chaves para calcular ranking de atletas
     chaves = Chave.objects.filter(campeonato=campeonato_ativo)
@@ -682,14 +1686,16 @@ def ranking_global(request):
     )
     
     # Obter classes e categorias disponíveis
-    classes_disponiveis = sorted(set([ch.classe for ch in chaves.exclude(classe='').values_list('classe', flat=True)]))
-    categorias_disponiveis = sorted(set([ch.categoria for ch in chaves.exclude(categoria='').values_list('categoria', flat=True)]))
+    classes_disponiveis = sorted(set(chaves.exclude(classe='').values_list('classe', flat=True).distinct()))
+    categorias_disponiveis = sorted(set(chaves.exclude(categoria='').values_list('categoria', flat=True).distinct()))
     
     context = {
         'campeonato_ativo': campeonato_ativo,
         'ranking_atletas_completo': ranking_atletas_completo,
-        'top3_academias': top3_academias,
-        'total_academias': pontuacoes.count(),
+        'ranking_academias_completo': ranking_academias_completo,  # Lista completa para a tabela
+        'top3_academias': top3_academias,  # Top 3 para os cards
+        'total_academias': len(ranking_academias_completo),
+        'total_atletas': len(ranking_atletas_completo),
         'classes_disponiveis': classes_disponiveis,
         'categorias_disponiveis': categorias_disponiveis,
         'classe_filtro': classe_filtro,
@@ -716,10 +1722,22 @@ def ranking_academias(request):
     # Calcular pontuação das academias
     calcular_pontuacao_academias(campeonato_ativo.id)
     
+    # Buscar apenas academias permitidas no campeonato
+    academias_permitidas_ids = list(AcademiaCampeonato.objects.filter(
+        campeonato=campeonato_ativo,
+        permitido=True
+    ).values_list('academia_id', flat=True))
+    
     # Buscar pontuações do campeonato
     pontuacoes = AcademiaPontuacao.objects.filter(
         campeonato=campeonato_ativo
-    ).select_related('academia').order_by('-pontos_totais', '-ouro', '-prata', '-bronze')
+    ).select_related('academia')
+    
+    # Se houver academias permitidas, filtrar por elas
+    if academias_permitidas_ids:
+        pontuacoes = pontuacoes.filter(academia_id__in=academias_permitidas_ids)
+    
+    pontuacoes = pontuacoes.order_by('-pontos_totais', '-ouro', '-prata', '-bronze')
     
     # Preparar dados para o template
     ranking_academias_list = []
@@ -765,13 +1783,420 @@ def api_ranking_academias(request):
     return JsonResponse({'academias': []})
 
 def perfil_atleta(request, atleta_id):
-    return render(request, 'atletas/perfil_atleta.html', {'atleta': get_object_or_404(Atleta, id=atleta_id)})
+    atleta = get_object_or_404(Atleta, id=atleta_id)
+    
+    # Buscar histórico de competições do atleta
+    historico = []
+    
+    # Buscar todas as inscrições do atleta
+    inscricoes = Inscricao.objects.filter(
+        atleta=atleta,
+        status_inscricao='aprovado'
+    ).select_related('campeonato')
+    
+    # Para cada inscrição, buscar a chave correspondente e os resultados
+    from .utils import get_resultados_chave
+    from .models import Chave
+    
+    for inscricao in inscricoes:
+        # Buscar chave do atleta neste campeonato
+        # A chave pode ter sido criada com categoria_ajustada ou categoria_escolhida
+        categoria_busca = inscricao.categoria_ajustada or inscricao.categoria_escolhida
+        
+        chave = Chave.objects.filter(
+            campeonato=inscricao.campeonato,
+            classe=inscricao.classe_escolhida,
+            categoria=categoria_busca
+        ).first()
+        
+        # Se não encontrou, tentar buscar pela categoria escolhida
+        if not chave and inscricao.categoria_ajustada:
+            chave = Chave.objects.filter(
+                campeonato=inscricao.campeonato,
+                classe=inscricao.classe_escolhida,
+                categoria=inscricao.categoria_escolhida
+            ).first()
+        
+        if chave:
+            # Verificar se o atleta participou desta chave
+            # Pode estar na lista de atletas da chave ou ter participado de lutas
+            atleta_participou = (
+                chave.atletas.filter(id=atleta.id).exists() or
+                chave.lutas.filter(
+                    Q(atleta_a=atleta) | Q(atleta_b=atleta)
+                ).exists()
+            )
+            
+            if atleta_participou:
+                # Buscar resultados da chave
+                resultados_ids = get_resultados_chave(chave)
+                
+                # Verificar se o atleta está nos resultados e qual a posição
+                if atleta.id in resultados_ids:
+                    posicao = resultados_ids.index(atleta.id) + 1
+                    
+                    # Determinar medalha baseado na posição
+                    medalha = None
+                    if posicao == 1:
+                        medalha = 'ouro'
+                    elif posicao == 2:
+                        medalha = 'prata'
+                    elif posicao == 3:
+                        medalha = 'bronze'
+                    
+                    # Adicionar ao histórico
+                    historico.append({
+                        'campeonato': inscricao.campeonato,
+                        'ano': inscricao.campeonato.data_competicao.year if inscricao.campeonato.data_competicao else None,
+                        'classe': inscricao.classe_escolhida,
+                        'categoria': inscricao.categoria_ajustada or inscricao.categoria_escolhida,
+                        'posicao': posicao,
+                        'medalha': medalha
+                    })
+    
+    # Ordenar histórico por ano (mais recente primeiro)
+    historico.sort(key=lambda x: x['ano'] or 0, reverse=True)
+    
+    # Calcular indicadores globais
+    total_eventos = len(historico)
+    total_ouros = sum(1 for item in historico if item['medalha'] == 'ouro')
+    total_pratas = sum(1 for item in historico if item['medalha'] == 'prata')
+    total_bronzes = sum(1 for item in historico if item['medalha'] == 'bronze')
+    
+    context = {
+        'atleta': atleta,
+        'historico': historico,
+        'total_eventos': total_eventos,
+        'total_ouros': total_ouros,
+        'total_pratas': total_pratas,
+        'total_bronzes': total_bronzes
+    }
+    
+    return render(request, 'atletas/perfil_atleta.html', context)
 
+@operacional_required
 def inscrever_atletas(request):
-    return render(request, 'atletas/inscrever_atletas.html')
+    """Inscrever atletas no campeonato ativo - Login Operacional (todos os atletas disponíveis)"""
+    campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
+    
+    if not campeonato_ativo:
+        messages.warning(request, 'Nenhum campeonato ativo encontrado. Ative um campeonato para inscrever atletas.')
+        return render(request, 'atletas/inscrever_atletas.html', {
+            'campeonato_ativo': None,
+            'atletas': [],
+            'academias': [],
+            'categorias': [],
+        })
+    
+    # Processar inscrição via POST
+    if request.method == 'POST':
+        atleta_id = request.POST.get('atleta_id')
+        classe_escolhida = request.POST.get('classe_escolhida')
+        categoria_id = request.POST.get('categoria_escolhida')
+        categoria_label = request.POST.get('categoria_label', '').strip()
+        
+        if atleta_id and classe_escolhida and categoria_id:
+            try:
+                # Para login operacional, buscar atleta sem filtro de academia
+                atleta = get_object_or_404(Atleta, id=atleta_id)
+                
+                # Verificar se a academia do atleta está permitida no campeonato
+                academia_permitida = AcademiaCampeonato.objects.filter(
+                    academia=atleta.academia,
+                    campeonato=campeonato_ativo,
+                    permitido=True
+                ).exists()
+                
+                if not academia_permitida:
+                    messages.error(request, f'A academia "{atleta.academia.nome}" não está permitida neste campeonato.')
+                else:
+                    categoria = get_object_or_404(Categoria, id=categoria_id)
+                    
+                    # Usar label do POST ou do objeto categoria
+                    categoria_nome = categoria_label or categoria.label
+                    
+                    # Verificar se já não está inscrito nesta classe/categoria
+                    inscricao_existente = Inscricao.objects.filter(
+                        atleta=atleta,
+                        campeonato=campeonato_ativo,
+                        classe_escolhida=classe_escolhida,
+                        categoria_escolhida=categoria_nome
+                    ).first()
+                    
+                    if inscricao_existente:
+                        messages.warning(request, f'{atleta.nome} já está inscrito em {classe_escolhida} - {categoria_nome}.')
+                    else:
+                        # Criar nova inscrição
+                        # Inscrições feitas pelo login operacional são confirmadas automaticamente
+                        # pois o operacional já valida na hora
+                        inscricao = Inscricao.objects.create(
+                            atleta=atleta,
+                            campeonato=campeonato_ativo,
+                            classe_escolhida=classe_escolhida,
+                            categoria_escolhida=categoria_nome,
+                            status_inscricao='confirmado'  # Confirmado automaticamente quando feito pelo operacional
+                        )
+                        
+                        # Criar ou atualizar ConferenciaPagamento automaticamente
+                        # para que apareça no financeiro
+                        from decimal import Decimal
+                        
+                        academia = atleta.academia
+                        valor_esperado, qtd_atletas = calcular_valor_esperado_academia(academia, campeonato_ativo)
+                        
+                        # Criar ou atualizar conferência com status CONFIRMADO
+                        ConferenciaPagamento.objects.update_or_create(
+                            academia=academia,
+                            campeonato=campeonato_ativo,
+                            defaults={
+                                'status': 'CONFIRMADO',
+                                'valor_esperado': valor_esperado,
+                                'valor_recebido': valor_esperado,  # Considera como recebido quando feito pelo operacional
+                                'quantidade_atletas': qtd_atletas,
+                                'conferido_por': request.user,
+                                'data_conferencia': timezone.now(),
+                                'observacoes': 'Inscrição criada diretamente pelo operacional'
+                            }
+                        )
+                        
+                        messages.success(request, f'{atleta.nome} inscrito e confirmado com sucesso em {classe_escolhida} - {categoria_nome}!')
+            except Exception as e:
+                messages.error(request, f'Erro ao inscrever atleta: {str(e)}')
+        
+        return redirect('inscrever_atletas')
+    
+    # GET: Listar atletas de academias permitidas no campeonato
+    nome_filtro = request.GET.get('nome', '').strip()
+    sexo_filtro = request.GET.get('sexo', '').strip()
+    academia_filtro = request.GET.get('academia', '').strip()
+    
+    # Buscar academias permitidas no campeonato
+    academias_permitidas_ids = list(AcademiaCampeonato.objects.filter(
+        campeonato=campeonato_ativo,
+        permitido=True
+    ).values_list('academia_id', flat=True))
+    
+    # Se não houver academias permitidas, mostrar todos os atletas (para permitir inscrição operacional)
+    # Mas ainda aplicar filtros se necessário
+    if not academias_permitidas_ids:
+        # Para login operacional, mostrar todos os atletas se não houver filtro de academias
+        atletas_query = Atleta.objects.select_related('academia')
+    else:
+        # Buscar atletas apenas de academias permitidas
+        atletas_query = Atleta.objects.filter(
+            academia_id__in=academias_permitidas_ids
+        ).select_related('academia')
+    
+    # Aplicar filtros opcionais
+    if nome_filtro:
+        atletas_query = atletas_query.filter(nome__icontains=nome_filtro)
+    if sexo_filtro:
+        atletas_query = atletas_query.filter(sexo=sexo_filtro)
+    if academia_filtro:
+        atletas_query = atletas_query.filter(academia_id=academia_filtro)
+    
+    atletas_query = atletas_query.order_by('academia__nome', 'nome')
+    
+    # Preparar dados para o template
+    atletas = []
+    for atleta in atletas_query:
+        # Buscar inscrições deste atleta neste campeonato
+        inscricoes = Inscricao.objects.filter(
+            atleta=atleta,
+            campeonato=campeonato_ativo
+        )
+        
+        atletas.append({
+            'atleta': atleta,
+            'total_inscricoes': inscricoes.count(),
+            'inscricoes': inscricoes,
+        })
+    
+    # Buscar academias para o filtro
+    # Se não houver academias permitidas, mostrar todas as academias
+    if not academias_permitidas_ids:
+        academias = Academia.objects.filter(ativo_login=True).order_by('nome')
+    else:
+        academias = Academia.objects.filter(
+            id__in=academias_permitidas_ids,
+            ativo_login=True
+        ).order_by('nome')
+    
+    # Buscar todas as categorias para o JavaScript
+    todas_categorias = Categoria.objects.all().order_by('classe', 'limite_min')
+    
+    # Preparar categorias no formato esperado pelo template
+    categorias_list = []
+    for cat in todas_categorias:
+        categorias_list.append({
+            'id': cat.id,
+            'classe': cat.classe,
+            'sexo': cat.sexo,
+            'label': cat.label,
+            'categoria_nome': cat.categoria_nome,
+        })
+    
+    context = {
+        'campeonato_ativo': campeonato_ativo,
+        'atletas': atletas,
+        'academias': academias,
+        'categorias': categorias_list,
+        'nome_filtro': nome_filtro,
+        'sexo_filtro': sexo_filtro,
+        'academia_filtro': academia_filtro,
+    }
+    
+    return render(request, 'atletas/inscrever_atletas.html', context)
 
+@operacional_required
 def metricas_evento(request):
-    return render(request, 'atletas/metricas_evento.html')
+    """Painel operacional completo com métricas do evento em tempo real"""
+    campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
+    
+    if not campeonato_ativo:
+        messages.warning(request, 'Nenhum campeonato ativo encontrado.')
+        return render(request, 'atletas/metricas_evento.html', {
+            'campeonato_ativo': None,
+            'indicadores_pesagem': {},
+            'atletas_por_categoria': [],
+            'remanejamentos': {},
+            'indicadores_chaves': {},
+            'progresso_campeonato': 0,
+        })
+    
+    # Filtrar apenas academias permitidas
+    academias_permitidas_ids = list(AcademiaCampeonato.objects.filter(
+        campeonato=campeonato_ativo,
+        permitido=True
+    ).values_list('academia_id', flat=True))
+    
+    # ========== 1. INDICADORES DE PESAGEM ==========
+    inscricoes_query = Inscricao.objects.filter(campeonato=campeonato_ativo)
+    if academias_permitidas_ids:
+        inscricoes_query = inscricoes_query.filter(atleta__academia_id__in=academias_permitidas_ids)
+    
+    total_inscritos = inscricoes_query.count()
+    total_pesados = inscricoes_query.filter(peso__isnull=False).exclude(peso=0).count()
+    total_pendentes = total_inscritos - total_pesados
+    total_fora_categoria = inscricoes_query.filter(remanejado=True).count()
+    
+    # Contar remanejados que foram aceitos vs pendentes
+    remanejados_aceitos = inscricoes_query.filter(remanejado=True, categoria_ajustada__isnull=False).exclude(categoria_ajustada='').count()
+    remanejados_pendentes = inscricoes_query.filter(remanejado=True, categoria_ajustada__isnull=True).count() + inscricoes_query.filter(remanejado=True, categoria_ajustada='').count()
+    
+    indicadores_pesagem = {
+        'total_inscritos': total_inscritos,
+        'total_pesados': total_pesados,
+        'total_pendentes': total_pendentes,
+        'total_fora_categoria': total_fora_categoria,
+        'remanejados_aceitos': remanejados_aceitos,
+        'remanejados_pendentes': remanejados_pendentes,
+        'percentual_pesados': round((total_pesados / total_inscritos * 100) if total_inscritos > 0 else 0, 1),
+    }
+    
+    # ========== 2. ATLETAS POR CATEGORIA ==========
+    inscricoes_por_categoria = inscricoes_query.values(
+        'classe_escolhida', 'categoria_escolhida', 'categoria_ajustada'
+    ).annotate(
+        total=Count('id'),
+        pesados=Count('id', filter=Q(peso__isnull=False) & ~Q(peso=0)),
+        pendentes=Count('id', filter=Q(peso__isnull=True) | Q(peso=0)),
+        remanejados=Count('id', filter=Q(remanejado=True))
+    ).order_by('classe_escolhida', 'categoria_escolhida')
+    
+    atletas_por_categoria = []
+    for item in inscricoes_por_categoria:
+        categoria_nome = item['categoria_ajustada'] if item['categoria_ajustada'] else item['categoria_escolhida']
+        atletas_por_categoria.append({
+            'classe': item['classe_escolhida'],
+            'categoria': categoria_nome,
+            'total': item['total'],
+            'pesados': item['pesados'],
+            'pendentes': item['pendentes'],
+            'remanejados': item['remanejados'],
+        })
+    
+    # ========== 3. REMANEJAMENTOS ==========
+    remanejamentos_query = inscricoes_query.filter(remanejado=True).select_related('atleta', 'atleta__academia')
+    
+    remanejamentos_pendentes_list = []
+    remanejamentos_resolvidos = 0
+    remanejamentos_desclassificados = 0
+    
+    for inscricao in remanejamentos_query:
+        if inscricao.categoria_ajustada and inscricao.categoria_ajustada.strip():
+            remanejamentos_resolvidos += 1
+        elif inscricao.categoria_ajustada == 'DESCLASSIFICADO' or inscricao.status_inscricao == 'rejeitado':
+            remanejamentos_desclassificados += 1
+        else:
+            remanejamentos_pendentes_list.append({
+                'id': inscricao.id,
+                'atleta_nome': inscricao.atleta.nome,
+                'peso_registrado': inscricao.peso or 0,
+                'professor': inscricao.atleta.academia.responsavel if inscricao.atleta.academia else 'N/A',
+                'academia': inscricao.atleta.academia.nome if inscricao.atleta.academia else 'N/A',
+                'categoria_original': inscricao.categoria_escolhida,
+                'categoria_proposta': inscricao.categoria_ajustada or 'Aguardando decisão',
+                'classe': inscricao.classe_escolhida,
+            })
+    
+    remanejamentos = {
+        'pendentes': len(remanejamentos_pendentes_list),
+        'resolvidos': remanejamentos_resolvidos,
+        'desclassificados': remanejamentos_desclassificados,
+        'total': remanejamentos_query.count(),
+        'lista_pendentes': remanejamentos_pendentes_list[:10],  # Limitar a 10 para não sobrecarregar
+    }
+    
+    # ========== 4. INDICADORES DE CHAVES ==========
+    chaves_query = Chave.objects.filter(campeonato=campeonato_ativo)
+    total_chaves = chaves_query.count()
+    
+    # Contar chaves por status
+    chaves_finalizadas = 0
+    chaves_pendentes = 0
+    chaves_em_construcao = 0
+    total_lutas_geradas = 0
+    total_lutas_finalizadas = 0
+    
+    for chave in chaves_query:
+        lutas_chave = chave.lutas.all()
+        total_lutas_chave = lutas_chave.count()
+        lutas_finalizadas_chave = lutas_chave.filter(concluida=True).count()
+        
+        total_lutas_geradas += total_lutas_chave
+        total_lutas_finalizadas += lutas_finalizadas_chave
+        
+        if total_lutas_chave == 0:
+            chaves_em_construcao += 1
+        elif lutas_finalizadas_chave == total_lutas_chave and total_lutas_chave > 0:
+            chaves_finalizadas += 1
+        else:
+            chaves_pendentes += 1
+    
+    # Calcular progresso do campeonato
+    progresso_campeonato = round((total_lutas_finalizadas / total_lutas_geradas * 100) if total_lutas_geradas > 0 else 0, 1)
+    
+    indicadores_chaves = {
+        'total_chaves': total_chaves,
+        'chaves_finalizadas': chaves_finalizadas,
+        'chaves_pendentes': chaves_pendentes,
+        'chaves_em_construcao': chaves_em_construcao,
+        'total_lutas_geradas': total_lutas_geradas,
+        'total_lutas_finalizadas': total_lutas_finalizadas,
+        'progresso_campeonato': progresso_campeonato,
+    }
+    
+    context = {
+        'campeonato_ativo': campeonato_ativo,
+        'indicadores_pesagem': indicadores_pesagem,
+        'atletas_por_categoria': atletas_por_categoria,
+        'remanejamentos': remanejamentos,
+        'indicadores_chaves': indicadores_chaves,
+        'progresso_campeonato': progresso_campeonato,
+    }
+    
+    return render(request, 'atletas/metricas_evento.html', context)
 
 def dashboard(request):
     return render(request, 'atletas/dashboard.html')
@@ -796,7 +2221,11 @@ class ResetCompeticaoAPIView(APIView):
 @operacional_required
 def lista_campeonatos(request):
     """Lista campeonatos e exibe credenciais geradas se houver"""
-    campeonatos = Campeonato.objects.all()
+    # Listar campeonatos com contagem de inscrições e academias vinculadas
+    campeonatos = Campeonato.objects.annotate(
+        total_inscricoes=Count('inscricoes'),
+        total_academias=Count('academias_vinculadas', filter=Q(academias_vinculadas__permitido=True))
+    ).order_by('-data_competicao', '-data_inicio')
     
     # Verificar se há credenciais na sessão (após criar campeonato)
     credenciais_campeonato = request.session.pop('credenciais_campeonato', None)
@@ -972,11 +2401,26 @@ def editar_campeonato(request, campeonato_id):
     if request.method == "POST":
         form = CampeonatoForm(request.POST, request.FILES, instance=campeonato)
         if form.is_valid():
-            campeonato = form.save()
+            campeonato = form.save(commit=False)
+            campeonato.chave_pix = request.POST.get('chave_pix', '').strip()
+            campeonato.titular_pix = request.POST.get('titular_pix', '').strip()
+            campeonato.save()
+            
+            # Handle ManyToMany for formas_pagamento
+            formas_pagamento_ids = request.POST.getlist('formas_pagamento')
+            campeonato.formas_pagamento.set(formas_pagamento_ids)
             
             # Se marcou como ativo, desativar outros
             if campeonato.ativo:
                 Campeonato.objects.exclude(id=campeonato.id).update(ativo=False)
+                # Vincular todas as academias ativas ao campeonato ativo (se ainda não estiverem vinculadas)
+                academias_ativas = Academia.objects.filter(ativo_login=True)
+                for academia in academias_ativas:
+                    AcademiaCampeonato.objects.get_or_create(
+                        academia=academia,
+                        campeonato=campeonato,
+                        defaults={'permitido': True}
+                    )
             
             messages.success(request, "Alterações salvas com sucesso.")
             return redirect('lista_campeonatos')
@@ -984,10 +2428,12 @@ def editar_campeonato(request, campeonato_id):
             messages.error(request, "Por favor, corrija os erros abaixo.")
     else:
         form = CampeonatoForm(instance=campeonato)
+        formas_pagamento = FormaPagamento.objects.filter(ativo=True).order_by('tipo', 'nome')
     
     return render(request, 'atletas/editar_campeonato.html', {
         'form': form,
-        'campeonato': campeonato
+        'campeonato': campeonato,
+        'formas_pagamento': formas_pagamento,
     })
 
 @operacional_required
@@ -1002,8 +2448,128 @@ def definir_campeonato_ativo(request, campeonato_id):
     campeonato.ativo = True
     campeonato.save()
     
+    # Vincular todas as academias ativas ao campeonato ativo (se ainda não estiverem vinculadas) e gerar senhas
+    academias_ativas = Academia.objects.filter(ativo_login=True)
+    vinculadas = 0
+    senhas_geradas = 0
+    
+    import random
+    import string
+    from datetime import timedelta
+    from datetime import datetime as dt
+    
+    for academia in academias_ativas:
+        vinculo, created = AcademiaCampeonato.objects.get_or_create(
+            academia=academia,
+            campeonato=campeonato,
+            defaults={'permitido': True}
+        )
+        if created:
+            vinculadas += 1
+        
+        # Gerar senha se não existir
+        senha_obj, senha_created = AcademiaCampeonatoSenha.objects.get_or_create(
+            academia=academia,
+            campeonato=campeonato,
+            defaults={
+                'login': f"ACADEMIA_{academia.id:03d}",
+                'senha_plana': ''.join(random.choices(string.ascii_letters + string.digits, k=8)),
+                'data_expiracao': timezone.make_aware(
+                    dt.combine(campeonato.data_competicao, dt.min.time())
+                ) + timedelta(days=5) if campeonato.data_competicao else None,
+            }
+        )
+        
+        if senha_created:
+            senha_obj.definir_senha(senha_obj.senha_plana)
+            senha_obj.save()
+            senhas_geradas += 1
+    
     messages.success(request, f'Campeonato "{campeonato.nome}" ativado com sucesso!')
+    if vinculadas > 0:
+        messages.info(request, f'{vinculadas} academia(s) vinculada(s) automaticamente ao campeonato.')
+    if senhas_geradas > 0:
+        messages.info(request, f'{senhas_geradas} senha(s) gerada(s) para as academias.')
     return redirect('lista_campeonatos')
+
+@operacional_required
+def gerenciar_academias_campeonato(request, campeonato_id):
+    """Gerenciar permissões de academias no campeonato"""
+    campeonato = get_object_or_404(Campeonato, id=campeonato_id)
+    
+    if request.method == 'POST':
+        acao = request.POST.get('acao')
+        
+        if acao == 'toggle_permissao':
+            academia_id = request.POST.get('academia_id')
+            permitido = request.POST.get('permitido') == 'true'
+            
+            if academia_id:
+                try:
+                    academia = get_object_or_404(Academia, id=academia_id)
+                    vinculo, created = AcademiaCampeonato.objects.get_or_create(
+                        academia=academia,
+                        campeonato=campeonato,
+                        defaults={'permitido': True}
+                    )
+                    vinculo.permitido = permitido
+                    vinculo.save()
+                    
+                    status = 'permitida' if permitido else 'bloqueada'
+                    messages.success(request, f'Academia "{academia.nome}" {status} no campeonato.')
+                except Exception as e:
+                    messages.error(request, f'Erro ao atualizar permissão: {str(e)}')
+        
+        elif acao == 'adicionar_academia':
+            academia_id = request.POST.get('academia_id')
+            if academia_id:
+                try:
+                    academia = get_object_or_404(Academia, id=academia_id)
+                    vinculo, created = AcademiaCampeonato.objects.get_or_create(
+                        academia=academia,
+                        campeonato=campeonato,
+                        defaults={'permitido': True}
+                    )
+                    if created:
+                        messages.success(request, f'Academia "{academia.nome}" adicionada ao campeonato.')
+                    else:
+                        messages.info(request, f'Academia "{academia.nome}" já está vinculada ao campeonato.')
+                except Exception as e:
+                    messages.error(request, f'Erro ao adicionar academia: {str(e)}')
+        
+        return redirect('gerenciar_academias_campeonato', campeonato_id=campeonato_id)
+    
+    # GET: Listar todas as academias e seus status no campeonato
+    todas_academias = Academia.objects.filter(ativo_login=True).order_by('nome')
+    vinculos = AcademiaCampeonato.objects.filter(campeonato=campeonato).select_related('academia')
+    
+    # Criar dicionário de status por academia
+    status_academias = {v.academia_id: v.permitido for v in vinculos}
+    
+    # Separar academias vinculadas e não vinculadas
+    academias_vinculadas = []
+    academias_nao_vinculadas = []
+    
+    for academia in todas_academias:
+        if academia.id in status_academias:
+            vinculo_obj = vinculos.get(academia_id=academia.id)
+            academias_vinculadas.append({
+                'academia': academia,
+                'permitido': status_academias[academia.id],
+                'vinculo': vinculo_obj
+            })
+        else:
+            academias_nao_vinculadas.append(academia)
+    
+    context = {
+        'campeonato': campeonato,
+        'academias_vinculadas': academias_vinculadas,
+        'academias_nao_vinculadas': academias_nao_vinculadas,
+        'total_permitidas': sum(1 for a in academias_vinculadas if a['permitido']),
+        'total_bloqueadas': sum(1 for a in academias_vinculadas if not a['permitido']),
+    }
+    
+    return render(request, 'atletas/gerenciar_academias_campeonato.html', context)
 
 @operacional_required
 def gerenciar_senhas_campeonato(request, campeonato_id):
@@ -1123,38 +2689,126 @@ def academia_painel(request):
         eventos_processados.add(campeonato.id)
         
         # Verificar se o evento está encerrado
-        # Encerrado = data_competicao < hoje OU ativo = False
+        # Encerrado APENAS se a data da competição já passou (data_competicao < hoje)
+        # Eventos futuros (mesmo com inscrições fechadas) ficam em "abertos" (agenda)
         evento_encerrado = (
-            (campeonato.data_competicao and campeonato.data_competicao < hoje) or
-            not campeonato.ativo
+            campeonato.data_competicao and 
+            campeonato.data_competicao < hoje
         )
         
         if evento_encerrado:
-            # Evento encerrado - apenas consulta
+            # Evento encerrado - apenas consulta (já aconteceu)
             eventos_encerrados.append(campeonato)
         else:
-            # Evento ativo e aberto
-            # Verificar se ainda está aberto para inscrição (se tem data limite)
-            aberto_inscricao = True
-            if campeonato.data_limite_inscricao:
-                if hoje > campeonato.data_limite_inscricao:
-                    aberto_inscricao = False
-            
-            if aberto_inscricao:
-                eventos_abertos.append(campeonato)
-            else:
-                # Fechou inscrições mas ainda é evento ativo (antes da data da competição)
-                # Considerar como encerrado para inscrições, mas ainda ativo
-                eventos_encerrados.append(campeonato)
+            # Evento futuro ou sem data definida - sempre em "abertos" (agenda)
+            # Mesmo que as inscrições tenham fechado, se o evento ainda não aconteceu,
+            # ele deve aparecer como "agenda" para a academia acompanhar
+            eventos_abertos.append(campeonato)
     
     # Ordenar por data (mais recente primeiro)
     eventos_abertos.sort(key=lambda x: x.data_competicao or date.min, reverse=True)
     eventos_encerrados.sort(key=lambda x: x.data_competicao or date.min, reverse=True)
     
+    # Calcular rankings para exibir no painel
+    ranking_global_atletas = []
+    ranking_academias_list = []
+    campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
+    
+    if campeonato_ativo:
+        from .utils import calcular_pontuacao_academias, get_resultados_chave
+        
+        # Calcular pontuação das academias primeiro
+        calcular_pontuacao_academias(campeonato_ativo.id)
+        
+        academias_permitidas_ids = list(AcademiaCampeonato.objects.filter(
+            campeonato=campeonato_ativo,
+            permitido=True
+        ).values_list('academia_id', flat=True))
+        
+        # Ranking completo de academias
+        ranking_academias_completo = AcademiaPontuacao.objects.filter(
+            campeonato=campeonato_ativo
+        ).select_related('academia')
+        
+        # Se houver academias permitidas, filtrar por elas
+        if academias_permitidas_ids:
+            ranking_academias_completo = ranking_academias_completo.filter(academia_id__in=academias_permitidas_ids)
+        
+        ranking_academias_completo = ranking_academias_completo.order_by('-pontos_totais', '-ouro', '-prata', '-bronze')
+        
+        # Preparar dados do ranking de academias
+        for pontuacao in ranking_academias_completo:
+            # Contar atletas ativos da academia no campeonato
+            total_atletas_ativos = Inscricao.objects.filter(
+                campeonato=campeonato_ativo,
+                atleta__academia=pontuacao.academia,
+                status_inscricao='aprovado'
+            ).count()
+            
+            ranking_academias_list.append({
+                'academia': pontuacao.academia,
+                'ouro': pontuacao.ouro,
+                'prata': pontuacao.prata,
+                'bronze': pontuacao.bronze,
+                'pontos_totais': pontuacao.pontos_totais,
+                'total_atletas_ativos': total_atletas_ativos,
+            })
+        
+        # Calcular ranking global de atletas
+        chaves = Chave.objects.filter(campeonato=campeonato_ativo)
+        medalhas_por_atleta = {}
+        
+        for chave in chaves:
+            resultados = get_resultados_chave(chave)
+            if not resultados:
+                continue
+            
+            # 1º lugar = ouro, 2º lugar = prata, 3º lugar = bronze
+            for idx, atleta_id in enumerate(resultados[:3], 1):
+                if not atleta_id:
+                    continue
+                
+                if atleta_id not in medalhas_por_atleta:
+                    try:
+                        atleta = Atleta.objects.get(id=atleta_id)
+                        medalhas_por_atleta[atleta_id] = {
+                            'atleta': atleta,
+                            'ouro': 0,
+                            'prata': 0,
+                            'bronze': 0,
+                            'total_medalhas': 0,
+                        }
+                    except Atleta.DoesNotExist:
+                        continue
+                
+                if idx == 1:
+                    medalhas_por_atleta[atleta_id]['ouro'] += 1
+                elif idx == 2:
+                    medalhas_por_atleta[atleta_id]['prata'] += 1
+                elif idx == 3:
+                    medalhas_por_atleta[atleta_id]['bronze'] += 1
+                
+                medalhas_por_atleta[atleta_id]['total_medalhas'] = (
+                    medalhas_por_atleta[atleta_id]['ouro'] +
+                    medalhas_por_atleta[atleta_id]['prata'] +
+                    medalhas_por_atleta[atleta_id]['bronze']
+                )
+        
+        # Ordenar por total de medalhas (ouro > prata > bronze)
+        ranking_global_atletas = sorted(
+            medalhas_por_atleta.values(),
+            key=lambda x: (x['total_medalhas'], x['ouro'], x['prata'], x['bronze']),
+            reverse=True
+        )
+    
     context = {
         'academia': academia,
         'eventos_abertos': eventos_abertos,
         'eventos_encerrados': eventos_encerrados,
+        'campeonato_ativo': campeonato_ativo,
+        'ranking_global_atletas': ranking_global_atletas,
+        'ranking_academias_completo': ranking_academias_list,
+        'hoje': hoje,  # Data atual para uso no template
     }
     
     return render(request, 'atletas/academia/painel.html', context)
@@ -1297,6 +2951,12 @@ def academia_lista_atletas(request, campeonato_id=None):
 def academia_inscrever_atletas(request, campeonato_id):
     """Inscrever atletas da academia em um campeonato"""
     academia = request.academia
+    
+    # Debug: verificar se academia foi encontrada
+    if not academia:
+        messages.error(request, 'Erro: Academia não encontrada na sessão.')
+        return redirect('academia_painel')
+    
     campeonato = get_object_or_404(Campeonato, id=campeonato_id)
     hoje = timezone.now().date()
     
@@ -1307,8 +2967,19 @@ def academia_inscrever_atletas(request, campeonato_id):
         messages.warning(request, 'Este evento está inativo. Não é possível fazer novas inscrições, apenas consultar.')
         return redirect('academia_evento', campeonato_id=campeonato_id)
     
+    # Verificar data limite para inscrições por academia
+    prazo_inscricao_vencido = False
+    if campeonato.data_limite_inscricao_academia:
+        prazo_inscricao_vencido = hoje > campeonato.data_limite_inscricao_academia
+        if prazo_inscricao_vencido:
+            messages.warning(request, f'O prazo para inscrições por academia encerrou em {campeonato.data_limite_inscricao_academia.strftime("%d/%m/%Y")}. Apenas a equipe operacional pode realizar inscrições agora.')
+    
     # Processar inscrição via POST
     if request.method == 'POST':
+        # Bloquear POST se o prazo estiver vencido
+        if prazo_inscricao_vencido:
+            messages.error(request, 'O prazo para inscrições por academia já encerrou. Entre em contato com a organização do evento.')
+            return redirect('academia_inscrever_atletas', campeonato_id=campeonato_id)
         atleta_id = request.POST.get('atleta_id')
         classe_escolhida = request.POST.get('classe_escolhida')
         categoria_escolhida = request.POST.get('categoria_escolhida')
@@ -1316,6 +2987,16 @@ def academia_inscrever_atletas(request, campeonato_id):
         if atleta_id and classe_escolhida and categoria_escolhida:
             try:
                 atleta = Atleta.objects.get(id=atleta_id, academia=academia)
+                
+                # Garantir que categoria_escolhida seja o label completo
+                # Se vier apenas um ID numérico, buscar o label da categoria
+                if categoria_escolhida.isdigit():
+                    try:
+                        categoria_obj = Categoria.objects.get(id=int(categoria_escolhida))
+                        categoria_escolhida = categoria_obj.label
+                    except Categoria.DoesNotExist:
+                        messages.error(request, 'Categoria não encontrada. Tente novamente.')
+                        return redirect('academia_inscrever_atletas', campeonato_id=campeonato_id)
                 
                 # Verificar se já não está inscrito nesta classe/categoria
                 inscricao_existente = Inscricao.objects.filter(
@@ -1348,7 +3029,7 @@ def academia_inscrever_atletas(request, campeonato_id):
     nome_filtro = request.GET.get('nome', '').strip()
     sexo_filtro = request.GET.get('sexo', '').strip()
     
-    # Buscar atletas da academia
+    # Buscar atletas da academia (incluindo inativos para que apareçam na lista)
     atletas_query = Atleta.objects.filter(academia=academia)
     
     # Aplicar filtros
@@ -1358,6 +3039,20 @@ def academia_inscrever_atletas(request, campeonato_id):
         atletas_query = atletas_query.filter(sexo=sexo_filtro)
     
     atletas_query = atletas_query.order_by('nome')
+    
+    # Debug: verificar quantos atletas foram encontrados
+    total_atletas_encontrados = atletas_query.count()
+    
+    # Se não encontrou atletas, verificar se há atletas cadastrados para esta academia
+    if total_atletas_encontrados == 0:
+        total_geral = Atleta.objects.filter(academia=academia).count()
+        if total_geral == 0:
+            messages.info(request, f'Nenhum atleta cadastrado para a academia "{academia.nome}". Use o botão "Cadastrar Novo Atleta" para adicionar atletas.')
+        else:
+            if nome_filtro or sexo_filtro:
+                messages.warning(request, f'Encontrados {total_geral} atleta(s) cadastrado(s), mas nenhum corresponde aos filtros aplicados. Tente limpar os filtros.')
+            else:
+                messages.warning(request, f'Erro: {total_geral} atleta(s) cadastrado(s), mas não foram encontrados na query. Verifique o código.')
     
     # Preparar dados para o template
     atletas = []
@@ -1427,6 +3122,8 @@ def academia_inscrever_atletas(request, campeonato_id):
         'valor_inscricao_federado': valor_federado,
         'valor_inscricao_nao_federado': valor_nao_federado,
         'categorias': categorias_list,
+        'prazo_inscricao_vencido': prazo_inscricao_vencido,
+        'data_limite_inscricao_academia': campeonato.data_limite_inscricao_academia,
     }
     
     return render(request, 'atletas/academia/inscrever_atletas.html', context)
@@ -1490,29 +3187,261 @@ def academia_cadastrar_atleta(request, campeonato_id=None):
     return render(request, 'atletas/academia/cadastrar_atleta.html', context)
 
 @academia_required
+@academia_required
 def academia_ver_chaves(request, campeonato_id):
-    return render(request, 'atletas/academia/ver_chaves.html', {'campeonato': get_object_or_404(Campeonato, id=campeonato_id)})
+    """Lista todas as chaves geradas para o campeonato com filtros"""
+    campeonato = get_object_or_404(Campeonato, id=campeonato_id)
+    
+    # Buscar todas as chaves do campeonato
+    chaves_query = Chave.objects.filter(campeonato=campeonato).order_by('classe', 'sexo', 'categoria')
+    
+    # Aplicar filtros
+    classe_filtro = request.GET.get('classe', '').strip()
+    sexo_filtro = request.GET.get('sexo', '').strip()
+    categoria_filtro = request.GET.get('categoria', '').strip()
+    
+    if classe_filtro:
+        chaves_query = chaves_query.filter(classe=classe_filtro)
+    if sexo_filtro:
+        chaves_query = chaves_query.filter(sexo=sexo_filtro)
+    if categoria_filtro:
+        chaves_query = chaves_query.filter(categoria=categoria_filtro)
+    
+    chaves = list(chaves_query)
+    
+    # Obter classes, sexos e categorias disponíveis para os filtros
+    todas_chaves = Chave.objects.filter(campeonato=campeonato)
+    classes = sorted(set(todas_chaves.exclude(classe='').values_list('classe', flat=True).distinct()))
+    categorias = sorted(set(todas_chaves.exclude(categoria='').values_list('categoria', flat=True).distinct()))
+    
+    context = {
+        'campeonato': campeonato,
+        'chaves': chaves,
+        'classes': classes,
+        'categorias': categorias,
+        'classe_filtro': classe_filtro,
+        'sexo_filtro': sexo_filtro,
+        'categoria_filtro': categoria_filtro,
+    }
+    
+    return render(request, 'atletas/academia/ver_chaves.html', context)
 
 @academia_required
 def academia_detalhe_chave(request, campeonato_id, chave_id):
-    return render(request, 'atletas/academia/detalhe_chave.html', {
-        'campeonato': get_object_or_404(Campeonato, id=campeonato_id),
-        'chave': get_object_or_404(Chave, id=chave_id)
-    })
+    """Exibe detalhes da chave para a academia"""
+    campeonato = get_object_or_404(Campeonato, id=campeonato_id)
+    chave = get_object_or_404(Chave, id=chave_id, campeonato=campeonato)
+    
+    # Buscar lutas da chave ordenadas por round e ID
+    lutas = chave.lutas.all().order_by('round', 'id').select_related('atleta_a', 'atleta_b', 'vencedor', 'atleta_a__academia', 'atleta_b__academia')
+    
+    # Agrupar lutas por round
+    from itertools import groupby
+    lutas_por_round = []
+    for round_num, lutas_round in groupby(lutas, key=lambda l: l.round):
+        lutas_por_round.append({
+            'grouper': round_num,
+            'list': list(lutas_round)
+        })
+    
+    # Buscar resultados finais usando a função utilitária
+    from .utils import get_resultados_chave
+    resultados_ids = get_resultados_chave(chave)
+    
+    # Converter IDs de resultados em objetos Atleta com academias
+    resultados = []
+    for atleta_id in resultados_ids:
+        try:
+            atleta = Atleta.objects.select_related('academia').get(id=atleta_id)
+            resultados.append(atleta)
+        except Atleta.DoesNotExist:
+            continue
+    
+    context = {
+        'campeonato': campeonato,
+        'chave': chave,
+        'lutas_por_round': lutas_por_round,
+        'resultados': resultados,
+    }
+    
+    return render(request, 'atletas/academia/detalhe_chave.html', context)
 
 @academia_required
+@academia_required
 def academia_baixar_regulamento(request, campeonato_id):
+    """Baixa o regulamento do campeonato em formato PDF"""
     campeonato = get_object_or_404(Campeonato, id=campeonato_id)
-    if campeonato.regulamento:
-        response = HttpResponse(campeonato.regulamento, content_type='text/plain')
-        response['Content-Disposition'] = f'attachment; filename="regulamento_{campeonato.nome}.txt"'
+    
+    if not campeonato.regulamento:
+        messages.error(request, 'Regulamento não disponível para este evento.')
+        return redirect('academia_evento', campeonato_id=campeonato_id)
+    
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import mm
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
+        from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+        from io import BytesIO
+        import re
+        
+        # Criar buffer para o PDF
+        buffer = BytesIO()
+        
+        # Criar documento PDF
+        doc = SimpleDocTemplate(buffer, pagesize=A4, 
+                               rightMargin=20*mm, leftMargin=20*mm,
+                               topMargin=20*mm, bottomMargin=20*mm)
+        
+        # Estilos
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            textColor='#000000',
+            spaceAfter=12,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=14,
+            textColor='#000000',
+            spaceAfter=8,
+            spaceBefore=12,
+            fontName='Helvetica-Bold'
+        )
+        
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=11,
+            textColor='#000000',
+            spaceAfter=6,
+            alignment=TA_JUSTIFY,
+            leading=14
+        )
+        
+        # Conteúdo do PDF
+        story = []
+        
+        # Título
+        story.append(Paragraph(f"REGULAMENTO - {campeonato.nome}", title_style))
+        story.append(Spacer(1, 12))
+        
+        # Data do campeonato
+        if campeonato.data_competicao:
+            story.append(Paragraph(f"<b>Data do Evento:</b> {campeonato.data_competicao.strftime('%d/%m/%Y')}", normal_style))
+            story.append(Spacer(1, 6))
+        
+        # Linha separadora
+        story.append(Spacer(1, 12))
+        
+        # Processar texto do regulamento
+        texto_regulamento = campeonato.regulamento
+        
+        # Dividir em parágrafos (linhas vazias indicam novo parágrafo)
+        paragrafos = texto_regulamento.split('\n\n')
+        
+        for paragrafo in paragrafos:
+            paragrafo = paragrafo.strip()
+            if not paragrafo:
+                story.append(Spacer(1, 6))
+                continue
+            
+            # Verificar se é um título (linha curta, sem pontuação final, ou começa com número)
+            linhas = paragrafo.split('\n')
+            if len(linhas) == 1 and (len(paragrafo) < 80 or re.match(r'^\d+[\.\)]', paragrafo.strip())):
+                # Provavelmente é um título
+                story.append(Paragraph(paragrafo, heading_style))
+            else:
+                # É um parágrafo normal
+                # Substituir quebras de linha por <br/>
+                paragrafo_html = paragrafo.replace('\n', '<br/>')
+                story.append(Paragraph(paragrafo_html, normal_style))
+            
+            story.append(Spacer(1, 6))
+        
+        # Construir PDF
+        doc.build(story)
+        
+        # Obter conteúdo do buffer
+        pdf_content = buffer.getvalue()
+        buffer.close()
+        
+        # Criar resposta HTTP
+        response = HttpResponse(pdf_content, content_type='application/pdf')
+        filename = f"regulamento_{campeonato.nome.replace(' ', '_')}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
         return response
-    messages.warning(request, 'Regulamento não disponível.')
-    return redirect('academia_evento', campeonato_id=campeonato_id)
+        
+    except ImportError:
+        # Se reportlab não estiver instalado, retornar como HTML para impressão
+        from django.template.loader import render_to_string
+        html_content = render_to_string('atletas/academia/regulamento_pdf.html', {
+            'campeonato': campeonato,
+            'regulamento': campeonato.regulamento
+        })
+        response = HttpResponse(html_content, content_type='text/html')
+        response['Content-Disposition'] = f'inline; filename="regulamento_{campeonato.nome}.html"'
+        return response
+    except Exception as e:
+        messages.error(request, f'Erro ao gerar PDF: {str(e)}')
+        return redirect('academia_evento', campeonato_id=campeonato_id)
+
+@academia_required
+def tabela_categorias_peso(request):
+    """Exibe tabela de categorias de peso por classe e sexo"""
+    # Buscar todas as categorias ordenadas
+    categorias = Categoria.objects.all().order_by('classe', 'sexo', 'limite_min')
+    
+    # Organizar por classe e sexo
+    categorias_organizadas = {}
+    classes = []
+    
+    for categoria in categorias:
+        classe = categoria.classe
+        sexo_display = categoria.get_sexo_display()
+        
+        if classe not in categorias_organizadas:
+            categorias_organizadas[classe] = {}
+            if classe not in classes:
+                classes.append(classe)
+        
+        if sexo_display not in categorias_organizadas[classe]:
+            categorias_organizadas[classe][sexo_display] = []
+        
+        categorias_organizadas[classe][sexo_display].append(categoria)
+    
+    # Ordenar classes
+    ordem_classes = {
+        'SUB 9': 1, 'SUB 11': 2, 'SUB 13': 3, 'SUB 15': 4,
+        'SUB 18': 5, 'SUB 21': 6, 'SÊNIOR': 7, 'VETERANOS': 8
+    }
+    classes_ordenadas = sorted(classes, key=lambda x: ordem_classes.get(x, 99))
+    
+    # Preparar dados para template (lista de tuplas)
+    categorias_por_classe = []
+    for classe in classes_ordenadas:
+        sexos_data = []
+        for sexo_display, categorias_list in categorias_organizadas[classe].items():
+            sexos_data.append((sexo_display, categorias_list))
+        categorias_por_classe.append((classe, sexos_data))
+    
+    context = {
+        'categorias_por_classe': categorias_por_classe,
+    }
+    
+    return render(request, 'atletas/tabela_categorias_peso.html', context)
 
 @operacional_required
 def administracao_painel(request):
-    return render(request, 'atletas/administracao/painel.html')
+    """Redireciona para o painel financeiro unificado"""
+    return redirect('administracao_financeiro')
 
 @operacional_required
 def administracao_conferencia_inscricoes(request):
@@ -1524,19 +3453,926 @@ def administracao_confirmar_inscricoes(request):
 
 @operacional_required
 def administracao_financeiro(request):
-    return render(request, 'atletas/administracao/financeiro.html')
+    """Painel financeiro completo e unificado - única fonte de verdade para dados financeiros - 100% vinculado ao evento"""
+    # Buscar campeonato ativo ou selecionado via GET
+    campeonato_id = request.GET.get('campeonato_id')
+    if campeonato_id:
+        campeonato_ativo = get_object_or_404(Campeonato, id=campeonato_id)
+    else:
+        campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
+    
+    # OBRIGATÓRIO: Sem evento, não pode acessar financeiro
+    if not campeonato_ativo:
+        messages.warning(request, 'Nenhum evento selecionado. Selecione um evento para acessar o módulo financeiro.')
+        return redirect('lista_campeonatos')
+    
+    # Inicializar todas as variáveis
+    ganho_previsto = 0
+    dinheiro_caixa = 0
+    pagamentos_pendentes = 0
+    total_despesas = 0
+    despesas_pendentes = 0
+    despesas_pagas = 0
+    total_bonus = 0
+    saldo_final = 0
+    lucro_atual = 0
+    patrocinios_total = 0
+    
+    # Inscrições
+    inscricoes_pendentes = 0
+    inscricoes_confirmadas = 0
+    entradas_federado = 0
+    entradas_nao_federado = 0
+    total_inscricoes = 0  # Total de inscrições para o gráfico
+    
+    # Operacionais
+    operacional_counts = {
+        'arbitro': 0,
+        'mesario': 0,
+        'oficial_mesa': 0,
+        'oficial_pesagem': 0,
+    }
+    
+    # Rankings
+    ranking_academias = []
+    top_custos = []
+    
+    if campeonato_ativo:
+        # ========== CÁLCULOS BASEADOS EM ConferenciaPagamento (FONTE ÚNICA) ==========
+        
+        # Buscar todas as conferências do campeonato
+        conferencias = ConferenciaPagamento.objects.filter(campeonato=campeonato_ativo)
+        
+        # Dinheiro em caixa: soma de conferências confirmadas
+        conferencias_confirmadas = conferencias.filter(status='CONFIRMADO')
+        dinheiro_caixa = sum(c.valor_recebido or c.valor_esperado for c in conferencias_confirmadas)
+        
+        # Pagamentos pendentes: soma de conferências pendentes
+        conferencias_pendentes = conferencias.filter(status='PENDENTE')
+        pagamentos_pendentes = sum(c.valor_esperado for c in conferencias_pendentes)
+        
+        # Ganho previsto: soma de todas as conferências (valor esperado)
+        ganho_previsto = sum(c.valor_esperado for c in conferencias)
+        
+        # Inscrições confirmadas: contar academias com status CONFIRMADO
+        inscricoes_confirmadas = conferencias_confirmadas.count()
+        
+        # Inscrições pendentes: contar academias com status PENDENTE, DIVERGENTE ou NAO_ENCONTRADO
+        inscricoes_pendentes = conferencias.filter(status__in=['PENDENTE', 'DIVERGENTE', 'NAO_ENCONTRADO']).count()
+        
+        # ========== CÁLCULOS DE INSCRIÇÕES POR CATEGORIA ==========
+        # Buscar inscrições para calcular entradas por tipo (federado/não federado)
+        inscricoes = Inscricao.objects.filter(campeonato=campeonato_ativo)
+        valor_federado = campeonato_ativo.valor_inscricao_federado or 0
+        valor_nao_federado = campeonato_ativo.valor_inscricao_nao_federado or 0
+        
+        # Calcular entradas por categoria
+        for ins in inscricoes:
+            if ins.atleta.federado:
+                entradas_federado += valor_federado
+            else:
+                entradas_nao_federado += valor_nao_federado
+        
+        # Total de inscrições (para o gráfico de pilhas)
+        total_inscricoes = entradas_federado + entradas_nao_federado
+        
+        # ========== CÁLCULOS DE DESPESAS ==========
+        # IMPORTANTE: Todas as despesas são 100% vinculadas ao campeonato_ativo
+        # Não há mistura de valores entre eventos diferentes
+        from .models import Despesa
+        despesas = Despesa.objects.filter(campeonato=campeonato_ativo)
+        total_despesas = sum(d.valor for d in despesas)
+        despesas_pendentes = sum(d.valor for d in despesas.filter(status='pendente'))
+        despesas_pagas = sum(d.valor for d in despesas.filter(status='pago'))
+        
+        # Patrocínios: despesas com categoria 'patrocinios' (entrada de dinheiro)
+        patrocinios_total = sum(d.valor for d in despesas.filter(categoria='patrocinios', status='pago'))
+        
+        # ========== CÁLCULOS DE LUCRO/PREJUÍZO ==========
+        lucro_atual = dinheiro_caixa + patrocinios_total - total_despesas
+        saldo_final = dinheiro_caixa - total_despesas
+        
+        # ========== INDICADORES OPERACIONAIS ==========
+        # Contar pessoas da equipe técnica vinculadas ao campeonato ativo por função
+        from .models import EquipeTecnicaCampeonato
+        operacional_counts['arbitro'] = EquipeTecnicaCampeonato.objects.filter(
+            campeonato=campeonato_ativo,
+            funcao='arbitro',
+            ativo=True
+        ).count()
+        operacional_counts['mesario'] = EquipeTecnicaCampeonato.objects.filter(
+            campeonato=campeonato_ativo,
+            funcao='mesario',
+            ativo=True
+        ).count()
+        operacional_counts['oficial_mesa'] = EquipeTecnicaCampeonato.objects.filter(
+            campeonato=campeonato_ativo,
+            funcao='oficial_mesa',
+            ativo=True
+        ).count()
+        operacional_counts['oficial_pesagem'] = EquipeTecnicaCampeonato.objects.filter(
+            campeonato=campeonato_ativo,
+            funcao='oficial_pesagem',
+            ativo=True
+        ).count()
+        
+        # ========== RANKINGS ==========
+        # Top 5 academias por número de inscrições
+        from django.db.models import Count
+        academias_permitidas_ids = list(AcademiaCampeonato.objects.filter(
+            campeonato=campeonato_ativo,
+            permitido=True
+        ).values_list('academia_id', flat=True))
+        
+        if academias_permitidas_ids:
+            ranking_academias = Inscricao.objects.filter(
+                campeonato=campeonato_ativo,
+                atleta__academia_id__in=academias_permitidas_ids
+            ).values('atleta__academia').annotate(
+                total=Count('id')
+            ).order_by('-total')[:5]
+            
+            # Adicionar objeto academia ao ranking
+            ranking_academias_list = []
+            for item in ranking_academias:
+                try:
+                    academia = Academia.objects.get(id=item['atleta__academia'])
+                    ranking_academias_list.append({
+                        'academia': academia,
+                        'total': item['total']
+                    })
+                except Academia.DoesNotExist:
+                    pass
+            ranking_academias = ranking_academias_list
+        
+        # Top 5 custos por categoria
+        from django.db.models import Sum
+        top_custos_raw = despesas.values('categoria').annotate(
+            valor_total=Sum('valor')
+        ).order_by('-valor_total')[:5]
+        
+        top_custos = []
+        for item in top_custos_raw:
+            # Combinar todas as categorias possíveis (despesa + receita)
+            todas_categorias = dict(Despesa.CATEGORIA_DESPESA_CHOICES)
+            todas_categorias.update(dict(Despesa.CATEGORIA_RECEITA_CHOICES))
+            categoria_display = todas_categorias.get(item['categoria'], item['categoria'])
+            top_custos.append({
+                'categoria': categoria_display,
+                'valor': item['valor_total']
+            })
+    
+    # Despesas recentes - SEMPRE filtrar por campeonato
+    from .models import Despesa
+    despesas_recentes = Despesa.objects.filter(campeonato=campeonato_ativo).order_by('-data_cadastro')[:10] if campeonato_ativo else Despesa.objects.none()
+    
+    context = {
+        'campeonato_ativo': campeonato_ativo,
+        # Financeiros principais
+        'ganho_previsto': ganho_previsto,
+        'dinheiro_caixa': dinheiro_caixa,
+        'pagamentos_pendentes': pagamentos_pendentes,
+        'total_despesas': total_despesas,
+        'despesas_pendentes': despesas_pendentes,
+        'despesas_pagas': despesas_pagas,
+        'total_bonus': total_bonus,
+        'saldo_final': saldo_final,
+        'lucro_atual': lucro_atual,
+        'patrocinios_total': patrocinios_total,
+        # Inscrições
+        'inscricoes_pendentes': inscricoes_pendentes,
+        'inscricoes_confirmadas': inscricoes_confirmadas,
+        'entradas_federado': entradas_federado,
+        'entradas_nao_federado': entradas_nao_federado,
+        'total_inscricoes': total_inscricoes,  # Total de inscrições para o gráfico
+        # Operacionais
+        'operacional_counts': operacional_counts,
+        # Rankings
+        'ranking_academias': ranking_academias,
+        'top_custos': top_custos,
+        # Despesas recentes
+        'despesas': despesas_recentes,
+    }
+    
+    return render(request, 'atletas/administracao/financeiro.html', context)
 
 @operacional_required
 def administracao_despesas(request):
-    return render(request, 'atletas/administracao/despesas.html')
+    """Gerenciar despesas e receitas do campeonato - 100% vinculado ao evento"""
+    # Buscar campeonato ativo ou selecionado via GET
+    campeonato_id = request.GET.get('campeonato_id')
+    if campeonato_id:
+        campeonato_ativo = get_object_or_404(Campeonato, id=campeonato_id)
+    else:
+        campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
+    
+    # OBRIGATÓRIO: Sem evento, não pode acessar despesas
+    if not campeonato_ativo:
+        messages.warning(request, 'Nenhum evento selecionado. Selecione um evento para acessar despesas e receitas.')
+        return redirect('lista_campeonatos')
+    
+    # Processar ações via POST
+    if request.method == 'POST':
+        acao = request.POST.get('acao')
+        
+        if acao == 'criar':
+            tipo = request.POST.get('tipo', 'despesa')
+            categoria = request.POST.get('categoria', '').strip()
+            nome = request.POST.get('nome', '').strip()
+            valor = request.POST.get('valor', '').strip()
+            status = request.POST.get('status', 'pendente')
+            observacao = request.POST.get('observacao', '').strip()
+            contato_nome = request.POST.get('contato_nome', '').strip()
+            contato_whatsapp = request.POST.get('contato_whatsapp', '').strip()
+            data_pagamento = request.POST.get('data_pagamento', '').strip()
+            comprovante = request.FILES.get('comprovante_pagamento')
+            
+            if not categoria or not nome or not valor:
+                messages.error(request, 'Preencha todos os campos obrigatórios.')
+            else:
+                try:
+                    valor_decimal = float(valor.replace(',', '.'))
+                    if valor_decimal <= 0:
+                        messages.error(request, 'O valor deve ser maior que zero.')
+                    else:
+                        despesa = Despesa.objects.create(
+                            campeonato=campeonato_ativo,
+                            tipo=tipo,
+                            categoria=categoria,
+                            nome=nome,
+                            valor=valor_decimal,
+                            status=status,
+                            observacao=observacao,
+                            contato_nome=contato_nome,
+                            contato_whatsapp=contato_whatsapp,
+                            data_pagamento=data_pagamento if data_pagamento else None,
+                            comprovante_pagamento=comprovante
+                        )
+                        tipo_display = "Despesa" if tipo == 'despesa' else "Receita"
+                        messages.success(request, f'{tipo_display} "{nome}" cadastrada com sucesso!')
+                except ValueError:
+                    messages.error(request, 'Valor inválido. Use números com ponto ou vírgula.')
+                except Exception as e:
+                    messages.error(request, f'Erro ao cadastrar: {str(e)}')
+        
+        elif acao == 'editar':
+            despesa_id = request.POST.get('despesa_id')
+            if despesa_id:
+                try:
+                    despesa = get_object_or_404(Despesa, id=despesa_id, campeonato=campeonato_ativo)
+                    despesa.tipo = request.POST.get('tipo', despesa.tipo)
+                    despesa.categoria = request.POST.get('categoria', despesa.categoria)
+                    despesa.nome = request.POST.get('nome', '').strip()
+                    valor = request.POST.get('valor', '').strip()
+                    despesa.status = request.POST.get('status', despesa.status)
+                    despesa.observacao = request.POST.get('observacao', '').strip()
+                    despesa.contato_nome = request.POST.get('contato_nome', '').strip()
+                    despesa.contato_whatsapp = request.POST.get('contato_whatsapp', '').strip()
+                    data_pagamento = request.POST.get('data_pagamento', '').strip()
+                    comprovante = request.FILES.get('comprovante_pagamento')
+                    
+                    if valor:
+                        try:
+                            valor_decimal = float(valor.replace(',', '.'))
+                            if valor_decimal > 0:
+                                despesa.valor = valor_decimal
+                        except ValueError:
+                            messages.error(request, 'Valor inválido.')
+                            return redirect('administracao_despesas')
+                    
+                    despesa.data_pagamento = data_pagamento if data_pagamento else None
+                    if comprovante:
+                        despesa.comprovante_pagamento = comprovante
+                    despesa.save()
+                    
+                    tipo_display = "Despesa" if despesa.tipo == 'despesa' else "Receita"
+                    messages.success(request, f'{tipo_display} "{despesa.nome}" atualizada com sucesso!')
+                except Exception as e:
+                    messages.error(request, f'Erro ao atualizar: {str(e)}')
+        
+        elif acao == 'deletar':
+            despesa_id = request.POST.get('despesa_id')
+            if despesa_id:
+                try:
+                    despesa = get_object_or_404(Despesa, id=despesa_id, campeonato=campeonato_ativo)
+                    nome = despesa.nome
+                    tipo_display = "Despesa" if despesa.tipo == 'despesa' else "Receita"
+                    despesa.delete()
+                    messages.success(request, f'{tipo_display} "{nome}" removida com sucesso!')
+                except Exception as e:
+                    messages.error(request, f'Erro ao remover: {str(e)}')
+        
+        return redirect('administracao_despesas')
+    
+    # GET: Listar despesas e receitas
+    despesas = Despesa.objects.filter(campeonato=campeonato_ativo).order_by('-data_cadastro')
+    
+    # Filtros
+    tipo_filtro = request.GET.get('tipo', '')
+    status_filtro = request.GET.get('status', '')
+    categoria_filtro = request.GET.get('categoria', '')
+    
+    if tipo_filtro:
+        despesas = despesas.filter(tipo=tipo_filtro)
+    if status_filtro:
+        despesas = despesas.filter(status=status_filtro)
+    if categoria_filtro:
+        despesas = despesas.filter(categoria=categoria_filtro)
+    
+    # Calcular receita de inscrições confirmadas
+    receita_inscricoes = 0
+    if campeonato_ativo:
+        from .models import ConferenciaPagamento
+        conferencias_confirmadas = ConferenciaPagamento.objects.filter(
+            campeonato=campeonato_ativo,
+            status='CONFIRMADO'
+        )
+        receita_inscricoes = sum(c.valor_recebido or c.valor_esperado for c in conferencias_confirmadas)
+    
+    # Estatísticas
+    total_despesas = sum(d.valor for d in despesas.filter(tipo='despesa'))
+    total_receitas = sum(d.valor for d in despesas.filter(tipo='receita')) + receita_inscricoes
+    despesas_pagas = sum(d.valor for d in despesas.filter(tipo='despesa', status='pago'))
+    receitas_recebidas = sum(d.valor for d in despesas.filter(tipo='receita', status='pago')) + receita_inscricoes
+    saldo = total_receitas - total_despesas
+    
+    context = {
+        'campeonato_ativo': campeonato_ativo,
+        'despesas': despesas,
+        'total_despesas': total_despesas,
+        'total_receitas': total_receitas,
+        'receita_inscricoes': receita_inscricoes,
+        'despesas_pagas': despesas_pagas,
+        'receitas_recebidas': receitas_recebidas,
+        'saldo': saldo,
+        'tipo_filtro': tipo_filtro,
+        'status_filtro': status_filtro,
+        'categoria_filtro': categoria_filtro,
+        'categorias_despesa': Despesa.CATEGORIA_DESPESA_CHOICES,
+        'categorias_receita': Despesa.CATEGORIA_RECEITA_CHOICES,
+        'status_choices': Despesa.STATUS_CHOICES,
+        'tipo_choices': Despesa.TIPO_CHOICES,
+    }
+    
+    return render(request, 'atletas/administracao/despesas.html', context)
 
 @operacional_required
 def administracao_equipe(request):
-    return render(request, 'atletas/administracao/equipe.html')
+    """Página principal da equipe técnica - mostra cards por tipo"""
+    campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
+    
+    # Contar membros da equipe técnica por função (se houver campeonato ativo)
+    cards = [
+        {
+            'titulo': 'Árbitros',
+            'quantidade': EquipeTecnicaCampeonato.objects.filter(campeonato=campeonato_ativo, funcao='arbitro', ativo=True).count() if campeonato_ativo else 0,
+            'tipo': 'arbitro',
+            'icone': 'M12 2l4 4h-3v6h-2V6H8l4-4z'
+        },
+        {
+            'titulo': 'Mesários',
+            'quantidade': EquipeTecnicaCampeonato.objects.filter(campeonato=campeonato_ativo, funcao='mesario', ativo=True).count() if campeonato_ativo else 0,
+            'tipo': 'mesario',
+            'icone': 'M4 6h16M4 10h16M4 14h16M4 18h16'
+        },
+        {
+            'titulo': 'Oficiais de Mesa',
+            'quantidade': EquipeTecnicaCampeonato.objects.filter(campeonato=campeonato_ativo, funcao='oficial_mesa', ativo=True).count() if campeonato_ativo else 0,
+            'tipo': 'oficial_mesa',
+            'icone': 'M5 4h14l1 4H4l1-4zm0 6h14v8H5v-8z'
+        },
+        {
+            'titulo': 'Oficiais de Pesagem',
+            'quantidade': EquipeTecnicaCampeonato.objects.filter(campeonato=campeonato_ativo, funcao='oficial_pesagem', ativo=True).count() if campeonato_ativo else 0,
+            'tipo': 'oficial_pesagem',
+            'icone': 'M6 3h12v4H6z M4 9h16v10H4z'
+        },
+        {
+            'titulo': 'Coordenadores',
+            'quantidade': EquipeTecnicaCampeonato.objects.filter(campeonato=campeonato_ativo, funcao='coordenador', ativo=True).count() if campeonato_ativo else 0,
+            'tipo': 'coordenador',
+            'icone': 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 1 8 0 4 4 0 0 1-8 0'
+        },
+    ]
+    
+    # Total de pessoas na lista fixa
+    total_pessoas = PessoaEquipeTecnica.objects.filter(ativo=True).count()
+    
+    context = {
+        'cards': cards,
+        'campeonato_ativo': campeonato_ativo,
+        'total_pessoas': total_pessoas,
+    }
+    
+    return render(request, 'atletas/administracao/equipe.html', context)
+
+@operacional_required
+def administracao_equipe_pessoas_lista(request):
+    """Gerenciar lista fixa de pessoas da equipe técnica"""
+    # Processar ações via POST
+    if request.method == 'POST':
+        acao = request.POST.get('acao')
+        
+        if acao == 'criar_pessoa':
+            tipo_pessoa = request.POST.get('tipo_pessoa')  # 'atleta' ou 'externa'
+            atleta_id = request.POST.get('atleta_id')
+            nome = request.POST.get('nome', '').strip()
+            telefone = request.POST.get('telefone', '').strip()
+            chave_pix = request.POST.get('chave_pix', '').strip()
+            observacao = request.POST.get('observacao', '').strip()
+            
+            if tipo_pessoa == 'atleta' and atleta_id:
+                try:
+                    atleta = Atleta.objects.get(id=atleta_id, pode_ser_equipe_tecnica=True)
+                    # Verificar se já existe
+                    pessoa_existente = PessoaEquipeTecnica.objects.filter(atleta=atleta).first()
+                    if pessoa_existente:
+                        messages.warning(request, f'{atleta.nome} já está na lista de equipe técnica.')
+                    else:
+                        # Criar pessoa com nome preenchido automaticamente pelo save()
+                        pessoa = PessoaEquipeTecnica(
+                            atleta=atleta,
+                            telefone=telefone or atleta.telefone or '',
+                            chave_pix=chave_pix or atleta.chave_pix or '',
+                            observacao=observacao
+                        )
+                        # O método save() preencherá o nome automaticamente
+                        pessoa.save()
+                        messages.success(request, f'{pessoa.nome_completo} adicionado à lista de equipe técnica.')
+                except Atleta.DoesNotExist:
+                    messages.error(request, 'Atleta não encontrado ou não elegível.')
+            elif tipo_pessoa == 'externa':
+                if not nome:
+                    messages.error(request, 'Nome é obrigatório para pessoas externas.')
+                elif not telefone:
+                    messages.error(request, 'Telefone é obrigatório para pessoas externas.')
+                elif not chave_pix:
+                    messages.error(request, 'Chave PIX é obrigatória para pessoas externas.')
+                else:
+                    try:
+                        pessoa = PessoaEquipeTecnica.objects.create(
+                            nome=nome,
+                            telefone=telefone,
+                            chave_pix=chave_pix,
+                            observacao=observacao
+                        )
+                        messages.success(request, f'{pessoa.nome} adicionado à lista de equipe técnica.')
+                    except Exception as e:
+                        messages.error(request, f'Erro ao cadastrar pessoa: {str(e)}')
+            else:
+                if tipo_pessoa == 'atleta':
+                    messages.error(request, 'Selecione um atleta ou preencha os dados da pessoa externa.')
+                else:
+                    messages.error(request, 'Preencha os campos obrigatórios.')
+        
+        elif acao == 'editar_pessoa':
+            pessoa_id = request.POST.get('pessoa_id')
+            if pessoa_id:
+                try:
+                    pessoa = get_object_or_404(PessoaEquipeTecnica, id=pessoa_id)
+                    # Só pode editar se não for atleta (atletas são editados no cadastro de atletas)
+                    if pessoa.atleta:
+                        messages.warning(request, 'Para editar atletas, use o cadastro de atletas.')
+                    else:
+                        pessoa.nome = request.POST.get('nome', '').strip()
+                        pessoa.telefone = request.POST.get('telefone', '').strip()
+                        pessoa.chave_pix = request.POST.get('chave_pix', '').strip()
+                        pessoa.observacao = request.POST.get('observacao', '').strip()
+                        pessoa.save()
+                        messages.success(request, f'{pessoa.nome} atualizado com sucesso.')
+                except Exception as e:
+                    messages.error(request, f'Erro ao atualizar: {str(e)}')
+        
+        elif acao == 'deletar_pessoa':
+            pessoa_id = request.POST.get('pessoa_id')
+            if pessoa_id:
+                try:
+                    pessoa = get_object_or_404(PessoaEquipeTecnica, id=pessoa_id)
+                    nome = pessoa.nome_completo
+                    pessoa.delete()
+                    messages.success(request, f'{nome} removido da lista.')
+                except Exception as e:
+                    messages.error(request, f'Erro ao remover: {str(e)}')
+        
+        elif acao == 'toggle_ativo':
+            pessoa_id = request.POST.get('pessoa_id')
+            if pessoa_id:
+                try:
+                    pessoa = get_object_or_404(PessoaEquipeTecnica, id=pessoa_id)
+                    pessoa.ativo = not pessoa.ativo
+                    pessoa.save()
+                    status = 'ativada' if pessoa.ativo else 'desativada'
+                    messages.success(request, f'{pessoa.nome_completo} {status}.')
+                except Exception as e:
+                    messages.error(request, f'Erro: {str(e)}')
+        
+        return redirect('administracao_equipe_pessoas_lista')
+    
+    # GET: Listar pessoas
+    pessoas = PessoaEquipeTecnica.objects.all().select_related('atleta', 'atleta__academia').order_by('nome')
+    
+    # Filtros
+    nome_filtro = request.GET.get('nome', '').strip()
+    tipo_filtro = request.GET.get('tipo', '').strip()
+    
+    if nome_filtro:
+        pessoas = pessoas.filter(nome__icontains=nome_filtro)
+    if tipo_filtro == 'atleta':
+        pessoas = pessoas.filter(atleta__isnull=False)
+    elif tipo_filtro == 'externa':
+        pessoas = pessoas.filter(atleta__isnull=True)
+    
+    # Buscar atletas elegíveis para adicionar
+    atletas_elegiveis = Atleta.objects.filter(
+        pode_ser_equipe_tecnica=True,
+        status_ativo=True
+    ).exclude(
+        id__in=PessoaEquipeTecnica.objects.filter(atleta__isnull=False).values_list('atleta_id', flat=True)
+    ).select_related('academia').order_by('nome')
+    
+    context = {
+        'pessoas': pessoas,
+        'atletas_elegiveis': atletas_elegiveis,
+        'nome_filtro': nome_filtro,
+        'tipo_filtro': tipo_filtro,
+    }
+    
+    return render(request, 'atletas/administracao/equipe_pessoas_lista.html', context)
+
+@operacional_required
+def administracao_equipe_gerenciar(request, campeonato_id=None):
+    """Gerenciar equipe técnica de um campeonato específico"""
+    if campeonato_id:
+        campeonato = get_object_or_404(Campeonato, id=campeonato_id)
+    else:
+        campeonato = Campeonato.objects.filter(ativo=True).first()
+        if not campeonato:
+            messages.warning(request, 'Nenhum campeonato ativo encontrado. Selecione um campeonato.')
+            return redirect('lista_campeonatos')
+    
+    # Processar ações via POST
+    if request.method == 'POST':
+        acao = request.POST.get('acao')
+        
+        if acao == 'adicionar':
+            pessoa_id = request.POST.get('pessoa_id')
+            funcao = request.POST.get('funcao')
+            funcao_customizada = request.POST.get('funcao_customizada', '').strip()
+            pro_labore_str = request.POST.get('pro_labore', '0').strip().replace(',', '.')
+            observacao = request.POST.get('observacao', '').strip()
+            
+            if not pessoa_id or not funcao:
+                messages.error(request, 'Selecione uma pessoa e uma função.')
+            else:
+                try:
+                    pessoa = get_object_or_404(PessoaEquipeTecnica, id=pessoa_id, ativo=True)
+                    
+                    # Verificar se já está vinculado nesta função
+                    vinculo_existente = EquipeTecnicaCampeonato.objects.filter(
+                        pessoa=pessoa,
+                        campeonato=campeonato,
+                        funcao=funcao
+                    ).first()
+                    
+                    if vinculo_existente:
+                        messages.warning(request, f'{pessoa.nome_completo} já está vinculado como {vinculo_existente.get_funcao_display()} neste campeonato.')
+                    else:
+                        pro_labore = float(pro_labore_str) if pro_labore_str else 0
+                        vinculo = EquipeTecnicaCampeonato.objects.create(
+                            pessoa=pessoa,
+                            campeonato=campeonato,
+                            funcao=funcao,
+                            funcao_customizada=funcao_customizada if funcao == 'outro' else None,
+                            pro_labore=pro_labore,
+                            observacao=observacao
+                        )
+                        
+                        # Gerar despesa automaticamente se pró-labore > 0
+                        if pro_labore > 0:
+                            despesa = criar_despesa_pro_labore(vinculo)
+                            vinculo.despesa_gerada = despesa
+                            vinculo.save()
+                        
+                        funcao_display = dict(EquipeTecnicaCampeonato.FUNCAO_CHOICES).get(funcao, funcao_customizada or funcao)
+                        messages.success(request, f'{pessoa.nome_completo} adicionado à equipe técnica como {funcao_display}.')
+                except ValueError:
+                    messages.error(request, 'Valor do pró-labore inválido.')
+                except Exception as e:
+                    messages.error(request, f'Erro ao adicionar pessoa: {str(e)}')
+        
+        elif acao == 'atualizar_pro_labore':
+            vinculo_id = request.POST.get('vinculo_id')
+            pro_labore_str = request.POST.get('pro_labore', '0').strip().replace(',', '.')
+            
+            if vinculo_id:
+                try:
+                    vinculo = get_object_or_404(EquipeTecnicaCampeonato, id=vinculo_id, campeonato=campeonato)
+                    pro_labore_anterior = vinculo.pro_labore
+                    pro_labore_novo = float(pro_labore_str) if pro_labore_str else 0
+                    
+                    vinculo.pro_labore = pro_labore_novo
+                    
+                    # Atualizar ou criar despesa
+                    if pro_labore_novo > 0:
+                        if vinculo.despesa_gerada:
+                            # Atualizar despesa existente
+                            vinculo.despesa_gerada.valor = pro_labore_novo
+                            vinculo.despesa_gerada.nome = f"Pró-labore: {vinculo.pessoa.nome_completo} - {vinculo.get_funcao_display()}"
+                            vinculo.despesa_gerada.save()
+                        else:
+                            # Criar nova despesa
+                            despesa = criar_despesa_pro_labore(vinculo)
+                            vinculo.despesa_gerada = despesa
+                    elif vinculo.despesa_gerada:
+                        # Remover despesa se pró-labore = 0
+                        vinculo.despesa_gerada.delete()
+                        vinculo.despesa_gerada = None
+                    
+                    vinculo.save()
+                    messages.success(request, f'Pró-labore de {vinculo.pessoa.nome_completo} atualizado para R$ {pro_labore_novo:.2f}.')
+                except ValueError:
+                    messages.error(request, 'Valor do pró-labore inválido.')
+                except Exception as e:
+                    messages.error(request, f'Erro ao atualizar pró-labore: {str(e)}')
+        
+        elif acao == 'remover':
+            vinculo_id = request.POST.get('vinculo_id')
+            if vinculo_id:
+                try:
+                    vinculo = EquipeTecnicaCampeonato.objects.get(id=vinculo_id, campeonato=campeonato)
+                    nome = vinculo.nome_completo
+                    vinculo.delete()
+                    messages.success(request, f'{nome} removido da equipe técnica.')
+                except EquipeTecnicaCampeonato.DoesNotExist:
+                    messages.error(request, 'Vínculo não encontrado.')
+        
+        elif acao == 'toggle_ativo':
+            vinculo_id = request.POST.get('vinculo_id')
+            if vinculo_id:
+                try:
+                    vinculo = EquipeTecnicaCampeonato.objects.get(id=vinculo_id, campeonato=campeonato)
+                    vinculo.ativo = not vinculo.ativo
+                    vinculo.save()
+                    status = 'ativado' if vinculo.ativo else 'desativado'
+                    messages.success(request, f'{vinculo.nome_completo} {status} na equipe técnica.')
+                except EquipeTecnicaCampeonato.DoesNotExist:
+                    messages.error(request, 'Vínculo não encontrado.')
+        
+        elif acao == 'atualizar_pro_labore':
+            vinculo_id = request.POST.get('vinculo_id')
+            pro_labore_str = request.POST.get('pro_labore', '0').strip().replace(',', '.')
+            
+            if vinculo_id:
+                try:
+                    vinculo = get_object_or_404(EquipeTecnicaCampeonato, id=vinculo_id, campeonato=campeonato)
+                    pro_labore_anterior = vinculo.pro_labore
+                    pro_labore_novo = float(pro_labore_str) if pro_labore_str else 0
+                    
+                    vinculo.pro_labore = pro_labore_novo
+                    
+                    # Atualizar ou criar despesa
+                    if pro_labore_novo > 0:
+                        if vinculo.despesa_gerada:
+                            # Atualizar despesa existente
+                            vinculo.despesa_gerada.valor = pro_labore_novo
+                            funcao_display = vinculo.funcao_customizada if vinculo.funcao == 'outro' and vinculo.funcao_customizada else vinculo.get_funcao_display()
+                            vinculo.despesa_gerada.nome = f"Pró-labore: {vinculo.pessoa.nome_completo} - {funcao_display}"
+                            vinculo.despesa_gerada.save()
+                        else:
+                            # Criar nova despesa
+                            despesa = criar_despesa_pro_labore(vinculo)
+                            vinculo.despesa_gerada = despesa
+                    elif vinculo.despesa_gerada:
+                        # Remover despesa se pró-labore = 0
+                        vinculo.despesa_gerada.delete()
+                        vinculo.despesa_gerada = None
+                    
+                    vinculo.save()
+                    messages.success(request, f'Pró-labore de {vinculo.pessoa.nome_completo} atualizado para R$ {pro_labore_novo:.2f}.')
+                except ValueError:
+                    messages.error(request, 'Valor do pró-labore inválido.')
+                except Exception as e:
+                    messages.error(request, f'Erro ao atualizar pró-labore: {str(e)}')
+        
+        return redirect('administracao_equipe_gerenciar', campeonato_id=campeonato.id)
+    
+    # GET: Listar equipe técnica do campeonato
+    equipe = EquipeTecnicaCampeonato.objects.filter(
+        campeonato=campeonato
+    ).select_related('pessoa', 'pessoa__atleta', 'pessoa__atleta__academia').order_by('funcao', 'pessoa__nome')
+    
+    # Agrupar por função
+    equipe_por_funcao = {}
+    for membro in equipe:
+        funcao_display = membro.funcao_customizada if membro.funcao == 'outro' and membro.funcao_customizada else membro.get_funcao_display()
+        if funcao_display not in equipe_por_funcao:
+            equipe_por_funcao[funcao_display] = []
+        equipe_por_funcao[funcao_display].append(membro)
+    
+    # Buscar pessoas disponíveis da lista fixa (apenas as que ainda não estão vinculadas neste campeonato)
+    pessoas_vinculadas_ids = equipe.values_list('pessoa_id', flat=True)
+    pessoas_disponiveis = PessoaEquipeTecnica.objects.filter(
+        ativo=True
+    ).exclude(id__in=pessoas_vinculadas_ids).select_related('atleta', 'atleta__academia').order_by('nome')
+    
+    context = {
+        'campeonato': campeonato,
+        'equipe': equipe,
+        'equipe_por_funcao': equipe_por_funcao,
+        'pessoas_disponiveis': pessoas_disponiveis,
+        'funcoes': EquipeTecnicaCampeonato.FUNCAO_CHOICES,
+    }
+    
+    return render(request, 'atletas/administracao/equipe_gerenciar.html', context)
+
+def criar_despesa_pro_labore(vinculo):
+    """Cria uma despesa automaticamente baseada no pró-labore de um membro da equipe técnica"""
+    funcao_display = vinculo.funcao_customizada if vinculo.funcao == 'outro' and vinculo.funcao_customizada else vinculo.get_funcao_display()
+    
+    # Mapear função para categoria de despesa
+    categoria_map = {
+        'arbitro': 'arbitros',
+        'mesario': 'mesarios',
+        'coordenador': 'coordenadores',
+        'oficial_pesagem': 'oficiais_pesagem',
+        'oficial_mesa': 'oficiais_mesa',
+        'outro': 'outras',
+    }
+    categoria = categoria_map.get(vinculo.funcao, 'outras')
+    
+    despesa = Despesa.objects.create(
+        campeonato=vinculo.campeonato,
+        tipo='despesa',
+        categoria=categoria,
+        nome=f"Pró-labore: {vinculo.pessoa.nome_completo} - {funcao_display}",
+        valor=vinculo.pro_labore,
+        status='pendente',
+        observacao=f"Pró-labore gerado automaticamente para {vinculo.pessoa.nome_completo} na função de {funcao_display}.",
+        contato_nome=vinculo.pessoa.nome_completo,
+        contato_whatsapp=vinculo.pessoa.telefone or ''
+    )
+    
+    return despesa
 
 @operacional_required
 def administracao_insumos(request):
-    return render(request, 'atletas/administracao/insumos.html')
+    """Gestão de Insumos e Estrutura"""
+    campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
+    
+    # Processar ações via POST
+    if request.method == 'POST':
+        acao = request.POST.get('acao')
+        
+        if acao == 'criar_insumo':
+            if not campeonato_ativo:
+                messages.error(request, 'Nenhum campeonato ativo encontrado.')
+            else:
+                try:
+                    categoria_id = request.POST.get('categoria')
+                    nome = request.POST.get('nome', '').strip()
+                    valor = request.POST.get('valor', '').strip()
+                    quantidade = request.POST.get('quantidade', '1').strip()
+                    fornecedor = request.POST.get('fornecedor', '').strip()
+                    contato_nome = request.POST.get('contato_nome', '').strip()
+                    contato_whatsapp = request.POST.get('contato_whatsapp', '').strip()
+                    observacao = request.POST.get('observacao', '').strip()
+                    status = request.POST.get('status', 'pendente')
+                    data_pagamento = request.POST.get('data_pagamento', '').strip() or None
+                    
+                    if not categoria_id or not nome or not valor:
+                        messages.error(request, 'Preencha os campos obrigatórios: Categoria, Nome e Valor.')
+                    else:
+                        categoria = get_object_or_404(CategoriaInsumo, id=categoria_id, ativo=True)
+                        insumo = InsumoEstrutura.objects.create(
+                            campeonato=campeonato_ativo,
+                            categoria=categoria,
+                            nome=nome,
+                            valor=float(valor.replace(',', '.')),
+                            quantidade=int(quantidade) if quantidade else 1,
+                            fornecedor=fornecedor or None,
+                            contato_nome=contato_nome or None,
+                            contato_whatsapp=contato_whatsapp or None,
+                            observacao=observacao or None,
+                            status=status,
+                            data_pagamento=data_pagamento if data_pagamento else None
+                        )
+                        messages.success(request, f'Insumo "{insumo.nome}" cadastrado com sucesso!')
+                except Exception as e:
+                    messages.error(request, f'Erro ao cadastrar insumo: {str(e)}')
+        
+        elif acao == 'criar_categoria':
+            try:
+                nome = request.POST.get('nome_categoria', '').strip()
+                descricao = request.POST.get('descricao_categoria', '').strip()
+                
+                if not nome:
+                    messages.error(request, 'Informe o nome da categoria.')
+                else:
+                    categoria, created = CategoriaInsumo.objects.get_or_create(
+                        nome=nome,
+                        defaults={'descricao': descricao}
+                    )
+                    if created:
+                        messages.success(request, f'Categoria "{categoria.nome}" criada com sucesso!')
+                    else:
+                        messages.warning(request, f'Categoria "{categoria.nome}" já existe.')
+            except Exception as e:
+                messages.error(request, f'Erro ao criar categoria: {str(e)}')
+        
+        elif acao == 'editar_insumo':
+            insumo_id = request.POST.get('insumo_id')
+            if insumo_id:
+                try:
+                    insumo = get_object_or_404(InsumoEstrutura, id=insumo_id)
+                    insumo.categoria = get_object_or_404(CategoriaInsumo, id=request.POST.get('categoria'), ativo=True)
+                    insumo.nome = request.POST.get('nome', '').strip()
+                    insumo.valor = float(request.POST.get('valor', '0').replace(',', '.'))
+                    insumo.quantidade = int(request.POST.get('quantidade', '1'))
+                    insumo.fornecedor = request.POST.get('fornecedor', '').strip() or None
+                    insumo.contato_nome = request.POST.get('contato_nome', '').strip() or None
+                    insumo.contato_whatsapp = request.POST.get('contato_whatsapp', '').strip() or None
+                    insumo.observacao = request.POST.get('observacao', '').strip() or None
+                    insumo.status = request.POST.get('status', 'pendente')
+                    data_pagamento = request.POST.get('data_pagamento', '').strip()
+                    insumo.data_pagamento = data_pagamento if data_pagamento else None
+                    insumo.save()
+                    messages.success(request, f'Insumo "{insumo.nome}" atualizado com sucesso!')
+                except Exception as e:
+                    messages.error(request, f'Erro ao atualizar insumo: {str(e)}')
+        
+        elif acao == 'deletar_insumo':
+            insumo_id = request.POST.get('insumo_id')
+            if insumo_id:
+                try:
+                    insumo = get_object_or_404(InsumoEstrutura, id=insumo_id)
+                    nome = insumo.nome
+                    insumo.delete()
+                    messages.success(request, f'Insumo "{nome}" removido com sucesso!')
+                except Exception as e:
+                    messages.error(request, f'Erro ao remover insumo: {str(e)}')
+        
+        elif acao == 'toggle_categoria':
+            categoria_id = request.POST.get('categoria_id')
+            if categoria_id:
+                try:
+                    categoria = get_object_or_404(CategoriaInsumo, id=categoria_id)
+                    categoria.ativo = not categoria.ativo
+                    categoria.save()
+                    status = 'ativada' if categoria.ativo else 'desativada'
+                    messages.success(request, f'Categoria "{categoria.nome}" {status} com sucesso!')
+                except Exception as e:
+                    messages.error(request, f'Erro ao alterar categoria: {str(e)}')
+        
+        return redirect('administracao_insumos')
+    
+    # GET: Listar insumos e categorias
+    categorias = CategoriaInsumo.objects.all().order_by('nome')
+    categorias_ativas = categorias.filter(ativo=True)
+    
+    if campeonato_ativo:
+        insumos = InsumoEstrutura.objects.filter(
+            campeonato=campeonato_ativo
+        ).select_related('categoria').order_by('-data_cadastro')
+        
+        # Estatísticas
+        total_insumos = insumos.count()
+        total_valor = insumos.aggregate(total=Sum('valor'))['total'] or 0
+        total_pago = insumos.filter(status='pago').aggregate(total=Sum('valor'))['total'] or 0
+        total_pendente = insumos.filter(status='pendente').aggregate(total=Sum('valor'))['total'] or 0
+        
+        # Agrupar por categoria
+        insumos_por_categoria = {}
+        for insumo in insumos:
+            cat_nome = insumo.categoria.nome
+            if cat_nome not in insumos_por_categoria:
+                insumos_por_categoria[cat_nome] = {
+                    'categoria': insumo.categoria,
+                    'insumos': [],
+                    'total': 0
+                }
+            insumos_por_categoria[cat_nome]['insumos'].append(insumo)
+            insumos_por_categoria[cat_nome]['total'] += insumo.valor
+    else:
+        insumos = InsumoEstrutura.objects.none()
+        total_insumos = 0
+        total_valor = 0
+        total_pago = 0
+        total_pendente = 0
+        insumos_por_categoria = {}
+    
+    context = {
+        'campeonato_ativo': campeonato_ativo,
+        'categorias': categorias,
+        'categorias_ativas': categorias_ativas,
+        'insumos': insumos,
+        'insumos_por_categoria': insumos_por_categoria,
+        'total_insumos': total_insumos,
+        'total_valor': total_valor,
+        'total_pago': total_pago,
+        'total_pendente': total_pendente,
+    }
+    
+    return render(request, 'atletas/administracao/insumos.html', context)
 
 @operacional_required
 def administracao_patrocinios(request):
@@ -1548,7 +4384,9 @@ def administracao_relatorios(request):
 
 @operacional_required
 def administracao_cadastros_operacionais(request, tipo):
-    return render(request, 'atletas/administracao/cadastros_operacionais.html', {'tipo': tipo})
+    """Redireciona para lista de pessoas (unificado)"""
+    messages.info(request, 'Cadastros Operacionais foram unificados com Equipe Técnica.')
+    return redirect('administracao_equipe_pessoas_lista')
 
 @pode_criar_usuarios_required
 def gerenciar_usuarios_operacionais(request):
@@ -1576,8 +4414,11 @@ def academia_enviar_comprovante(request, campeonato_id):
         for ins in inscricoes
     )
     
-    # Verificar se já existe pagamento
-    pagamento_existente = Pagamento.objects.filter(
+    # Buscar ou criar conferência de pagamento
+    from .views_conferencia_pagamentos import calcular_valor_esperado_academia
+    valor_esperado, qtd_atletas = calcular_valor_esperado_academia(academia, campeonato)
+    
+    conferencia_existente = ConferenciaPagamento.objects.filter(
         academia=academia,
         campeonato=campeonato
     ).first()
@@ -1588,26 +4429,28 @@ def academia_enviar_comprovante(request, campeonato_id):
             
             # Validar tipo de arquivo
             extensao = comprovante.name.split('.')[-1].lower()
-            if extensao not in ['jpg', 'jpeg', 'png', 'pdf']:
-                messages.error(request, 'Formato de arquivo inválido. Use JPG, PNG ou PDF.')
+            if extensao not in ['jpg', 'jpeg', 'png', 'pdf', 'heic']:
+                messages.error(request, 'Formato de arquivo inválido. Use JPG, PNG, PDF ou HEIC.')
                 return redirect('academia_enviar_comprovante', campeonato_id=campeonato_id)
             
-            # Criar ou atualizar pagamento
-            if pagamento_existente:
-                pagamento_existente.comprovante = comprovante
-                pagamento_existente.status = 'AGUARDANDO'
-                pagamento_existente.motivo_rejeicao = ''
-                pagamento_existente.save()
-                messages.success(request, 'Comprovante atualizado com sucesso! Aguarde validação do operador.')
+            # Criar ou atualizar conferência de pagamento
+            if conferencia_existente:
+                conferencia_existente.comprovante = comprovante
+                conferencia_existente.valor_esperado = valor_esperado
+                conferencia_existente.quantidade_atletas = qtd_atletas
+                # Mantém status atual (não muda automaticamente ao enviar comprovante)
+                conferencia_existente.save()
+                messages.success(request, 'Comprovante atualizado com sucesso! Aguarde conferência do operador.')
             else:
-                pagamento = Pagamento.objects.create(
+                conferencia = ConferenciaPagamento.objects.create(
                     academia=academia,
                     campeonato=campeonato,
-                    valor_total=valor_total,
+                    valor_esperado=valor_esperado,
+                    quantidade_atletas=qtd_atletas,
                     comprovante=comprovante,
-                    status='AGUARDANDO'
+                    status='PENDENTE'  # Permanece pendente até conferência manual
                 )
-                messages.success(request, 'Comprovante enviado com sucesso! Aguarde validação do operador.')
+                messages.success(request, 'Comprovante enviado com sucesso! Aguarde conferência do operador.')
             
             return redirect('academia_evento', campeonato_id=campeonato_id)
         else:
@@ -1616,96 +4459,39 @@ def academia_enviar_comprovante(request, campeonato_id):
     context = {
         'academia': academia,
         'campeonato': campeonato,
-        'valor_total': valor_total,
+        'valor_total': valor_esperado,
         'inscricoes': inscricoes,
-        'pagamento': pagamento_existente,
+        'conferencia': conferencia_existente,
     }
     
     return render(request, 'atletas/academia/enviar_comprovante.html', context)
 
 @operacional_required
 def validacao_pagamentos(request):
-    """Painel de validação de pagamentos para operador"""
-    # Buscar pagamentos aguardando validação
-    pagamentos_aguardando = Pagamento.objects.filter(
-        status__in=['PENDENTE', 'AGUARDANDO']
-    ).select_related('academia', 'campeonato').order_by('-data_envio')
-    
-    # Buscar pagamentos validados recentes
-    pagamentos_validados = Pagamento.objects.filter(
-        status='VALIDADO'
-    ).select_related('academia', 'campeonato', 'validado_por').order_by('-data_validacao')[:10]
-    
-    # Buscar pagamentos rejeitados recentes
-    pagamentos_rejeitados = Pagamento.objects.filter(
-        status='REJEITADO'
-    ).select_related('academia', 'campeonato').order_by('-data_envio')[:10]
-    
-    context = {
-        'pagamentos_aguardando': pagamentos_aguardando,
-        'pagamentos_validados': pagamentos_validados,
-        'pagamentos_rejeitados': pagamentos_rejeitados,
-    }
-    
-    return render(request, 'atletas/administracao/validacao_pagamentos.html', context)
+    """
+    DEPRECADO: Esta view foi descontinuada.
+    Use 'conferencia_pagamentos_lista' ao invés desta.
+    Redireciona para a conferência de pagamentos.
+    """
+    messages.info(request, 'O módulo de Validação de Pagamentos foi unificado com a Conferência de Pagamentos.')
+    return redirect('conferencia_pagamentos_lista')
 
 @operacional_required
 def validar_pagamento(request, pagamento_id):
-    """Validar pagamento e confirmar inscrições"""
-    pagamento = get_object_or_404(Pagamento, id=pagamento_id)
-    
-    if request.method == 'POST':
-        # Atualizar status do pagamento
-        pagamento.status = 'VALIDADO'
-        pagamento.validado_por = request.user
-        pagamento.data_validacao = timezone.now()
-        pagamento.motivo_rejeicao = ''
-        pagamento.save()
-        
-        # Confirmar todas as inscrições da academia no campeonato
-        inscricoes = Inscricao.objects.filter(
-            atleta__academia=pagamento.academia,
-            campeonato=pagamento.campeonato
-        )
-        inscricoes.update(status_inscricao='aprovado')
-        
-        messages.success(request, f'Pagamento validado! {inscricoes.count()} inscrições confirmadas automaticamente.')
-        return redirect('validacao_pagamentos')
-    
-    # Buscar inscrições da academia
-    inscricoes = Inscricao.objects.filter(
-        atleta__academia=pagamento.academia,
-        campeonato=pagamento.campeonato
-    ).select_related('atleta', 'atleta__academia')
-    
-    context = {
-        'pagamento': pagamento,
-        'inscricoes': inscricoes,
-    }
-    
-    return render(request, 'atletas/administracao/validar_pagamento.html', context)
+    """
+    DEPRECADO: Esta view foi descontinuada.
+    Use 'conferencia_pagamentos_detalhe' e 'conferencia_pagamentos_salvar' ao invés desta.
+    Redireciona para a conferência de pagamentos.
+    """
+    messages.info(request, 'O módulo de Validação de Pagamentos foi unificado com a Conferência de Pagamentos.')
+    return redirect('conferencia_pagamentos_lista')
 
 @operacional_required
 def rejeitar_pagamento(request, pagamento_id):
-    """Rejeitar pagamento"""
-    pagamento = get_object_or_404(Pagamento, id=pagamento_id)
-    
-    if request.method == 'POST':
-        motivo = request.POST.get('motivo_rejeicao', '').strip()
-        
-        if not motivo:
-            messages.error(request, 'Por favor, informe o motivo da rejeição.')
-            return redirect('validar_pagamento', pagamento_id=pagamento_id)
-        
-        pagamento.status = 'REJEITADO'
-        pagamento.motivo_rejeicao = motivo
-        pagamento.save()
-        
-        messages.success(request, 'Pagamento rejeitado. A academia foi notificada.')
-        return redirect('validacao_pagamentos')
-    
-    context = {
-        'pagamento': pagamento,
-    }
-    
-    return render(request, 'atletas/administracao/rejeitar_pagamento.html', context)
+    """
+    DEPRECADO: Esta view foi descontinuada.
+    Use 'conferencia_pagamentos_detalhe' e 'conferencia_pagamentos_salvar' com status DIVERGENTE ao invés desta.
+    Redireciona para a conferência de pagamentos.
+    """
+    messages.info(request, 'O módulo de Validação de Pagamentos foi unificado com a Conferência de Pagamentos.')
+    return redirect('conferencia_pagamentos_lista')

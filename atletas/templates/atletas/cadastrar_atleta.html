@@ -85,8 +85,8 @@
                     <label class="form-label" for="foto_perfil">
                         Foto de Perfil
                     </label>
-                    <input type="file" id="foto_perfil" name="foto_perfil" class="form-input" accept=".jpg,.jpeg,.png" onchange="previewFoto(this, 'foto-preview')">
-                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Formatos aceitos: JPG, PNG (máximo 2MB)</small>
+                    <input type="file" id="foto_perfil" name="foto_perfil" class="form-input" accept=".jpg,.jpeg,.png,.heic" onchange="previewFoto(this, 'foto-preview')">
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Formatos aceitos: JPG, PNG, HEIC (máximo 2MB)</small>
                     <div id="foto-preview" style="margin-top: var(--spacing-3); display: none;">
                         <img id="foto-preview-img" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: var(--border-radius-md); border: 2px solid var(--color-gray-300);">
                     </div>
@@ -97,8 +97,8 @@
                         Documento Oficial (RG, CPF ou Certidão)
                         <span style="color: var(--color-danger);">*</span>
                     </label>
-                    <input type="file" id="documento_oficial" name="documento_oficial" class="form-input" accept=".jpg,.jpeg,.png,.pdf" required>
-                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Formatos aceitos: JPG, PNG ou PDF (máximo 5MB)</small>
+                    <input type="file" id="documento_oficial" name="documento_oficial" class="form-input" accept=".jpg,.jpeg,.png,.pdf,.heic" required>
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Formatos aceitos: JPG, PNG, PDF ou HEIC (máximo 5MB)</small>
                 </div>
                 
                 <div class="form-group" style="grid-column: 1 / -1;">
@@ -122,6 +122,55 @@
                     </label>
                     <input type="text" id="numero_zempo" name="numero_zempo" class="form-input" placeholder="Digite o número Zempo do atleta">
                     <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Obrigatório para atletas federados</small>
+                </div>
+            </div>
+            
+            <!-- Seção Equipe Técnica -->
+            <div style="margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 2px solid var(--color-gray-300);">
+                <h3 style="font-size: var(--font-size-lg); font-weight: 600; color: var(--color-gray-900); margin-bottom: var(--spacing-4);">Equipe Técnica</h3>
+                <p style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: var(--spacing-4);">Marque se esta pessoa pode fazer parte da equipe técnica em eventos (árbitros, mesários, etc.)</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label style="display: flex; align-items: center; gap: var(--spacing-2); cursor: pointer; padding: var(--spacing-3); border: 1px solid var(--color-gray-300); border-radius: var(--border-radius-md); transition: all var(--transition-base);">
+                            <input type="checkbox" id="pode_ser_equipe_tecnica" name="pode_ser_equipe_tecnica" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;" onchange="toggleEquipeTecnicaFields()">
+                            <div>
+                                <span style="font-size: var(--font-size-sm); font-weight: 500; color: var(--color-gray-700);">
+                                    Pode Fazer Parte da Equipe Técnica
+                                </span>
+                                <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-weight: normal;">
+                                    Marque se esta pessoa pode ser selecionada para compor a equipe técnica em eventos
+                                </small>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group" id="equipe-tecnica-group" style="display: none; grid-column: 1 / -1;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-4);">
+                            <div class="form-group">
+                                <label class="form-label" for="funcao_equipe_tecnica">Função/Cargo na Equipe Técnica</label>
+                                <input type="text" id="funcao_equipe_tecnica" name="funcao_equipe_tecnica" class="form-input" placeholder="Ex: Árbitro, Mesário, Coordenador">
+                                <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Função padrão na equipe técnica</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="telefone">
+                                    Telefone
+                                </label>
+                                <input type="text" id="telefone" name="telefone" class="form-input" placeholder="(00) 00000-0000">
+                                <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Telefone de contato</small>
+                            </div>
+                            
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label class="form-label" for="chave_pix">
+                                    Chave PIX
+                                    <span style="color: var(--color-danger);">*</span>
+                                </label>
+                                <input type="text" id="chave_pix" name="chave_pix" class="form-input" placeholder="CPF, CNPJ, Email, Telefone ou Chave Aleatória">
+                                <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Obrigatório para pagamento da equipe técnica</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -171,15 +220,41 @@ function previewFoto(input, previewId) {
     }
 }
 
+function toggleEquipeTecnicaFields() {
+    const podeSerEquipeTecnica = document.getElementById('pode_ser_equipe_tecnica');
+    const equipeTecnicaGroup = document.getElementById('equipe-tecnica-group');
+    const chavePix = document.getElementById('chave_pix');
+    
+    if (podeSerEquipeTecnica.checked) {
+        equipeTecnicaGroup.style.display = 'block';
+        chavePix.required = true;
+    } else {
+        equipeTecnicaGroup.style.display = 'none';
+        chavePix.required = false;
+        chavePix.value = '';
+        document.getElementById('funcao_equipe_tecnica').value = '';
+        document.getElementById('telefone').value = '';
+    }
+}
+
 // Validar antes de enviar
 document.querySelector('form').addEventListener('submit', function(e) {
     const federado = document.getElementById('federado').checked;
     const numeroZempo = document.getElementById('numero_zempo').value.trim();
+    const podeSerEquipeTecnica = document.getElementById('pode_ser_equipe_tecnica').checked;
+    const chavePix = document.getElementById('chave_pix').value.trim();
         
     if (federado && !numeroZempo) {
         e.preventDefault();
         alert('Por favor, informe o número Zempo para atletas federados.');
         document.getElementById('numero_zempo').focus();
+        return false;
+    }
+    
+    if (podeSerEquipeTecnica && !chavePix) {
+        e.preventDefault();
+        alert('Por favor, informe a Chave PIX para pessoas que podem fazer parte da equipe técnica.');
+        document.getElementById('chave_pix').focus();
         return false;
     }
 });

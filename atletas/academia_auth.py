@@ -44,7 +44,7 @@ def academia_required(view_func):
 
 
 def operacional_required(view_func):
-    """Decorator para verificar se é acesso operacional (não academia)"""
+    """Decorator para verificar se é acesso operacional (não academia) - SEMPRE exige login e senha"""
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         # Se está logado como academia, redirecionar
@@ -52,7 +52,7 @@ def operacional_required(view_func):
             messages.warning(request, 'Você está logado como academia. Faça logout para acessar o módulo operacional.')
             return redirect('academia_painel')
         
-        # Verificar se está autenticado operacionalmente (Django auth)
+        # Verificar se está autenticado operacionalmente (Django auth) - OBRIGATÓRIO
         if not request.user.is_authenticated:
             messages.warning(request, 'Você precisa fazer login operacional para acessar esta página.')
             return redirect('login_operacional')

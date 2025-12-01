@@ -1,0 +1,175 @@
+{% extends 'atletas/administracao/base_admin.html' %}
+
+{% block admin_page_title %}Ocorrências{% endblock %}
+{% block admin_page_description %}Registro e gestão de problemas, relatos e situações durante eventos{% endblock %}
+
+{% block admin_content %}
+<section class="section-spacing">
+    <!-- Filtros e Estatísticas -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Evento</label>
+                    <select class="form-select" onchange="window.location.href='?campeonato_id='+this.value">
+                        <option value="">Todos os eventos</option>
+                        {% for camp in campeonatos %}
+                        <option value="{{ camp.id }}" {% if campeonato_selecionado and campeonato_selecionado.id == camp.id %}selected{% endif %}>{{ camp.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Categoria</label>
+                    <select class="form-select" onchange="window.location.href='?categoria='+this.value{% if campeonato_selecionado %}&campeonato_id={{ campeonato_selecionado.id }}{% endif %}">
+                        <option value="">Todas</option>
+                        {% for value, label in CATEGORIA_CHOICES %}
+                        <option value="{{ value }}" {% if categoria_filtro == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" onchange="window.location.href='?status='+this.value{% if campeonato_selecionado %}&campeonato_id={{ campeonato_selecionado.id }}{% endif %}">
+                        <option value="">Todos</option>
+                        {% for value, label in STATUS_CHOICES %}
+                        <option value="{{ value }}" {% if status_filtro == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Prioridade</label>
+                    <select class="form-select" onchange="window.location.href='?prioridade='+this.value{% if campeonato_selecionado %}&campeonato_id={{ campeonato_selecionado.id }}{% endif %}">
+                        <option value="">Todas</option>
+                        {% for value, label in PRIORIDADE_CHOICES %}
+                        <option value="{{ value }}" {% if prioridade_filtro == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Buscar</label>
+                    <form method="get" class="d-flex">
+                        <input type="text" class="form-control" name="busca" value="{{ busca }}" placeholder="Título, descrição...">
+                        {% if campeonato_selecionado %}<input type="hidden" name="campeonato_id" value="{{ campeonato_selecionado.id }}">{% endif %}
+                        <button type="submit" class="btn btn-primary ms-2">Buscar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="stats-grid mb-4">
+        <div class="stat-card">
+            <div class="stat-card-header"><span class="stat-card-title">Total</span></div>
+            <div class="stat-card-value">{{ total }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-header"><span class="stat-card-title">Abertas</span></div>
+            <div class="stat-card-value text-warning">{{ abertas }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-header"><span class="stat-card-title">Em Andamento</span></div>
+            <div class="stat-card-value text-info">{{ em_andamento }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-header"><span class="stat-card-title">Resolvidas</span></div>
+            <div class="stat-card-value text-success">{{ resolvidas }}</div>
+        </div>
+    </div>
+
+    <!-- Lista de Ocorrências -->
+    <div class="card">
+        <div class="card-header card-header-flex">
+            <h2 class="card-title m-0">Ocorrências</h2>
+            <a href="{% url 'ocorrencias_criar' %}{% if campeonato_selecionado %}?campeonato_id={{ campeonato_selecionado.id }}{% endif %}" class="btn btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Nova Ocorrência
+            </a>
+        </div>
+        <div class="card-body">
+            {% if ocorrencias %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Título</th>
+                            <th>Categoria</th>
+                            <th>Prioridade</th>
+                            <th>Status</th>
+                            <th>Academia/Atleta</th>
+                            <th>Registrado por</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ocorrencia in ocorrencias %}
+                        <tr>
+                            <td>{{ ocorrencia.data_ocorrencia|date:"d/m/Y H:i" }}</td>
+                            <td><strong>{{ ocorrencia.titulo }}</strong></td>
+                            <td><span class="badge badge-info">{{ ocorrencia.get_categoria_display }}</span></td>
+                            <td>
+                                {% if ocorrencia.prioridade == 'URGENTE' %}
+                                <span class="badge badge-danger">Urgente</span>
+                                {% elif ocorrencia.prioridade == 'ALTA' %}
+                                <span class="badge badge-warning">Alta</span>
+                                {% elif ocorrencia.prioridade == 'MEDIA' %}
+                                <span class="badge badge-info">Média</span>
+                                {% else %}
+                                <span class="badge badge-secondary">Baixa</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if ocorrencia.status == 'ABERTA' %}
+                                <span class="badge badge-warning">Aberta</span>
+                                {% elif ocorrencia.status == 'EM_ANDAMENTO' %}
+                                <span class="badge badge-info">Em Andamento</span>
+                                {% elif ocorrencia.status == 'RESOLVIDA' %}
+                                <span class="badge badge-success">Resolvida</span>
+                                {% else %}
+                                <span class="badge badge-secondary">Encerrada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if ocorrencia.academia %}{{ ocorrencia.academia.nome }}{% endif %}
+                                {% if ocorrencia.atleta %}<br><small>{{ ocorrencia.atleta.nome }}</small>{% endif %}
+                            </td>
+                            <td>{{ ocorrencia.registrado_por.first_name|default:ocorrencia.registrado_por.username }}</td>
+                            <td>
+                                <a href="{% url 'ocorrencias_detalhe' ocorrencia.id %}" class="btn btn-sm btn-secondary">Ver</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            {% if ocorrencias.has_other_pages %}
+            <nav aria-label="Paginação">
+                <ul class="pagination justify-content-center mt-4">
+                    {% if ocorrencias.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ ocorrencias.previous_page_number }}{% if campeonato_selecionado %}&campeonato_id={{ campeonato_selecionado.id }}{% endif %}">Anterior</a></li>
+                    {% endif %}
+                    <li class="page-item active"><span class="page-link">{{ ocorrencias.number }} de {{ ocorrencias.paginator.num_pages }}</span></li>
+                    {% if ocorrencias.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ ocorrencias.next_page_number }}{% if campeonato_selecionado %}&campeonato_id={{ campeonato_selecionado.id }}{% endif %}">Próxima</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-5">
+                <p class="text-muted">Nenhuma ocorrência encontrada.</p>
+                <a href="{% url 'ocorrencias_criar' %}{% if campeonato_selecionado %}?campeonato_id={{ campeonato_selecionado.id }}{% endif %}" class="btn btn-primary">Registrar Primeira Ocorrência</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+

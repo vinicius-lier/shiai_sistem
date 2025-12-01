@@ -1,16 +1,442 @@
 {% extends 'atletas/administracao/base_admin.html' %}
+{% load custom_filters %}
 
 {% block admin_page_title %}Insumos e Estrutura{% endblock %}
-{% block admin_page_description %}Controle de ambulâncias, materiais e itens logísticos do evento{% endblock %}
+{% block admin_page_description %}Controle de materiais, aluguéis, transportes e demais insumos do evento{% endblock %}
 
 {% block admin_content %}
-<section class="section-spacing">
-    <p class="text-gray-600 mb-6 text-base" style="line-height: 1.6;">Acompanhe os recursos disponíveis e acesse os cadastros completos.</p>
-    <div class="grid grid-auto-fit-lg gap-6">
-        {% for card in cards %}
-            {% include 'atletas/administracao/partials/operacional_card.html' with titulo=card.titulo count=card.quantidade url=card.tipo icon=card.icone %}
-        {% endfor %}
+{% if not campeonato_ativo %}
+<div class="alert alert-warning" style="margin-bottom: var(--spacing-6);">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+    </svg>
+    Nenhum campeonato ativo. Ative um campeonato para cadastrar insumos.
+</div>
+{% endif %}
+
+<!-- Estatísticas -->
+{% if campeonato_ativo %}
+<section class="card" style="margin-bottom: var(--spacing-8);">
+    <div class="card-header">
+        <h3 class="card-title">Resumo Financeiro</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-6);">
+            <div style="text-align: center; padding: var(--spacing-4); background: var(--color-gray-50); border-radius: var(--border-radius-md);">
+                <div style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-gray-900);">{{ total_insumos }}</div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Total de Itens</div>
+            </div>
+            <div style="text-align: center; padding: var(--spacing-4); background: var(--color-gray-50); border-radius: var(--border-radius-md);">
+                <div style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-primary);">R$ {{ total_valor|floatformat:2 }}</div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Valor Total</div>
+            </div>
+            <div style="text-align: center; padding: var(--spacing-4); background: var(--color-success-light); border-radius: var(--border-radius-md);">
+                <div style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-success);">R$ {{ total_pago|floatformat:2 }}</div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Pago</div>
+            </div>
+            <div style="text-align: center; padding: var(--spacing-4); background: var(--color-warning-light); border-radius: var(--border-radius-md);">
+                <div style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-warning);">R$ {{ total_pendente|floatformat:2 }}</div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Pendente</div>
+            </div>
+        </div>
     </div>
 </section>
-{% endblock %}
+{% endif %}
 
+<!-- Criar Nova Categoria -->
+<section class="card" style="margin-bottom: var(--spacing-8);">
+    <div class="card-header">
+        <h3 class="card-title">Criar Nova Categoria</h3>
+    </div>
+    <div class="card-body">
+        <form method="post" style="display: grid; grid-template-columns: 1fr auto; gap: var(--spacing-4); align-items: end;">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="criar_categoria">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="nome_categoria">
+                    Nome da Categoria
+                    <span style="color: var(--color-danger);">*</span>
+                </label>
+                <input type="text" id="nome_categoria" name="nome_categoria" class="form-input" required placeholder="Ex: Tatames, Aluguéis, Transportes, etc.">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="descricao_categoria">Descrição (opcional)</label>
+                <input type="text" id="descricao_categoria" name="descricao_categoria" class="form-input" placeholder="Descrição da categoria">
+            </div>
+            <button type="submit" class="btn btn-primary" style="height: fit-content;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Criar Categoria
+            </button>
+        </form>
+    </div>
+</section>
+
+<!-- Cadastrar Insumo -->
+{% if campeonato_ativo %}
+<section class="card" style="margin-bottom: var(--spacing-8);">
+    <div class="card-header">
+        <h3 class="card-title">Cadastrar Insumo/Estrutura</h3>
+    </div>
+    <div class="card-body">
+        <form method="post" id="form-insumo" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-6);">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="criar_insumo">
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="categoria">
+                    Categoria
+                    <span style="color: var(--color-danger);">*</span>
+                </label>
+                <select id="categoria" name="categoria" class="form-select" required>
+                    <option value="">Selecione uma categoria</option>
+                    {% for categoria in categorias_ativas %}
+                    <option value="{{ categoria.id }}">{{ categoria.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="nome">
+                    Nome do Item
+                    <span style="color: var(--color-danger);">*</span>
+                </label>
+                <input type="text" id="nome" name="nome" class="form-input" required placeholder="Ex: Aluguel de tatames, Transporte de equipamentos">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="valor">
+                    Valor Total (R$)
+                    <span style="color: var(--color-danger);">*</span>
+                </label>
+                <input type="number" step="0.01" id="valor" name="valor" class="form-input" required placeholder="0.00">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="quantidade">Quantidade</label>
+                <input type="number" id="quantidade" name="quantidade" class="form-input" value="1" min="1" placeholder="1">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="fornecedor">Fornecedor</label>
+                <input type="text" id="fornecedor" name="fornecedor" class="form-input" placeholder="Nome do fornecedor ou empresa">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="status">Status do Pagamento</label>
+                <select id="status" name="status" class="form-select">
+                    <option value="pendente" selected>Pendente</option>
+                    <option value="pago">Pago</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="data_pagamento">Data de Pagamento</label>
+                <input type="date" id="data_pagamento" name="data_pagamento" class="form-input">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="contato_nome">Contato Responsável</label>
+                <input type="text" id="contato_nome" name="contato_nome" class="form-input" placeholder="Nome do responsável">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="contato_whatsapp">WhatsApp do Contato</label>
+                <input type="text" id="contato_whatsapp" name="contato_whatsapp" class="form-input" placeholder="(99) 99999-9999">
+            </div>
+            
+            <div class="form-group" style="grid-column: 1 / -1; margin-bottom: 0;">
+                <label class="form-label" for="observacao">Observações</label>
+                <textarea id="observacao" name="observacao" class="form-input" placeholder="Observações adicionais sobre o insumo" rows="3"></textarea>
+            </div>
+            
+            <div style="grid-column: 1 / -1; display: flex; gap: var(--spacing-3); justify-content: flex-end; margin-top: var(--spacing-4); padding-top: var(--spacing-4); border-top: 1px solid var(--color-gray-200);">
+                <button type="submit" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Cadastrar Insumo
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endif %}
+
+<!-- Lista de Categorias -->
+<section class="card" style="margin-bottom: var(--spacing-8);">
+    <div class="card-header">
+        <h3 class="card-title">Categorias Disponíveis</h3>
+    </div>
+    <div class="card-body">
+        {% if categorias %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--spacing-4);">
+            {% for categoria in categorias %}
+            <div style="padding: var(--spacing-4); border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-md); display: flex; justify-content: space-between; align-items: center; {% if not categoria.ativo %}opacity: 0.6;{% endif %}">
+                <div>
+                    <div style="font-weight: 600; color: var(--color-gray-900);">{{ categoria.nome }}</div>
+                    {% if categoria.descricao %}
+                    <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-top: var(--spacing-1);">{{ categoria.descricao|truncatewords:10 }}</div>
+                    {% endif %}
+                    {% if not categoria.ativo %}
+                    <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">(Desativada)</span>
+                    {% endif %}
+                </div>
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="toggle_categoria">
+                    <input type="hidden" name="categoria_id" value="{{ categoria.id }}">
+                    <button type="submit" class="btn btn-ghost" style="padding: var(--spacing-2);" title="{% if categoria.ativo %}Desativar{% else %}Ativar{% endif %} categoria">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                            {% if categoria.ativo %}
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                            {% else %}
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                            {% endif %}
+                        </svg>
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: var(--spacing-8); color: var(--color-gray-500);">
+            Nenhuma categoria cadastrada. Crie uma categoria acima.
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Lista de Insumos por Categoria -->
+{% if campeonato_ativo %}
+{% if insumos_por_categoria %}
+{% for cat_nome, dados in insumos_por_categoria.items %}
+<section class="card" style="margin-bottom: var(--spacing-8);">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title">{{ cat_nome }}</h3>
+        <div style="font-size: var(--font-size-lg); font-weight: 600; color: var(--color-primary);">
+            Total: R$ {{ dados.total|floatformat:2 }}
+        </div>
+    </div>
+    <div class="card-body">
+        <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
+            {% for insumo in dados.insumos %}
+            <div style="padding: var(--spacing-6); border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-md); background: {% if insumo.status == 'pago' %}var(--color-success-light){% else %}var(--color-warning-light){% endif %};">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-4);">
+                    <div>
+                        <div style="font-weight: 600; color: var(--color-gray-900); font-size: var(--font-size-lg);">{{ insumo.nome }}</div>
+                        {% if insumo.fornecedor %}
+                        <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">
+                            Fornecedor: {{ insumo.fornecedor }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: var(--font-size-xl); font-weight: 700; color: var(--color-primary);">
+                            R$ {{ insumo.valor|floatformat:2 }}
+                        </div>
+                        {% if insumo.quantidade > 1 %}
+                        <div style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                            {{ insumo.quantidade }} unidades × R$ {{ insumo.valor_unitario|floatformat:2 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-3); margin-bottom: var(--spacing-4);">
+                    <span class="badge {% if insumo.status == 'pago' %}badge-success{% else %}badge-warning{% endif %}">
+                        {{ insumo.get_status_display }}
+                    </span>
+                    {% if insumo.contato_nome %}
+                    <span style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                        Contato: {{ insumo.contato_nome }}
+                    </span>
+                    {% endif %}
+                    {% if insumo.data_pagamento %}
+                    <span style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                        Pago em: {{ insumo.data_pagamento|date:"d/m/Y" }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                {% if insumo.observacao %}
+                <div style="padding: var(--spacing-3); background: var(--color-white); border-radius: var(--border-radius-sm); margin-bottom: var(--spacing-4);">
+                    <div style="font-size: var(--font-size-sm); color: var(--color-gray-700);">{{ insumo.observacao|linebreaks }}</div>
+                </div>
+                {% endif %}
+                
+                <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end; padding-top: var(--spacing-4); border-top: 1px solid var(--color-gray-200);">
+                    {% if insumo.contato_whatsapp %}
+                    <a href="https://wa.me/{{ insumo.contato_whatsapp|whatsapp_clean }}" target="_blank" class="btn btn-ghost" style="color: var(--color-success);">
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 16px; height: 16px;">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.415Z"/>
+                        </svg>
+                        WhatsApp
+                    </a>
+                    {% endif %}
+                    <button type="button" onclick="editarInsumo({{ insumo.id }}, '{{ insumo.categoria.id }}', '{{ insumo.nome|escapejs }}', {{ insumo.valor }}, {{ insumo.quantidade }}, '{{ insumo.fornecedor|escapejs }}', '{{ insumo.status }}', '{{ insumo.contato_nome|escapejs }}', '{{ insumo.contato_whatsapp|escapejs }}', '{{ insumo.observacao|escapejs }}', '{{ insumo.data_pagamento|date:"Y-m-d"|default:"" }}')" class="btn btn-ghost">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Editar
+                    </button>
+                    <form method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja remover este insumo?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="deletar_insumo">
+                        <input type="hidden" name="insumo_id" value="{{ insumo.id }}">
+                        <button type="submit" class="btn btn-ghost" style="color: var(--color-danger);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            Remover
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endfor %}
+{% else %}
+<section class="card">
+    <div class="card-body" style="text-align: center; padding: var(--spacing-8); color: var(--color-gray-500);">
+        Nenhum insumo cadastrado ainda. Use o formulário acima para cadastrar.
+    </div>
+</section>
+{% endif %}
+{% endif %}
+
+<!-- Modal de Edição -->
+<div class="modal-overlay" id="modal-editar">
+    <div class="modal" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Editar Insumo</h3>
+            <button class="modal-close" onclick="fecharModal()" aria-label="Fechar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form method="post" id="form-editar-insumo" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-6);">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="editar_insumo">
+            <input type="hidden" name="insumo_id" id="editar_insumo_id">
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="editar_categoria">Categoria *</label>
+                <select id="editar_categoria" name="categoria" class="form-select" required>
+                    {% for categoria in categorias_ativas %}
+                    <option value="{{ categoria.id }}">{{ categoria.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="editar_nome">Nome do Item *</label>
+                <input type="text" id="editar_nome" name="nome" class="form-input" required>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="editar_valor">Valor Total (R$) *</label>
+                <input type="number" step="0.01" id="editar_valor" name="valor" class="form-input" required>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="editar_quantidade">Quantidade</label>
+                <input type="number" id="editar_quantidade" name="quantidade" class="form-input" min="1" value="1">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="editar_fornecedor">Fornecedor</label>
+                <input type="text" id="editar_fornecedor" name="fornecedor" class="form-input">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="editar_status">Status</label>
+                <select id="editar_status" name="status" class="form-select">
+                    <option value="pendente">Pendente</option>
+                    <option value="pago">Pago</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="editar_data_pagamento">Data de Pagamento</label>
+                <input type="date" id="editar_data_pagamento" name="data_pagamento" class="form-input">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="editar_contato_nome">Contato Responsável</label>
+                <input type="text" id="editar_contato_nome" name="contato_nome" class="form-input">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="editar_contato_whatsapp">WhatsApp</label>
+                <input type="text" id="editar_contato_whatsapp" name="contato_whatsapp" class="form-input">
+            </div>
+            
+            <div class="form-group" style="grid-column: 1 / -1; margin-bottom: 0;">
+                <label class="form-label" for="editar_observacao">Observações</label>
+                <textarea id="editar_observacao" name="observacao" class="form-input" rows="3"></textarea>
+            </div>
+            
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" onclick="fecharModal()" class="btn btn-secondary">Cancelar</button>
+            <button type="submit" form="form-editar-insumo" class="btn btn-primary">Salvar Alterações</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function editarInsumo(id, categoriaId, nome, valor, quantidade, fornecedor, status, contatoNome, contatoWhatsapp, observacao, dataPagamento) {
+    document.getElementById('editar_insumo_id').value = id;
+    document.getElementById('editar_categoria').value = categoriaId;
+    document.getElementById('editar_nome').value = nome;
+    document.getElementById('editar_valor').value = valor;
+    document.getElementById('editar_quantidade').value = quantidade;
+    document.getElementById('editar_fornecedor').value = fornecedor || '';
+    document.getElementById('editar_status').value = status;
+    document.getElementById('editar_contato_nome').value = contatoNome || '';
+    document.getElementById('editar_contato_whatsapp').value = contatoWhatsapp || '';
+    document.getElementById('editar_observacao').value = observacao || '';
+    document.getElementById('editar_data_pagamento').value = dataPagamento || '';
+    
+    const modal = document.getElementById('modal-editar');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function fecharModal() {
+    const modal = document.getElementById('modal-editar');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    const form = document.getElementById('form-editar-insumo');
+    if (form) {
+        form.reset();
+    }
+}
+
+// Fechar modal ao clicar no overlay
+document.getElementById('modal-editar')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        fecharModal();
+    }
+});
+</script>
+{% endblock %}

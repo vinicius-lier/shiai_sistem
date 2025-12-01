@@ -174,10 +174,10 @@
         </p>
     </div>
     <div style="display: flex; gap: var(--spacing-3);">
-        <button type="button" class="btn btn-secondary" onclick="window.print()">
+        <a href="{% url 'imprimir_chave' chave.id %}" target="_blank" class="btn btn-secondary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-            Imprimir
-        </button>
+            Imprimir Chave
+        </a>
         <a href="{% url 'lista_chaves' %}" class="btn btn-secondary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
             Voltar
@@ -311,8 +311,45 @@
                                 <option value="YUKO">Yuko (1 pt)</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success">Registrar Resultado</button>
+                        <button type="submit" class="btn btn-success" id="btn-registrar-{{ luta.id }}">Registrar Resultado</button>
                     </form>
+                    <script>
+                    // Interceptar submit do formulário para fazer AJAX
+                    document.querySelector('form[action="{% url 'registrar_vencedor' luta.id %}"]').addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const form = this;
+                        const btn = document.getElementById('btn-registrar-{{ luta.id }}');
+                        const formData = new FormData(form);
+                        
+                        btn.disabled = true;
+                        btn.textContent = 'Registrando...';
+                        
+                        fetch(form.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Recarregar a página para mostrar o resultado atualizado
+                                window.location.reload();
+                            } else {
+                                alert('Erro: ' + (data.message || 'Não foi possível registrar o resultado'));
+                                btn.disabled = false;
+                                btn.textContent = 'Registrar Resultado';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro:', error);
+                            alert('Erro ao registrar resultado. Tente novamente.');
+                            btn.disabled = false;
+                            btn.textContent = 'Registrar Resultado';
+                        });
+                    });
+                    </script>
                 {% else %}
                     <div style="color: var(--color-gray-500); font-style: italic;">
                         Aguardando luta anterior ser concluída

@@ -1,4 +1,5 @@
 {% extends 'atletas/academia/base_academia.html' %}
+{% load static %}
 
 {% block title %}Inscrever Atletas - {{ campeonato.nome }}{% endblock %}
 
@@ -152,34 +153,47 @@
         gap: var(--spacing-2);
     }
 
-    /* Modal */
+    /* Modal - PADRÃO SHIAI COM Z-INDEX CORRIGIDO */
     .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(0, 0, 0, 0.5) !important;
+        display: none !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 1055 !important;
         padding: var(--spacing-4);
         backdrop-filter: blur(4px);
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 0.2s ease, visibility 0.2s ease;
     }
 
     .modal-overlay.active {
-        display: flex;
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
 
     .modal {
-        background: var(--color-white);
+        background: var(--color-white) !important;
         border-radius: var(--border-radius-lg);
         box-shadow: var(--shadow-xl);
         max-width: 500px;
         width: 100%;
         max-height: 90vh;
         overflow-y: auto;
+        position: relative !important;
+        z-index: 1056 !important;
+        transform: scale(0.95);
+        transition: transform 0.2s ease;
+    }
+
+    .modal-overlay.active .modal {
+        transform: scale(1);
     }
 
     .modal-header {
@@ -292,9 +306,56 @@
         Voltar para evento
     </a>
     
-    <h1 class="page-title">Inscrever Atletas</h1>
-    <p class="page-description">{{ campeonato.nome }}</p>
+    <div style="display: flex; align-items: center; gap: var(--spacing-4); margin-top: var(--spacing-4); flex-wrap: wrap;">
+        {% if academia.foto_perfil %}
+        <img src="{{ academia.foto_perfil.url }}" alt="{{ academia.nome }}" style="max-width: 60px; max-height: 60px; height: auto; border-radius: var(--border-radius-md); object-fit: contain; flex-shrink: 0;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" style="max-width: 60px; height: auto; display: none; flex-shrink: 0;">
+        {% else %}
+        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" style="max-width: 60px; height: auto; flex-shrink: 0;">
+        {% endif %}
+        <div style="flex: 1; min-width: 200px;">
+            <h1 class="page-title" style="margin: 0;">Inscrever Atletas</h1>
+            <p class="page-description" style="margin: var(--spacing-1) 0 0 0;">{{ campeonato.nome }}</p>
+        </div>
+    </div>
 </div>
+
+{% if prazo_inscricao_vencido %}
+<div class="card mb-6" style="border-left: 4px solid var(--color-warning); background: var(--color-warning-light);">
+    <div class="card-body">
+        <div style="display: flex; align-items: center; gap: var(--spacing-3);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; color: var(--color-warning); flex-shrink: 0;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <div style="flex: 1;">
+                <h3 style="font-size: var(--font-size-lg); font-weight: 600; color: var(--color-gray-900); margin: 0 0 var(--spacing-1) 0;">
+                    Prazo de Inscrições Encerrado
+                </h3>
+                <p style="font-size: var(--font-size-sm); color: var(--color-gray-700); margin: 0;">
+                    O prazo para inscrições por academia encerrou em <strong>{{ data_limite_inscricao_academia|date:"d/m/Y" }}</strong>. 
+                    Você não pode mais inscrever ou editar atletas. Apenas a equipe operacional pode realizar inscrições agora.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif data_limite_inscricao_academia %}
+<div class="card mb-6" style="border-left: 4px solid var(--color-info); background: var(--color-info-light);">
+    <div class="card-body">
+        <div style="display: flex; align-items: center; gap: var(--spacing-3);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; color: var(--color-info); flex-shrink: 0;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <p style="font-size: var(--font-size-sm); color: var(--color-gray-700); margin: 0;">
+                <strong>Prazo para inscrições:</strong> {{ data_limite_inscricao_academia|date:"d/m/Y" }}
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 {% if resumo_financeiro %}
 <div class="card mb-6">
@@ -356,7 +417,38 @@
 <div class="mb-4">
     <p class="text-gray-600" style="font-size: var(--font-size-sm);">Total: {{ atletas|length }} atleta(s)</p>
 </div>
+{% else %}
+<div class="card" style="text-align: center; padding: var(--spacing-8);">
+    <div style="margin-bottom: var(--spacing-4);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 64px; height: 64px; color: var(--color-gray-400); margin: 0 auto;">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+    </div>
+    <h3 style="font-size: var(--font-size-lg); font-weight: 600; color: var(--color-gray-900); margin-bottom: var(--spacing-2);">Nenhum atleta encontrado</h3>
+    <p style="color: var(--color-gray-600); margin-bottom: var(--spacing-6);">
+        {% if nome_filtro or sexo_filtro %}
+            Nenhum atleta corresponde aos filtros aplicados. Tente ajustar os filtros ou
+        {% else %}
+            Não há atletas cadastrados para sua academia.
+        {% endif %}
+    </p>
+    <div style="display: flex; gap: var(--spacing-3); justify-content: center; flex-wrap: wrap;">
+        {% if nome_filtro or sexo_filtro %}
+        <a href="{% url 'academia_inscrever_atletas' campeonato.id %}" class="btn btn-secondary">Limpar Filtros</a>
+        {% endif %}
+        <a href="{% url 'academia_cadastrar_atleta' %}?campeonato_id={{ campeonato.id }}" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Cadastrar Novo Atleta
+        </a>
+    </div>
+</div>
+{% endif %}
 
+{% if atletas %}
 <div class="grid grid-cols-1 gap-4">
     {% for item in atletas %}
     <div class="atleta-item {% if item.total_inscricoes > 0 %}inscrito{% endif %}">
@@ -412,9 +504,10 @@
             <button type="button"
                     class="btn btn-primary"
                     data-atleta-id="{{ item.atleta.id }}"
-                    onclick="abrirModalInscricao({{ item.atleta.id }}, '{{ item.atleta.nome|escapejs }}', '{{ item.atleta.get_classe_atual|escapejs }}', '{{ item.atleta.sexo }}', {{ item.atleta.federado|yesno:'true,false' }})"
-                    style="width: 100%; min-width: 120px;">
-                {% if item.total_inscricoes > 0 %}Adicionar{% else %}Inscrever{% endif %}
+                    onclick="{% if prazo_inscricao_vencido %}alert('O prazo para inscrições por academia já encerrou. Entre em contato com a organização do evento.');{% else %}abrirModalInscricao({{ item.atleta.id }}, '{{ item.atleta.nome|escapejs }}', '{{ item.atleta.get_classe_atual|escapejs }}', '{{ item.atleta.sexo }}', {{ item.atleta.federado|yesno:'true,false' }});{% endif %}"
+                    style="width: 100%; min-width: 120px;"
+                    {% if prazo_inscricao_vencido %}disabled title="Prazo de inscrições encerrado"{% endif %}>
+                {% if prazo_inscricao_vencido %}Prazo Encerrado{% elif item.total_inscricoes > 0 %}Adicionar{% else %}Inscrever{% endif %}
             </button>
         </div>
     </div>
@@ -441,7 +534,7 @@
 </div>
 {% endif %}
 
-<!-- Modal de Inscrição -->
+<!-- Modal de Inscrição - FORA DO CONTAINER PARA GARANTIR VISIBILIDADE -->
 <div class="modal-overlay" id="modal-inscricao">
     <div class="modal">
         <div class="modal-header">
@@ -453,7 +546,7 @@
                 </svg>
             </button>
         </div>
-        <form id="form-inscricao" method="post" action="{% url 'academia_inscrever_atletas' campeonato.id %}">
+        <form id="form-inscricao" method="post" action="{% url 'academia_inscrever_atletas' campeonato.id %}" onsubmit="return validarFormularioInscricao(event);">
             {% csrf_token %}
             <input type="hidden" id="atleta_id_inscricao" name="atleta_id">
             
@@ -481,24 +574,36 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="categoria_escolhida">
-                        Categoria
+                    <label class="form-label" for="categoria_escolhida" style="display: flex; align-items: center; gap: var(--spacing-2);">
+                        <span>Categoria</span>
                         <span style="color: var(--color-danger);">*</span>
+                        <button type="button" onclick="abrirTabelaCategorias()" style="background: none; border: none; cursor: pointer; padding: 0; margin-left: auto; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; transition: all 0.2s;" title="Ver tabela de categorias de peso" onmouseover="this.style.background='var(--color-gray-100)'" onmouseout="this.style.background='none'">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; color: var(--color-warning);">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </button>
                     </label>
                     <select id="categoria_escolhida" name="categoria_escolhida" class="form-select" required disabled>
                         <option value="">Selecione primeiro a classe</option>
                     </select>
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">
+                        Dúvidas sobre o peso? Clique no ícone <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; color: var(--color-warning);"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> para ver a tabela completa
+                    </small>
                 </div>
             </div>
             
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="fecharModalInscricao()">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Confirmar Inscrição</button>
+                <button type="submit" class="btn btn-primary" {% if prazo_inscricao_vencido %}disabled title="Prazo de inscrições encerrado"{% endif %}>Confirmar Inscrição</button>
             </div>
         </form>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 // Dados das categorias
 const categorias = [
@@ -541,14 +646,27 @@ function categoriasPermitidas(classeAtleta) {
     const classesExistentesNormalizadas = Array.from(classesExistentesMap.keys());
     
     // Determinar classes permitidas baseado na classe do atleta
+    // Regras de elegibilidade:
+    // - VETERANOS: podem escolher VETERANOS ou SÊNIOR
+    // - SUB 18: podem escolher SUB 18, SUB 21 (se existir) ou SÊNIOR
+    // - Demais classes: apenas sua própria classe
     let classesPermitidasNormalizadas = [];
     
-    if (classeNormalizada.includes('VETERANO')) {
-        classesPermitidasNormalizadas = ['VETERANOS', 'SÊNIOR'];
-    } else if (classeNormalizada.includes('SUB18') || classeNormalizada.includes('SUB 18')) {
-        classesPermitidasNormalizadas = ['SUB 18', 'SUB21', 'SÊNIOR'];
-    } else {
-        // Tentar encontrar a classe exata
+    // Normalizar variações de VETERANOS
+    if (classeNormalizada === 'VETERANOS' || classeNormalizada === 'VETERANO' || classeNormalizada.includes('VETERANO')) {
+        // Veteranos podem escolher VETERANOS (se existir) ou SÊNIOR
+        classesPermitidasNormalizadas = ['VETERANOS', 'VETERANO', 'SÊNIOR', 'SENIOR'];
+    } 
+    // Normalizar variações de SUB 18
+    else if (classeNormalizada === 'SUB 18' || classeNormalizada === 'SUB18' || classeNormalizada.includes('SUB18') || classeNormalizada.includes('SUB 18')) {
+        classesPermitidasNormalizadas = ['SUB 18', 'SUB 21', 'SUB21', 'SÊNIOR'];
+    } 
+    // Festival: apenas sua própria classe
+    else if (classeNormalizada === 'FESTIVAL') {
+        classesPermitidasNormalizadas = ['FESTIVAL'];
+    }
+    // Regra padrão: apenas sua própria classe
+    else {
         classesPermitidasNormalizadas = [classeNormalizada];
     }
     
@@ -556,15 +674,80 @@ function categoriasPermitidas(classeAtleta) {
     const classesFinais = [];
     classesPermitidasNormalizadas.forEach(classePermitida => {
         const classePermitidaNormal = classePermitida.toUpperCase().trim();
-        if (classesExistentesNormalizadas.includes(classePermitidaNormal)) {
-            // Encontrar o valor original (com capitalização correta)
-            classesExistentesMap.forEach((valorOriginal, chaveNormal) => {
-                if (chaveNormal === classePermitidaNormal && !classesFinais.includes(valorOriginal)) {
-                    classesFinais.push(valorOriginal);
-                }
-            });
-        }
+        // Verificar se a classe existe (comparação flexível)
+        classesExistentesMap.forEach((valorOriginal, chaveNormal) => {
+            // Comparação flexível: SUB21 = SUB 21, VETERANO = VETERANOS, SÊNIOR = SENIOR
+            let match = false;
+            if (chaveNormal === classePermitidaNormal) {
+                match = true;
+            } else if (classePermitidaNormal === 'SUB21' && (chaveNormal === 'SUB 21' || chaveNormal === 'SUB21')) {
+                match = true;
+            } else if (classePermitidaNormal === 'SUB 21' && (chaveNormal === 'SUB 21' || chaveNormal === 'SUB21')) {
+                match = true;
+            } else if (classePermitidaNormal === 'SUB18' && (chaveNormal === 'SUB 18' || chaveNormal === 'SUB18')) {
+                match = true;
+            } else if (classePermitidaNormal === 'SUB 18' && (chaveNormal === 'SUB 18' || chaveNormal === 'SUB18')) {
+                match = true;
+            } else if (classePermitidaNormal === 'VETERANO' && (chaveNormal === 'VETERANOS' || chaveNormal === 'VETERANO')) {
+                match = true;
+            } else if (classePermitidaNormal === 'VETERANOS' && (chaveNormal === 'VETERANOS' || chaveNormal === 'VETERANO')) {
+                match = true;
+            } else if (classePermitidaNormal === 'SÊNIOR' && (chaveNormal === 'SÊNIOR' || chaveNormal === 'SENIOR')) {
+                match = true;
+            } else if (classePermitidaNormal === 'SENIOR' && (chaveNormal === 'SÊNIOR' || chaveNormal === 'SENIOR')) {
+                match = true;
+            } else if (classePermitidaNormal === 'FESTIVAL' && chaveNormal === 'FESTIVAL') {
+                match = true;
+            }
+            
+            if (match && !classesFinais.includes(valorOriginal)) {
+                classesFinais.push(valorOriginal);
+            }
+        });
     });
+    
+    // Caso especial: Se atleta é VETERANO e não encontrou VETERANOS no banco, 
+    // mas encontrou SÊNIOR, garantir que SÊNIOR apareça
+    if ((classeNormalizada === 'VETERANOS' || classeNormalizada === 'VETERANO' || classeNormalizada.includes('VETERANO')) 
+        && classesFinais.length > 0 && !classesFinais.some(c => c.toUpperCase().includes('VETERANO'))) {
+        // Se encontrou SÊNIOR mas não VETERANOS, está correto - manter SÊNIOR
+        // Veterano pode se inscrever nas classes finais
+    }
+    
+    // Se não encontrou nenhuma classe, tentar usar a classe original do atleta
+    if (classesFinais.length === 0 && classeAtleta) {
+        const classeAtletaNormal = classeAtleta.toUpperCase().trim();
+        classesExistentesMap.forEach((valorOriginal, chaveNormal) => {
+            // Comparação flexível para classe original
+            let match = false;
+            if (chaveNormal === classeAtletaNormal) {
+                match = true;
+            } else if ((classeAtletaNormal === 'SUB 18' || classeAtletaNormal === 'SUB18') && 
+                       (chaveNormal === 'SUB 18' || chaveNormal === 'SUB18')) {
+                match = true;
+            } else if ((classeAtletaNormal === 'SUB 21' || classeAtletaNormal === 'SUB21') && 
+                       (chaveNormal === 'SUB 21' || chaveNormal === 'SUB21')) {
+                match = true;
+            } else if ((classeAtletaNormal === 'VETERANOS' || classeAtletaNormal === 'VETERANO' || classeAtletaNormal.includes('VETERANO')) && 
+                       (chaveNormal === 'VETERANOS' || chaveNormal === 'VETERANO' || chaveNormal === 'SÊNIOR' || chaveNormal === 'SENIOR')) {
+                match = true;
+            } else if (classeAtletaNormal === 'FESTIVAL' && chaveNormal === 'FESTIVAL') {
+                match = true;
+            }
+            
+            if (match && !classesFinais.includes(valorOriginal)) {
+                classesFinais.push(valorOriginal);
+            }
+        });
+    }
+    
+    // Retorna classes permitidas para o atleta
+    
+    if (classesFinais.length === 0) {
+        console.warn('⚠️ Nenhuma classe encontrada para:', classeAtleta);
+        console.log('Classes permitidas normalizadas:', classesPermitidasNormalizadas);
+        console.log('Classes existentes no banco:', Array.from(classesExistentesMap.keys()));
+    }
     
     return classesFinais;
 }
@@ -579,49 +762,189 @@ function atualizarValorPreview() {
 }
 
 function abrirModalInscricao(atletaId, atletaNome, classe, sexo, federado) {
-    atletaAtual = atletaId;
-    classeAtleta = classe;
-    sexoAtleta = sexo;
-    atletaFederado = !!federado;
-    
-    document.getElementById('atleta_id_inscricao').value = atletaId;
-    document.getElementById('atleta_nome_inscricao').textContent = atletaNome;
-    document.getElementById('atleta_classe_inscricao').textContent = classe;
-    document.getElementById('atleta_sexo_inscricao').textContent = sexo === 'M' ? 'Masculino' : 'Feminino';
-    atualizarValorPreview();
-    
-    const classesPermitidas = categoriasPermitidas(classe);
-    const classeSelect = document.getElementById('classe_escolhida');
-    classeSelect.innerHTML = '<option value="">Selecione a classe</option>';
-    
-    classesPermitidas.forEach(classePermitida => {
-        const option = document.createElement('option');
-        option.value = classePermitida;
-        option.textContent = classePermitida;
-        if (classesPermitidas.length === 1) {
-            option.selected = true;
-            setTimeout(() => classeSelect.dispatchEvent(new Event('change')), 100);
+    try {
+        console.log('🔵 abrirModalInscricao chamado:', { atletaId, atletaNome, classe, sexo, federado });
+        
+        // Função interna para processar após garantir que DOM está pronto
+        const processarModal = () => {
+            atletaAtual = atletaId;
+            classeAtleta = classe;
+            sexoAtleta = sexo;
+            atletaFederado = !!federado;
+            
+            // Verificar se os elementos existem antes de acessá-los
+            const atletaIdInput = document.getElementById('atleta_id_inscricao');
+            const atletaNomeSpan = document.getElementById('atleta_nome_inscricao');
+            const atletaClasseSpan = document.getElementById('atleta_classe_inscricao');
+            const atletaSexoSpan = document.getElementById('atleta_sexo_inscricao');
+            
+            if (!atletaIdInput || !atletaNomeSpan || !atletaClasseSpan || !atletaSexoSpan) {
+                console.error('❌ Elementos do formulário não encontrados!', {
+                    atletaIdInput: !!atletaIdInput,
+                    atletaNomeSpan: !!atletaNomeSpan,
+                    atletaClasseSpan: !!atletaClasseSpan,
+                    atletaSexoSpan: !!atletaSexoSpan,
+                    modal: !!document.getElementById('modal-inscricao')
+                });
+                // Tentar novamente após um pequeno delay
+                setTimeout(processarModal, 50);
+                return;
+            }
+            
+            atletaIdInput.value = atletaId;
+            atletaNomeSpan.textContent = atletaNome;
+            atletaClasseSpan.textContent = classe;
+            atletaSexoSpan.textContent = sexo === 'M' ? 'Masculino' : 'Feminino';
+            atualizarValorPreview();
+            
+            const classesPermitidas = categoriasPermitidas(classe);
+            const classeSelect = document.getElementById('classe_escolhida');
+            
+            if (!classeSelect) {
+                console.error('❌ Select de classe não encontrado!');
+                alert('Erro: Select de classe não encontrado. Recarregue a página.');
+                return;
+            }
+            
+            classeSelect.innerHTML = '<option value="">Selecione a classe</option>';
+            
+            if (classesPermitidas.length === 0) {
+                // Se não encontrou classes, mostrar mensagem de erro
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = '⚠️ Nenhuma classe disponível. Verifique se há categorias cadastradas no sistema.';
+                option.disabled = true;
+                classeSelect.appendChild(option);
+                console.error('❌ Nenhuma classe permitida encontrada para:', classe);
+                console.log('Classes existentes no banco:', Array.from(new Map(categorias.map(c => [c.classe.toUpperCase().trim(), c.classe])).keys()));
+            } else {
+                classesPermitidas.forEach(classePermitida => {
+                    const option = document.createElement('option');
+                    option.value = classePermitida;
+                    option.textContent = classePermitida;
+                    if (classesPermitidas.length === 1) {
+                        option.selected = true;
+                        setTimeout(() => classeSelect.dispatchEvent(new Event('change')), 100);
+                    }
+                    classeSelect.appendChild(option);
+                });
+            }
+            
+            const categoriaSelect = document.getElementById('categoria_escolhida');
+            if (!categoriaSelect) {
+                console.error('❌ Select de categoria não encontrado!');
+                alert('Erro: Select de categoria não encontrado. Recarregue a página.');
+                return;
+            }
+            
+            categoriaSelect.innerHTML = '<option value="">Selecione primeiro a classe</option>';
+            categoriaSelect.disabled = true;
+            
+            const modal = document.getElementById('modal-inscricao');
+            if (!modal) {
+                console.error('❌ Modal não encontrado no DOM!');
+                alert('Erro: Modal não encontrado. Recarregue a página.');
+                return;
+            }
+            
+            console.log('✅ Modal encontrado, abrindo...');
+            
+            // Garantir que o modal está visível
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Forçar exibição do modal se necessário
+            setTimeout(() => {
+                const computedStyle = window.getComputedStyle(modal);
+                if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
+                    console.log('⚠️ Modal não está visível, forçando exibição...');
+                    // Usar a função global de força de exibição se disponível
+                    if (window.forcarExibicaoModal) {
+                        window.forcarExibicaoModal('modal-inscricao');
+                    } else {
+                        modal.style.setProperty('display', 'flex', 'important');
+                        modal.style.setProperty('visibility', 'visible', 'important');
+                        modal.style.setProperty('opacity', '1', 'important');
+                    }
+                } else {
+                    console.log('✅ Modal está visível!');
+                }
+            }, 50);
+        };
+        
+        // Aguardar um pouco para garantir que o DOM está pronto, depois processar
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', processarModal);
+        } else {
+            // DOM já está pronto, mas dar um pequeno delay para garantir que elementos estão renderizados
+            setTimeout(processarModal, 10);
         }
-        classeSelect.appendChild(option);
-    });
-    
-    const categoriaSelect = document.getElementById('categoria_escolhida');
-    categoriaSelect.innerHTML = '<option value="">Selecione primeiro a classe</option>';
-    categoriaSelect.disabled = true;
-    
-    document.getElementById('modal-inscricao').classList.add('active');
-    document.body.style.overflow = 'hidden';
+    } catch (error) {
+        console.error('❌ Erro ao abrir modal:', error);
+        alert('Erro ao abrir modal de inscrição: ' + error.message);
+    }
 }
 
 function fecharModalInscricao() {
-    document.getElementById('modal-inscricao').classList.remove('active');
+    const modal = document.getElementById('modal-inscricao');
+    if (modal) {
+        modal.classList.remove('active');
+    }
     document.body.style.overflow = '';
-    document.getElementById('form-inscricao').reset();
+    const form = document.getElementById('form-inscricao');
+    if (form) {
+        form.reset();
+    }
     atletaAtual = null;
 }
 
-// Event listener para mudança de classe
-document.getElementById('classe_escolhida').addEventListener('change', function() {
+function abrirTabelaCategorias() {
+    window.open('{% url "tabela_categorias_peso" %}', 'TabelaCategorias', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+}
+
+// Validar formulário antes de submeter
+function validarFormularioInscricao(event) {
+    const atletaId = document.getElementById('atleta_id_inscricao').value;
+    const classeEscolhida = document.getElementById('classe_escolhida').value;
+    const categoriaEscolhida = document.getElementById('categoria_escolhida').value;
+    
+    if (!atletaId) {
+        alert('Erro: Atleta não identificado. Recarregue a página e tente novamente.');
+        event.preventDefault();
+        return false;
+    }
+    
+    if (!classeEscolhida) {
+        alert('Por favor, selecione a classe do atleta.');
+        event.preventDefault();
+        return false;
+    }
+    
+    if (!categoriaEscolhida) {
+        alert('Por favor, selecione a categoria de peso do atleta.');
+        event.preventDefault();
+        return false;
+    }
+    
+    // Se tudo estiver ok, permitir submissão
+    return true;
+}
+
+// Tornar funções globais IMEDIATAMENTE para garantir acesso (DEPOIS de todas estarem definidas)
+window.abrirModalInscricao = abrirModalInscricao;
+window.fecharModalInscricao = fecharModalInscricao;
+window.validarFormularioInscricao = validarFormularioInscricao;
+window.abrirTabelaCategorias = abrirTabelaCategorias;
+
+// Event listener para mudança de classe (aguardar DOM estar pronto)
+document.addEventListener('DOMContentLoaded', function() {
+    const classeSelect = document.getElementById('classe_escolhida');
+    if (!classeSelect) {
+        console.warn('⚠️ Select de classe não encontrado no DOM');
+        return;
+    }
+    
+    classeSelect.addEventListener('change', function() {
     const classeSelecionada = this.value;
     const categoriaSelect = document.getElementById('categoria_escolhida');
     
@@ -649,21 +972,58 @@ document.getElementById('classe_escolhida').addEventListener('change', function(
         categoriaSelect.disabled = false;
         categoriasFiltradas.forEach(cat => {
             const option = document.createElement('option');
-            option.value = cat.id;
+            option.value = cat.label;  // Enviar o label completo ao invés do ID
+            option.setAttribute('data-categoria-id', cat.id);  // Guardar ID como atributo para referência futura
             option.textContent = cat.label;
             categoriaSelect.appendChild(option);
         });
     }
-});
-
-// Fechar modal ao clicar fora
-document.getElementById('modal-inscricao').addEventListener('click', function(e) {
-    if (e.target === this) {
-        fecharModalInscricao();
+    });
+    
+    // Fechar modal ao clicar fora (mas não no conteúdo do modal)
+    const modal = document.getElementById('modal-inscricao');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                fecharModalInscricao();
+            }
+        });
+    } else {
+        console.warn('⚠️ Modal não encontrado no DOM');
     }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+// Validar formulário antes de submeter
+function validarFormularioInscricao(event) {
+    const atletaId = document.getElementById('atleta_id_inscricao').value;
+    const classeEscolhida = document.getElementById('classe_escolhida').value;
+    const categoriaEscolhida = document.getElementById('categoria_escolhida').value;
+    
+    if (!atletaId) {
+        alert('Erro: Atleta não identificado. Recarregue a página e tente novamente.');
+        event.preventDefault();
+        return false;
+    }
+    
+    if (!classeEscolhida) {
+        alert('Por favor, selecione a classe do atleta.');
+        event.preventDefault();
+        return false;
+    }
+    
+    if (!categoriaEscolhida) {
+        alert('Por favor, selecione a categoria de peso do atleta.');
+        event.preventDefault();
+        return false;
+    }
+    
+    // Se tudo estiver ok, permitir submissão
+    return true;
+}
+
+// Inicialização quando DOM estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-abrir modal se houver novo atleta
     if (NOVO_ATLETA_ID) {
         const botao = document.querySelector(`[data-atleta-id="${NOVO_ATLETA_ID}"]`);
         if (botao) {

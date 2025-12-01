@@ -1,0 +1,163 @@
+{% extends 'atletas/administracao/base_admin.html' %}
+
+{% block admin_page_title %}Detalhes da Ocorrência{% endblock %}
+{% block admin_page_description %}{{ ocorrencia.titulo }}{% endblock %}
+
+{% block admin_content %}
+<section class="section-spacing">
+    <div class="card mb-4">
+        <div class="card-header card-header-flex">
+            <div>
+                <h2 class="card-title m-0">{{ ocorrencia.titulo }}</h2>
+                <p class="text-muted mb-0 mt-1">
+                    <span class="badge {% if ocorrencia.prioridade == 'URGENTE' %}badge-danger{% elif ocorrencia.prioridade == 'ALTA' %}badge-warning{% elif ocorrencia.prioridade == 'MEDIA' %}badge-info{% else %}badge-secondary{% endif %}">
+                        {{ ocorrencia.get_prioridade_display }}
+                    </span>
+                    <span class="badge {% if ocorrencia.status == 'ABERTA' %}badge-warning{% elif ocorrencia.status == 'EM_ANDAMENTO' %}badge-info{% elif ocorrencia.status == 'RESOLVIDA' %}badge-success{% else %}badge-secondary{% endif %}">
+                        {{ ocorrencia.get_status_display }}
+                    </span>
+                </p>
+            </div>
+            <a href="{% url 'ocorrencias_lista' %}?campeonato_id={{ ocorrencia.campeonato.id }}" class="btn btn-secondary">Voltar</a>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-8">
+                    <h4>Informações</h4>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td width="200"><strong>Categoria:</strong></td>
+                            <td><span class="badge badge-info">{{ ocorrencia.get_categoria_display }}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Evento:</strong></td>
+                            <td>{{ ocorrencia.campeonato.nome }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Data da Ocorrência:</strong></td>
+                            <td>{{ ocorrencia.data_ocorrencia|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Registrado em:</strong></td>
+                            <td>{{ ocorrencia.data_registro|date:"d/m/Y H:i" }} por {{ ocorrencia.registrado_por.first_name|default:ocorrencia.registrado_por.username }}</td>
+                        </tr>
+                        {% if ocorrencia.academia %}
+                        <tr>
+                            <td><strong>Academia:</strong></td>
+                            <td>{{ ocorrencia.academia.nome }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if ocorrencia.atleta %}
+                        <tr>
+                            <td><strong>Atleta:</strong></td>
+                            <td>{{ ocorrencia.atleta.nome }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if ocorrencia.responsavel_resolucao %}
+                        <tr>
+                            <td><strong>Responsável:</strong></td>
+                            <td>{{ ocorrencia.responsavel_resolucao.first_name|default:ocorrencia.responsavel_resolucao.username }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if ocorrencia.data_resolucao %}
+                        <tr>
+                            <td><strong>Resolvida em:</strong></td>
+                            <td>{{ ocorrencia.data_resolucao|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+
+                    <h4 class="mt-4">Descrição</h4>
+                    <div class="p-3 bg-light rounded">{{ ocorrencia.descricao|linebreaks }}</div>
+
+                    {% if ocorrencia.observacoes %}
+                    <h4 class="mt-4">Observações</h4>
+                    <div class="p-3 bg-light rounded">{{ ocorrencia.observacoes|linebreaks }}</div>
+                    {% endif %}
+
+                    {% if ocorrencia.solucao %}
+                    <h4 class="mt-4">Solução Aplicada</h4>
+                    <div class="p-3 bg-success-light rounded">{{ ocorrencia.solucao|linebreaks }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title m-0">Ações</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" class="mb-3">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="atualizar_status">
+                                <label class="form-label">Alterar Status</label>
+                                <select class="form-select mb-2" name="status">
+                                    {% for value, label in STATUS_CHOICES %}
+                                    <option value="{{ value }}" {% if ocorrencia.status == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-primary w-100">Atualizar Status</button>
+                            </form>
+
+                            {% if ocorrencia.status != 'RESOLVIDA' %}
+                            <form method="post" class="mb-3">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="resolver">
+                                <label class="form-label">Marcar como Resolvida</label>
+                                <textarea class="form-control mb-2" name="solucao" rows="3" placeholder="Descreva a solução aplicada..."></textarea>
+                                <button type="submit" class="btn btn-success w-100">Marcar como Resolvida</button>
+                            </form>
+                            {% endif %}
+
+                            <button type="button" class="btn btn-secondary w-100" data-bs-toggle="modal" data-bs-target="#modalEditar">Editar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Ocorrência</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="atualizar">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Título</label>
+                        <input type="text" class="form-control" name="titulo" value="{{ ocorrencia.titulo }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea class="form-control" name="descricao" rows="5" required>{{ ocorrencia.descricao }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Prioridade</label>
+                        <select class="form-select" name="prioridade">
+                            {% for value, label in PRIORIDADE_CHOICES %}
+                            <option value="{{ value }}" {% if ocorrencia.prioridade == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-control" name="observacoes" rows="3">{{ ocorrencia.observacoes }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

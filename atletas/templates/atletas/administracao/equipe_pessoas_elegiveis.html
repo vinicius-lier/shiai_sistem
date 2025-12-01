@@ -1,0 +1,107 @@
+{% extends 'atletas/administracao/base_admin.html' %}
+
+{% block admin_page_title %}Pessoas Elegíveis para Equipe Técnica{% endblock %}
+{% block admin_page_description %}Lista de pessoas cadastradas que podem fazer parte da equipe técnica{% endblock %}
+
+{% block admin_content %}
+<section class="section-spacing">
+    <div class="flex items-center justify-between mb-6" style="flex-wrap: wrap; gap: var(--spacing-4);">
+        <div>
+            <p class="text-gray-600 text-base" style="line-height: 1.6;">
+                Pessoas marcadas como elegíveis para equipe técnica. 
+                <strong>Total: {{ total }}</strong>
+            </p>
+        </div>
+        <a href="{% url 'administracao_equipe' %}" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Voltar
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-6">
+        <div class="card-body">
+            <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-4);">
+                <div class="form-group">
+                    <label class="form-label" for="nome">Nome</label>
+                    <input type="text" id="nome" name="nome" class="form-input" value="{{ nome_filtro }}" placeholder="Buscar por nome">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="funcao">Função</label>
+                    <input type="text" id="funcao" name="funcao" class="form-input" value="{{ funcao_filtro }}" placeholder="Buscar por função">
+                </div>
+                
+                <div class="form-group" style="display: flex; align-items: flex-end; gap: var(--spacing-2);">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                    <a href="{% url 'administracao_equipe_pessoas_elegiveis' %}" class="btn btn-secondary">Limpar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Pessoas -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Pessoas Elegíveis</h3>
+        </div>
+        <div class="card-body">
+            {% if pessoas %}
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Documento</th>
+                                <th>Telefone</th>
+                                <th>Função/Cargo</th>
+                                <th>Chave PIX</th>
+                                <th>Academia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pessoa in pessoas %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 500; color: var(--color-gray-900);">{{ pessoa.nome }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge {% if pessoa.documento == 'Documento cadastrado' %}badge-success{% else %}badge-warning{% endif %}">
+                                        {{ pessoa.documento }}
+                                    </span>
+                                </td>
+                                <td>{{ pessoa.telefone }}</td>
+                                <td>
+                                    <span class="badge badge-info">{{ pessoa.funcao }}</span>
+                                </td>
+                                <td>
+                                    {% if pessoa.tem_pix %}
+                                        <span class="badge badge-success" style="font-family: monospace; font-size: 0.85em;">{{ pessoa.chave_pix|truncatechars:30 }}</span>
+                                    {% else %}
+                                        <span class="badge badge-warning">⚠ Não informado</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ pessoa.academia }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-title">Nenhuma pessoa elegível encontrada</div>
+                    <div class="empty-state-description">
+                        Marque pessoas como elegíveis para equipe técnica no cadastro de atletas.
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+
+
+

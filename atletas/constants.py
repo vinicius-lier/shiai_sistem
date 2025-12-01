@@ -33,3 +33,6 @@ MSG_LOGIN_OPERACIONAL_REQUERIDO = 'Você precisa fazer login operacional para ac
 MSG_CAMPEONATO_NAO_ENCONTRADO = 'Campeonato não encontrado.'
 MSG_NENHUM_REGISTRO = 'Nenhum registro encontrado.'
 
+
+
+

@@ -73,6 +73,7 @@ urlpatterns = [
     path('campeonatos/cadastrar/', views.cadastrar_campeonato, name='cadastrar_campeonato'),
     path('campeonatos/<int:campeonato_id>/editar/', views.editar_campeonato, name='editar_campeonato'),
     path('campeonatos/<int:campeonato_id>/ativar/', views.definir_campeonato_ativo, name='definir_campeonato_ativo'),
+    path('campeonatos/<int:campeonato_id>/academias/', views.gerenciar_academias_campeonato, name='gerenciar_academias_campeonato'),
     path('campeonatos/<int:campeonato_id>/senhas/', views.gerenciar_senhas_campeonato, name='gerenciar_senhas_campeonato'),
     
     # Módulo de Login de Academia
@@ -96,6 +97,7 @@ urlpatterns = [
     path('academia/evento/<int:campeonato_id>/chaves/', views.academia_ver_chaves, name='academia_evento_chaves'),
     path('academia/chave/<int:campeonato_id>/<int:chave_id>/', views.academia_detalhe_chave, name='academia_detalhe_chave'),
     path('academia/regulamento/<int:campeonato_id>/', views.academia_baixar_regulamento, name='academia_baixar_regulamento'),
+    path('academia/tabela-categorias/', views.tabela_categorias_peso, name='tabela_categorias_peso'),
     
     # Módulo de Administração da Competição
     path('administracao/', views.administracao_painel, name='administracao_painel'),
@@ -104,6 +106,9 @@ urlpatterns = [
     path('administracao/financeiro/', views.administracao_financeiro, name='administracao_financeiro'),
     path('administracao/financeiro/despesas/', views.administracao_despesas, name='administracao_despesas'),
     path('administracao/equipe/', views.administracao_equipe, name='administracao_equipe'),
+    path('administracao/equipe/pessoas-lista/', views.administracao_equipe_pessoas_lista, name='administracao_equipe_pessoas_lista'),
+    path('administracao/equipe/gerenciar/', views.administracao_equipe_gerenciar, name='administracao_equipe_gerenciar'),
+    path('administracao/equipe/gerenciar/<int:campeonato_id>/', views.administracao_equipe_gerenciar, name='administracao_equipe_gerenciar'),
     path('administracao/insumos/', views.administracao_insumos, name='administracao_insumos'),
     path('administracao/patrocinios/', views.administracao_patrocinios, name='administracao_patrocinios'),
     path('administracao/relatorios/', views.administracao_relatorios, name='administracao_relatorios'),
@@ -115,9 +120,23 @@ urlpatterns = [
     path('ajuda/manual/<str:tipo>/', views.ajuda_manual_web, name='ajuda_manual_web'),
     path('ajuda/documentacao-tecnica/', views.ajuda_documentacao_tecnica, name='ajuda_documentacao_tecnica'),
     
-    # Pagamentos
+    # Pagamentos (unificado em Conferência de Pagamentos)
     path('academia/evento/<int:campeonato_id>/enviar-comprovante/', views.academia_enviar_comprovante, name='academia_enviar_comprovante'),
-    path('administracao/pagamentos/', views.validacao_pagamentos, name='validacao_pagamentos'),
-    path('administracao/pagamentos/<int:pagamento_id>/validar/', views.validar_pagamento, name='validar_pagamento'),
-    path('administracao/pagamentos/<int:pagamento_id>/rejeitar/', views.rejeitar_pagamento, name='rejeitar_pagamento'),
+    
+    # Views deprecadas (mantidas para compatibilidade - redirecionam para conferência de pagamentos)
+    path('administracao/validacao-pagamentos/', views.validacao_pagamentos, name='validacao_pagamentos'),
+    path('administracao/validar-pagamento/<int:pagamento_id>/', views.validar_pagamento, name='validar_pagamento'),
+    path('administracao/rejeitar-pagamento/<int:pagamento_id>/', views.rejeitar_pagamento, name='rejeitar_pagamento'),
+    
+    # Conferência de Pagamentos (fluxo principal unificado)
+    path('administracao/conferencia-pagamentos/', views.conferencia_pagamentos_lista, name='conferencia_pagamentos_lista'),
+    path('administracao/conferencia-pagamentos/<int:academia_id>/<int:campeonato_id>/', views.conferencia_pagamentos_detalhe, name='conferencia_pagamentos_detalhe'),
+    path('administracao/conferencia-pagamentos/<int:academia_id>/<int:campeonato_id>/salvar/', views.conferencia_pagamentos_salvar, name='conferencia_pagamentos_salvar'),
+    path('administracao/conferencia-pagamentos/<int:academia_id>/<int:campeonato_id>/mensagem-whatsapp/', views.gerar_mensagem_whatsapp, name='gerar_mensagem_whatsapp'),
+    
+    # Ocorrências
+    path('administracao/ocorrencias/', views.ocorrencias_lista, name='ocorrencias_lista'),
+    path('administracao/ocorrencias/criar/', views.ocorrencias_criar, name='ocorrencias_criar'),
+    path('administracao/ocorrencias/<int:ocorrencia_id>/', views.ocorrencias_detalhe, name='ocorrencias_detalhe'),
+    path('administracao/ocorrencias/historico/', views.ocorrencias_historico, name='ocorrencias_historico'),
 ]

@@ -51,6 +51,8 @@
     width: 120px;
     min-width: 100px;
 }
+
+/* Modal usa CSS padrão do base.html - z-index 1055/1056 */
 </style>
 {% endblock %}
 
@@ -58,13 +60,75 @@
 <div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
     <div>
         <h1 class="page-title">Pesagem</h1>
-        <p class="page-description">Registre o peso oficial dos atletas</p>
+        <p class="page-description">Registre o peso oficial dos atletas inscritos no evento</p>
     </div>
-    <button type="button" class="btn btn-secondary" onclick="window.print()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-        Imprimir
-    </button>
+    <div style="display: flex; gap: var(--spacing-3); align-items: center;">
+        <button type="button" class="btn btn-secondary" onclick="window.print()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Imprimir
+        </button>
+    </div>
 </div>
+
+<!-- Seletor de Evento -->
+{% if campeonatos %}
+<div class="card mb-6" style="background: var(--color-primary-light); border-color: var(--color-primary);">
+    <div class="card-body">
+        <form method="get" style="display: flex; align-items: center; gap: var(--spacing-4); flex-wrap: wrap;">
+            <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+                <label class="form-label" for="campeonato_id" style="font-weight: 600; color: var(--color-primary);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 6px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                    Selecionar Evento
+                </label>
+                <select id="campeonato_id" name="campeonato_id" class="form-select" onchange="this.form.submit()" style="font-weight: 500;">
+                    {% if campeonato_selecionado %}
+                        <option value="{{ campeonato_selecionado.id }}" selected>{{ campeonato_selecionado.nome }}{% if campeonato_selecionado.data_competicao %} - {{ campeonato_selecionado.data_competicao|date:"d/m/Y" }}{% endif %}</option>
+                    {% else %}
+                        <option value="">-- Selecione um evento --</option>
+                    {% endif %}
+                    {% for campeonato in campeonatos %}
+                        {% if campeonato.id != campeonato_selecionado.id %}
+                        <option value="{{ campeonato.id }}">{{ campeonato.nome }}{% if campeonato.data_competicao %} - {{ campeonato.data_competicao|date:"d/m/Y" }}{% endif %}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            {% if classe_filtro or sexo_filtro or categoria_filtro %}
+                <input type="hidden" name="classe" value="{{ classe_filtro }}">
+                <input type="hidden" name="sexo" value="{{ sexo_filtro }}">
+                <input type="hidden" name="categoria" value="{{ categoria_filtro }}">
+            {% endif %}
+        </form>
+        {% if campeonato_selecionado %}
+        <div style="margin-top: var(--spacing-3); padding-top: var(--spacing-3); border-top: 1px solid rgba(59, 130, 246, 0.2);">
+            <div style="display: flex; align-items: center; gap: var(--spacing-2); font-size: var(--font-size-sm); color: var(--color-gray-700);">
+                <strong>Evento selecionado:</strong> {{ campeonato_selecionado.nome }}
+                {% if campeonato_selecionado.data_competicao %}
+                    <span style="color: var(--color-gray-500);">•</span>
+                    <span>{{ campeonato_selecionado.data_competicao|date:"d/m/Y" }}</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% if not campeonato_selecionado %}
+<div class="card">
+    <div class="empty-state" style="padding: var(--spacing-12);">
+        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; margin: 0 auto var(--spacing-4); color: var(--color-gray-400);">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+        </svg>
+        <div class="empty-state-title">Selecione um evento</div>
+        <div class="empty-state-description">Escolha um evento acima para visualizar e registrar as pesagens</div>
+    </div>
+</div>
+{% else %}
 
 <!-- Filtros -->
 <div class="card mb-6">
@@ -73,6 +137,9 @@
     </div>
     <div class="card-body">
         <form method="get">
+            {% if campeonato_selecionado %}
+            <input type="hidden" name="campeonato_id" value="{{ campeonato_selecionado.id }}">
+            {% endif %}
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-4);">
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" for="classe">Classe</label>
@@ -104,7 +171,7 @@
                 </div>
             </div>
             <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
-                <a href="{% url 'pesagem' %}" class="btn btn-secondary">Limpar Filtros</a>
+                <a href="{% url 'pesagem' %}{% if campeonato_selecionado %}?campeonato_id={{ campeonato_selecionado.id }}{% endif %}" class="btn btn-secondary">Limpar Filtros</a>
                 <button type="submit" class="btn btn-primary">Filtrar</button>
             </div>
         </form>
@@ -146,7 +213,13 @@
                     {{ atleta.categoria_ajustada|default:atleta.categoria_nome }}
                 </td>
                 <td style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
-                    {% if atleta.get_limite_categoria %}{{ atleta.get_limite_categoria }}{% else %}-{% endif %}
+                    {% if atleta.limite_categoria and atleta.limite_categoria != '-' %}
+                        {{ atleta.limite_categoria }}
+                    {% elif atleta.get_limite_categoria and atleta.get_limite_categoria != '-' %}
+                        {{ atleta.get_limite_categoria }}
+                    {% else %}
+                        -
+                    {% endif %}
                 </td>
                 <td style="font-size: var(--font-size-sm); color: var(--color-gray-700);">
                     {% if atleta.peso_oficial %}
@@ -158,6 +231,13 @@
                 <td>
                     {% if atleta.status == 'OK' %}
                         <span class="badge badge-success">{{ atleta.status }}</span>
+                    {% elif atleta.status == 'Fora da Categoria' %}
+                        <span class="badge badge-danger">{{ atleta.status }}</span>
+                        {% if atleta.motivo_ajuste %}
+                            <div style="font-size: var(--font-size-xs); color: var(--color-danger); margin-top: var(--spacing-1);">
+                                {{ atleta.motivo_ajuste|truncatewords:10 }}
+                            </div>
+                        {% endif %}
                     {% elif 'Eliminado' in atleta.status %}
                         <span class="badge badge-danger">{{ atleta.status }}</span>
                         {% if atleta.motivo_ajuste %}
@@ -198,6 +278,11 @@
                                class="form-input input-peso-inline" 
                                inputmode="decimal" 
                                required>
+                        <input type="text" 
+                               name="observacoes" 
+                               placeholder="Observações (opcional)" 
+                               class="form-input" 
+                               style="width: 150px; font-size: var(--font-size-xs);">
                         <button type="submit" class="btn btn-primary" style="padding: var(--spacing-2) var(--spacing-3); font-size: var(--font-size-xs); white-space: nowrap;">
                             Registrar
                         </button>
@@ -207,6 +292,55 @@
                         <a href="{% url 'rebaixar_categoria' atleta.id %}" class="btn btn-success" style="padding: var(--spacing-2) var(--spacing-3); font-size: var(--font-size-xs);">
                             Rebaixar Categoria
                         </a>
+                    </div>
+                    {% endif %}
+                    {% if atleta.historico_pesagens %}
+                    <div style="margin-top: var(--spacing-2);">
+                        <button type="button" class="btn btn-ghost" style="padding: var(--spacing-1) var(--spacing-2); font-size: var(--font-size-xs);" onclick="toggleHistorico({{ atleta.inscricao_id }})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            Histórico ({{ atleta.historico_pesagens|length }})
+                        </button>
+                    </div>
+                    <div id="historico-{{ atleta.inscricao_id }}" style="display: none; margin-top: var(--spacing-2); padding: var(--spacing-3); background: var(--color-gray-50); border-radius: var(--border-radius-md); border: 1px solid var(--color-gray-200);">
+                        <div style="font-weight: 600; font-size: var(--font-size-sm); margin-bottom: var(--spacing-2); color: var(--color-gray-900);">Histórico de Pesagens:</div>
+                        <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
+                            {% for historico in atleta.historico_pesagens %}
+                            <div style="padding: var(--spacing-2); background: var(--color-white); border-radius: var(--border-radius-sm); border-left: 3px solid var(--color-primary);">
+                                <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: var(--spacing-2);">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--color-gray-900);">
+                                            {{ historico.peso_registrado }} kg
+                                            {% if historico.categoria_ajustada %}
+                                                <span style="color: var(--color-gray-600); font-weight: 400;">• {{ historico.categoria_ajustada }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-top: var(--spacing-1);">
+                                            {{ historico.data_hora|date:"d/m/Y H:i" }}
+                                            {% if historico.pesado_por %}
+                                                • Por: {{ historico.pesado_por.first_name|default:historico.pesado_por.username }}
+                                            {% endif %}
+                                        </div>
+                                        {% if historico.motivo_ajuste %}
+                                        <div style="font-size: var(--font-size-xs); color: var(--color-warning); margin-top: var(--spacing-1);">
+                                            {{ historico.motivo_ajuste }}
+                                        </div>
+                                        {% endif %}
+                                        {% if historico.observacoes %}
+                                        <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-top: var(--spacing-1); font-style: italic;">
+                                            {{ historico.observacoes }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
                     {% endif %}
                 </td>
@@ -237,25 +371,26 @@
     </div>
 </div>
 {% endif %}
+{% endif %}
 
-<!-- Modal de Confirmação de Remanejamento -->
+<!-- Modal de Confirmação de Remanejamento - PADRÃO SHIAI (FORA DO BLOCO PARA GARANTIR VISIBILIDADE) -->
 <div class="modal-overlay" id="modal-remanejamento">
     <div class="modal">
-        <div class="modal-header">
-            <h3 class="modal-title">⚠️ Atenção: Peso fora da categoria!</h3>
-            <button class="modal-close" onclick="fecharModal()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+        <div class="modal-header" style="padding: var(--spacing-6); border-bottom: 1px solid var(--color-gray-200); display: flex; align-items: center; justify-content: space-between;">
+            <h3 class="modal-title" style="font-size: var(--font-size-xl); font-weight: 600; color: var(--color-gray-900); margin: 0;">⚠️ Atenção: Peso fora da categoria!</h3>
+            <button class="modal-close" onclick="fecharModal()" style="width: 32px; height: 32px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: var(--border-radius-sm); transition: all var(--transition-base);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; color: var(--color-gray-500);">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
             </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="padding: var(--spacing-6);">
             <div id="modal-conteudo">
                 <!-- Conteúdo será preenchido via JavaScript -->
             </div>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer" style="padding: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
             <form id="form-confirmacao" method="post" style="width: 100%;">
                 {% csrf_token %}
                 <input type="hidden" name="peso_oficial" id="modal-peso">
@@ -269,7 +404,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const forms = document.querySelectorAll('.form-pesagem-inline');
@@ -296,14 +433,61 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.precisa_confirmacao) {
-                    // Mostrar modal de confirmação
-                    mostrarModalRemanejamento(data);
+                console.log('=== RESPOSTA DO SERVIDOR ===');
+                console.log('Resposta completa:', JSON.stringify(data, null, 2));
+                console.log('success:', data.success);
+                console.log('precisa_confirmacao:', data.precisa_confirmacao, 'tipo:', typeof data.precisa_confirmacao);
+                console.log('categoria_ok:', data.categoria_ok);
+                console.log('categoria_nova:', data.categoria_nova);
+                
+                if (data.success) {
+                    // Verificar se precisa confirmação (pode ser true, 'true', ou 1)
+                    const precisaConfirmacao = data.precisa_confirmacao === true || 
+                                              data.precisa_confirmacao === 'true' || 
+                                              data.precisa_confirmacao === 1 ||
+                                              (data.precisa_confirmacao && !data.categoria_ok);
+                    
+                    console.log('Precisa confirmação calculado:', precisaConfirmacao);
+                    
+                    if (precisaConfirmacao) {
+                        // Mostrar modal de confirmação para remanejamento
+                        console.log('>>> ABRINDO MODAL <<<');
+                        
+                        // Garantir que temos os dados necessários
+                        const modalData = {
+                            ...data,
+                            categoria_nova: data.categoria_nova || 'Não disponível',
+                            limite_atual_min: data.limite_atual_min || 0,
+                            limite_atual_max: data.limite_atual_max || 999,
+                            limite_novo_min: data.limite_novo_min || 0,
+                            limite_novo_max: data.limite_novo_max || 0
+                        };
+                        
+                        console.log('Dados para o modal:', modalData);
+                        
+                        try {
+                            mostrarModalRemanejamento(modalData);
+                            console.log('Modal chamado com sucesso');
+                        } catch (error) {
+                            console.error('Erro ao chamar mostrarModalRemanejamento:', error);
+                            alert('Erro ao abrir modal. Verifique o console para mais detalhes.');
+                        }
+                        
+                        btnSubmit.disabled = false;
+                        btnSubmit.textContent = originalText;
+                    } else {
+                        // Peso registrado com sucesso - recarregar página para atualizar
+                        if (data.categoria_ok) {
+                            alert('Peso registrado com sucesso!');
+                        } else {
+                            alert('Peso registrado, mas está fora dos limites da categoria. Verifique o status.');
+                        }
+                        window.location.reload();
+                    }
+                } else {
+                    alert(data.message || 'Erro ao registrar peso.');
                     btnSubmit.disabled = false;
                     btnSubmit.textContent = originalText;
-                } else {
-                    // Recarregar página
-                    window.location.reload();
                 }
             })
             .catch(error => {
@@ -317,13 +501,47 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function mostrarModalRemanejamento(data) {
+    console.log('mostrarModalRemanejamento chamado com:', data);
     const modal = document.getElementById('modal-remanejamento');
     const conteudo = document.getElementById('modal-conteudo');
     const form = document.getElementById('form-confirmacao');
     
+    if (!modal) {
+        console.error('Modal não encontrado! ID: modal-remanejamento');
+        alert('Erro: Modal não encontrado. Recarregue a página.');
+        return;
+    }
+    
+    if (!conteudo) {
+        console.error('Conteúdo do modal não encontrado! ID: modal-conteudo');
+        alert('Erro: Conteúdo do modal não encontrado. Recarregue a página.');
+        return;
+    }
+    
+    if (!form) {
+        console.error('Formulário não encontrado! ID: form-confirmacao');
+        alert('Erro: Formulário não encontrado. Recarregue a página.');
+        return;
+    }
+    
+    console.log('Elementos do modal encontrados, configurando...');
+    console.log('Modal element:', modal);
+    console.log('Modal parent:', modal.parentElement);
+    console.log('Modal computed style before:', window.getComputedStyle(modal).display);
+    
     form.action = `/pesagem/inscricao/${data.inscricao_id}/confirmar-remanejamento/`;
-    document.getElementById('modal-peso').value = data.peso;
-    document.getElementById('modal-categoria-nova').value = data.categoria_nova;
+    const pesoInput = document.getElementById('modal-peso');
+    const categoriaInput = document.getElementById('modal-categoria-nova');
+    
+    if (pesoInput) pesoInput.value = data.peso;
+    if (categoriaInput) categoriaInput.value = data.categoria_nova || '';
+    
+    // Verificar se o modal está no DOM e visível
+    if (!document.body.contains(modal)) {
+        console.error('ERRO CRÍTICO: Modal não está no DOM!');
+        alert('Erro: Modal não encontrado no DOM. Recarregue a página.');
+        return;
+    }
     
     const limiteAtual = data.limite_atual_max ? 
         `${data.limite_atual_min} a ${data.limite_atual_max} kg` : 
@@ -353,7 +571,36 @@ function mostrarModalRemanejamento(data) {
         </div>
     `;
     
+    console.log('Conteúdo do modal configurado, mostrando modal...');
+    
+    // Prevenir scroll do body quando modal abrir
+    document.body.style.overflow = 'hidden';
+    
+    // Adicionar classe 'active'
     modal.classList.add('active');
+    
+    // FORÇAR exibição do modal (solução robusta para conflitos de CSS)
+    setTimeout(() => {
+        const computedStyle = window.getComputedStyle(modal);
+        if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden' || computedStyle.opacity === '0') {
+            console.warn('⚠️ CSS não aplicado corretamente, forçando exibição...');
+            modal.style.setProperty('display', 'flex', 'important');
+            modal.style.setProperty('visibility', 'visible', 'important');
+            modal.style.setProperty('opacity', '1', 'important');
+            modal.style.setProperty('z-index', '1055', 'important');
+        }
+        
+        // Garantir que o modal interno também está visível
+        const modalInner = modal.querySelector('.modal');
+        if (modalInner) {
+            modalInner.style.setProperty('display', 'block', 'important');
+            modalInner.style.setProperty('visibility', 'visible', 'important');
+            modalInner.style.setProperty('opacity', '1', 'important');
+            modalInner.style.setProperty('z-index', '1056', 'important');
+        }
+    }, 10);
+    
+    console.log('✅ Modal ativado com classe "active"');
     
     // Remover listeners anteriores e adicionar novo
     const btnDesclassificar = document.getElementById('btn-desclassificar');
@@ -376,13 +623,40 @@ function mostrarModalRemanejamento(data) {
 
 function fecharModal() {
     const modal = document.getElementById('modal-remanejamento');
-    modal.classList.remove('active');
+    if (modal) {
+        modal.classList.remove('active');
+        // Restaurar scroll do body
+        document.body.style.overflow = '';
+        
+        console.log('Modal fechado');
+    }
 }
 
-// Fechar modal ao clicar no overlay
-document.getElementById('modal-remanejamento')?.addEventListener('click', function(e) {
-    if (e.target === this) {
-        fecharModal();
+function toggleHistorico(inscricaoId) {
+    const historicoDiv = document.getElementById('historico-' + inscricaoId);
+    if (historicoDiv) {
+        historicoDiv.style.display = historicoDiv.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// Fechar modal ao clicar no overlay (evitar propagação no conteúdo do modal)
+document.addEventListener('DOMContentLoaded', function() {
+    const modalOverlay = document.getElementById('modal-remanejamento');
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', function(e) {
+            // Só fechar se clicar diretamente no overlay, não no conteúdo do modal
+            if (e.target === modalOverlay) {
+                fecharModal();
+            }
+        });
+        
+        // Prevenir fechamento ao clicar no conteúdo do modal
+        const modalContent = modalOverlay.querySelector('.modal');
+        if (modalContent) {
+            modalContent.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
     }
 });
 

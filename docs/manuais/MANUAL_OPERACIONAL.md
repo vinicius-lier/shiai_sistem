@@ -389,7 +389,11 @@ Ao finalizar todas as lutas de uma chave:
 
 1. No menu lateral, clique em **"Ranking Global"**
 2. Você verá o ranking consolidado de **todos os eventos**
-3. O ranking mostra a soma de todas as pontuações
+3. O ranking mostra:
+   - **Cards do Top 3**: As três primeiras academias com destaque visual
+   - **Tabela Completa**: Lista de todas as academias com medalhas e pontos
+   - **Ranking de Atletas**: Classificação individual de todos os atletas
+4. O ranking mostra a soma de todas as pontuações de todos os eventos
 
 ### 8.3 Calcular Pontuação
 
@@ -634,6 +638,38 @@ Para dúvidas ou problemas:
 
 ---
 
-**Última Atualização:** 2024  
-**Versão do Manual:** 1.0
+---
+
+## 13. Correções e Melhorias Recentes
+
+### 13.1 Modais do Sistema
+
+Todos os modais do sistema foram padronizados e corrigidos:
+- ✅ Modais de inscrição funcionam corretamente
+- ✅ Modais de remanejamento funcionam corretamente
+- ✅ Modais de confirmação funcionam corretamente
+- ✅ Todos os modais aparecem corretamente com backdrop
+
+### 13.2 Ranking Global
+
+O ranking global foi aprimorado:
+- ✅ Exibe tabela completa de todas as academias
+- ✅ Mostra cards destacados do top 3
+- ✅ Ranking de atletas individual
+- ✅ Filtros por classe, sexo e categoria
+
+### 13.3 Eventos para Academias
+
+A tela de eventos para academias foi ajustada:
+- ✅ Eventos futuros aparecem como "Agenda de Eventos" (mesmo com inscrições fechadas)
+- ✅ Apenas eventos passados aparecem como "Encerrados"
+- ✅ Badge visual quando inscrições estão fechadas
+
+---
+
+**Última Atualização:** Janeiro 2025  
+**Versão do Manual:** 1.1
+
+
+
 

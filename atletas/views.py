@@ -1284,6 +1284,99 @@ def gerar_chave_view(request):
     return render(request, 'atletas/gerar_chave.html', context)
 
 @operacional_required
+def gerar_todas_chaves(request):
+    """Gera todas as chaves possíveis de uma única vez"""
+    campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
+    
+    if not campeonato_ativo:
+        messages.error(request, 'Nenhum campeonato ativo encontrado.')
+        return redirect('lista_chaves')
+    
+    # Buscar todas as combinações únicas de classe, sexo e categoria
+    # que têm inscrições aprovadas com peso confirmado
+    inscricoes_aptas = Inscricao.objects.filter(
+        campeonato=campeonato_ativo,
+        status_inscricao='aprovado',
+        peso__isnull=False
+    ).exclude(
+        classe_escolhida='Festival'
+    ).exclude(
+        peso=0
+    ).exclude(
+        classe_escolhida=''
+    )
+    
+    # Agrupar por classe, sexo e categoria (usar categoria_ajustada se existir, senão categoria_escolhida)
+    combinacoes = {}
+    for inscricao in inscricoes_aptas:
+        classe = inscricao.classe_escolhida
+        sexo = inscricao.atleta.sexo
+        categoria = inscricao.categoria_ajustada or inscricao.categoria_escolhida
+        
+        if not categoria:
+            continue
+        
+        chave_combinacao = (classe, sexo, categoria)
+        if chave_combinacao not in combinacoes:
+            combinacoes[chave_combinacao] = {
+                'classe': classe,
+                'sexo': sexo,
+                'categoria': categoria,
+                'count': 0
+            }
+        combinacoes[chave_combinacao]['count'] += 1
+    
+    # Gerar chaves para cada combinação
+    chaves_criadas = 0
+    chaves_atualizadas = 0
+    chaves_erro = []
+    
+    for combinacao in combinacoes.values():
+        try:
+            # Verificar se chave já existe
+            chave_existente = Chave.objects.filter(
+                campeonato=campeonato_ativo,
+                classe=combinacao['classe'],
+                sexo=combinacao['sexo'],
+                categoria=combinacao['categoria']
+            ).first()
+            
+            # Gerar chave (a função gerar_chave cria ou atualiza automaticamente)
+            chave = gerar_chave(
+                categoria_nome=combinacao['categoria'],
+                classe=combinacao['classe'],
+                sexo=combinacao['sexo'],
+                modelo_chave=None,  # Automático
+                campeonato=campeonato_ativo
+            )
+            
+            if chave_existente:
+                chaves_atualizadas += 1
+            else:
+                chaves_criadas += 1
+                
+        except Exception as e:
+            chaves_erro.append({
+                'combinacao': f"{combinacao['classe']} - {combinacao['sexo']} - {combinacao['categoria']}",
+                'erro': str(e)
+            })
+    
+    # Mensagem de sucesso
+    if chaves_criadas > 0 or chaves_atualizadas > 0:
+        mensagem = f"✅ {chaves_criadas} chave(s) criada(s) e {chaves_atualizadas} chave(s) atualizada(s) com sucesso!"
+        if chaves_erro:
+            mensagem += f" ⚠️ {len(chaves_erro)} erro(s) encontrado(s)."
+        messages.success(request, mensagem)
+    else:
+        messages.warning(request, 'Nenhuma chave foi gerada. Verifique se há inscrições aprovadas com peso confirmado.')
+    
+    if chaves_erro:
+        for erro in chaves_erro[:5]:  # Mostrar apenas os 5 primeiros erros
+            messages.error(request, f"Erro em {erro['combinacao']}: {erro['erro']}")
+    
+    return redirect('lista_chaves')
+
+@operacional_required
 def gerar_chave_manual(request):
     """Gerar lutas casadas (chave manual) - apenas atletas com peso confirmado"""
     campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
@@ -1685,6 +1778,43 @@ def ranking_global(request):
         reverse=True
     )
     
+    # Top 3 atletas para os cards
+    top3_atletas = ranking_atletas_completo[:3]
+    
+    # Aplicar filtros ao ranking de atletas
+    if classe_filtro or sexo_filtro or categoria_filtro:
+        ranking_atletas_filtrado = []
+        for item in ranking_atletas_completo:
+            atleta = item['atleta']
+            
+            # Filtrar por classe (buscar na inscrição do campeonato)
+            if classe_filtro:
+                inscricao = Inscricao.objects.filter(
+                    atleta=atleta,
+                    campeonato=campeonato_ativo,
+                    classe_escolhida=classe_filtro
+                ).first()
+                if not inscricao:
+                    continue
+            
+            # Filtrar por sexo
+            if sexo_filtro and atleta.sexo != sexo_filtro:
+                continue
+            
+            # Filtrar por categoria (buscar na inscrição do campeonato)
+            if categoria_filtro:
+                inscricao = Inscricao.objects.filter(
+                    atleta=atleta,
+                    campeonato=campeonato_ativo
+                ).first()
+                if not inscricao or categoria_filtro not in inscricao.categoria_escolhida:
+                    continue
+            
+            ranking_atletas_filtrado.append(item)
+        
+        ranking_atletas_completo = ranking_atletas_filtrado
+        top3_atletas = ranking_atletas_completo[:3]
+    
     # Obter classes e categorias disponíveis
     classes_disponiveis = sorted(set(chaves.exclude(classe='').values_list('classe', flat=True).distinct()))
     categorias_disponiveis = sorted(set(chaves.exclude(categoria='').values_list('categoria', flat=True).distinct()))
@@ -1692,6 +1822,7 @@ def ranking_global(request):
     context = {
         'campeonato_ativo': campeonato_ativo,
         'ranking_atletas_completo': ranking_atletas_completo,
+        'top3_atletas': top3_atletas,  # Top 3 para os cards
         'ranking_academias_completo': ranking_academias_completo,  # Lista completa para a tabela
         'top3_academias': top3_academias,  # Top 3 para os cards
         'total_academias': len(ranking_academias_completo),
@@ -2023,14 +2154,14 @@ def inscrever_atletas(request):
         ).order_by('nome')
     
     # Buscar todas as categorias para o JavaScript
-    todas_categorias = Categoria.objects.all().order_by('classe', 'limite_min')
+    todas_categorias = Categoria.objects.all().select_related('classe').order_by('classe__idade_min', 'limite_min')
     
     # Preparar categorias no formato esperado pelo template
     categorias_list = []
     for cat in todas_categorias:
         categorias_list.append({
             'id': cat.id,
-            'classe': cat.classe,
+            'classe': cat.classe.nome,  # Agora classe é ForeignKey, usar .nome
             'sexo': cat.sexo,
             'label': cat.label,
             'categoria_nome': cat.categoria_nome,
@@ -3099,14 +3230,14 @@ def academia_inscrever_atletas(request, campeonato_id):
     }
     
     # Buscar todas as categorias para o JavaScript
-    todas_categorias = Categoria.objects.all().order_by('classe', 'limite_min')
+    todas_categorias = Categoria.objects.all().select_related('classe').order_by('classe__idade_min', 'limite_min')
     
     # Preparar categorias no formato esperado pelo template
     categorias_list = []
     for cat in todas_categorias:
         categorias_list.append({
             'id': cat.id,
-            'classe': cat.classe,
+            'classe': cat.classe.nome,  # Agora classe é ForeignKey, usar .nome
             'sexo': cat.sexo,
             'label': cat.label,  # Campo label do modelo
             'categoria_nome': cat.categoria_nome,
@@ -3397,14 +3528,14 @@ def academia_baixar_regulamento(request, campeonato_id):
 def tabela_categorias_peso(request):
     """Exibe tabela de categorias de peso por classe e sexo"""
     # Buscar todas as categorias ordenadas
-    categorias = Categoria.objects.all().order_by('classe', 'sexo', 'limite_min')
+    categorias = Categoria.objects.all().select_related('classe').order_by('classe__idade_min', 'sexo', 'limite_min')
     
     # Organizar por classe e sexo
     categorias_organizadas = {}
     classes = []
     
     for categoria in categorias:
-        classe = categoria.classe
+        classe = categoria.classe.nome  # Agora classe é ForeignKey, usar .nome
         sexo_display = categoria.get_sexo_display()
         
         if classe not in categorias_organizadas:
@@ -3511,22 +3642,19 @@ def administracao_financeiro(request):
         conferencias_pendentes = conferencias.filter(status='PENDENTE')
         pagamentos_pendentes = sum(c.valor_esperado for c in conferencias_pendentes)
         
-        # Ganho previsto: soma de todas as conferências (valor esperado)
-        ganho_previsto = sum(c.valor_esperado for c in conferencias)
-        
-        # Inscrições confirmadas: contar academias com status CONFIRMADO
-        inscricoes_confirmadas = conferencias_confirmadas.count()
-        
-        # Inscrições pendentes: contar academias com status PENDENTE, DIVERGENTE ou NAO_ENCONTRADO
-        inscricoes_pendentes = conferencias.filter(status__in=['PENDENTE', 'DIVERGENTE', 'NAO_ENCONTRADO']).count()
-        
-        # ========== CÁLCULOS DE INSCRIÇÕES POR CATEGORIA ==========
-        # Buscar inscrições para calcular entradas por tipo (federado/não federado)
+        # ========== CÁLCULOS DE INSCRIÇÕES (BASEADO EM Inscricao - FONTE REAL) ==========
+        # Buscar TODAS as inscrições do campeonato
         inscricoes = Inscricao.objects.filter(campeonato=campeonato_ativo)
         valor_federado = campeonato_ativo.valor_inscricao_federado or 0
         valor_nao_federado = campeonato_ativo.valor_inscricao_nao_federado or 0
         
-        # Calcular entradas por categoria
+        # Contar inscrições por status (baseado nas inscrições reais)
+        # IMPORTANTE: Incluir todas as inscrições que não estão confirmadas/aprovadas como pendentes
+        inscricoes_confirmadas = inscricoes.filter(status_inscricao__in=['confirmado', 'aprovado']).count()
+        # Contar todas as inscrições pendentes (status='pendente' ou qualquer outro status que não seja confirmado/aprovado)
+        inscricoes_pendentes = inscricoes.exclude(status_inscricao__in=['confirmado', 'aprovado', 'reprovado']).count()
+        
+        # Calcular entradas por categoria (federado/não federado) baseado nas inscrições reais
         for ins in inscricoes:
             if ins.atleta.federado:
                 entradas_federado += valor_federado
@@ -3535,6 +3663,9 @@ def administracao_financeiro(request):
         
         # Total de inscrições (para o gráfico de pilhas)
         total_inscricoes = entradas_federado + entradas_nao_federado
+        
+        # Ganho previsto: soma de todas as inscrições (confirmadas + pendentes)
+        ganho_previsto = total_inscricoes
         
         # ========== CÁLCULOS DE DESPESAS ==========
         # IMPORTANTE: Todas as despesas são 100% vinculadas ao campeonato_ativo

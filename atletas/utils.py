@@ -590,9 +590,19 @@ def gerar_round_robin(chave, atletas_list):
 
 
 def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
-    """Gera chave eliminatória com repescagem (modelo CBJ)
+    """Gera chave eliminatória com repescagem (modelo CBJ correto)
     
-    A repescagem permite que perdedores das semifinais disputem o 3º lugar.
+    SISTEMA DE REPESCAGEM CORRETO:
+    1. Chave Principal: Vencedores seguem normalmente
+    2. Chave de Repescagem: Perdedores vão para chave separada
+    3. Luta de 3º lugar: Vencedor da repescagem vs Perdedor da semifinal principal
+    
+    Estrutura:
+    - Round 1: Todas as lutas iniciais
+    - Chave Principal: Vencedores do Round 1 seguem (rounds 2, 3, etc.)
+    - Chave Repescagem: Perdedores do Round 1 vão para repescagem (rounds 100+, 200+, etc.)
+    - Luta 3º lugar: Round 999 (vencedor repescagem vs perdedor semifinal)
+    
     Atletas da mesma academia não se enfrentam na primeira rodada.
     """
     num_atletas = len(atletas_list)
@@ -610,15 +620,18 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
         "tipo": "eliminatoria_repescagem",
         "atletas": num_atletas,
         "tamanho_chave": tamanho_chave,
-        "rounds": {},
-        "repescagem": {}
+        "rounds": {},  # Rounds da chave principal (1, 2, 3...)
+        "repescagem": {
+            "rounds": {},  # Rounds da repescagem (100, 101, 102...)
+            "luta_3_lugar": None  # ID da luta de 3º lugar (round 999)
+        }
     }
     
-    # Criar lutas do primeiro round
+    # ========== ROUND 1: TODAS AS LUTAS INICIAIS ==========
     round_num = 1
-    lutas_round = []
+    lutas_round1 = []
     num_lutas_round1 = tamanho_chave // 2
-    print(f"   🔧 Criando {num_lutas_round1} lutas do Round {round_num}")
+    print(f"   🔧 Criando {num_lutas_round1} lutas do Round {round_num} (inicial)")
     
     for i in range(0, tamanho_chave, 2):
         atleta_a = atletas_com_bye[i] if i < len(atletas_organizados) else None
@@ -633,7 +646,7 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
                 round=round_num,
                 proxima_luta=None
             )
-            lutas_round.append(luta.id)
+            lutas_round1.append(luta.id)
             nome_a = atleta_a.nome if atleta_a else "BYE"
             nome_b = atleta_b.nome if atleta_b else "BYE"
             print(f"      ✅ Luta Round {round_num} criada: {nome_a} vs {nome_b} (ID: {luta.id})")
@@ -642,34 +655,35 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
             import traceback
             traceback.print_exc()
     
-    estrutura["rounds"][round_num] = lutas_round
-    print(f"   ✅ Round {round_num} criado: {len(lutas_round)} lutas")
+    estrutura["rounds"][round_num] = lutas_round1
+    print(f"   ✅ Round {round_num} criado: {len(lutas_round1)} lutas")
     
-    # Criar lutas dos rounds seguintes e vincular
-    lutas_anteriores = lutas_round
+    # ========== CHAVE PRINCIPAL: VENCEDORES SEGUEM ==========
+    lutas_anteriores = lutas_round1
+    round_num_principal = 2
+    
     while len(lutas_anteriores) > 1:
-        round_num += 1
         num_lutas = len(lutas_anteriores) // 2
         lutas_novo_round = []
-        print(f"   🔧 Criando Round {round_num}: {num_lutas} lutas")
+        print(f"   🔧 Criando Round {round_num_principal} (Principal): {num_lutas} lutas")
         
         for i in range(num_lutas):
             try:
                 luta = Luta.objects.create(
                     chave=chave,
-                    atleta_a=None,
+                    atleta_a=None,  # Será preenchido quando vencedor do round anterior for definido
                     atleta_b=None,
-                    round=round_num,
+                    round=round_num_principal,
                     proxima_luta=None
                 )
                 lutas_novo_round.append(luta.id)
-                print(f"      ✅ Luta Round {round_num} criada (ID: {luta.id})")
+                print(f"      ✅ Luta Round {round_num_principal} criada (ID: {luta.id})")
             except Exception as e:
-                print(f"      ❌ ERRO ao criar luta Round {round_num}: {str(e)}")
+                print(f"      ❌ ERRO ao criar luta Round {round_num_principal}: {str(e)}")
                 import traceback
                 traceback.print_exc()
         
-        # Vincular lutas
+        # Vincular lutas da chave principal
         for idx, luta_ant_id in enumerate(lutas_anteriores):
             try:
                 luta_ant = Luta.objects.get(id=luta_ant_id)
@@ -680,40 +694,111 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
             except Luta.DoesNotExist:
                 print(f"      ⚠️  Luta anterior {luta_ant_id} não encontrada para vincular")
         
-        estrutura["rounds"][round_num] = lutas_novo_round
-        print(f"   ✅ Round {round_num} criado: {len(lutas_novo_round)} lutas")
+        estrutura["rounds"][round_num_principal] = lutas_novo_round
+        print(f"   ✅ Round {round_num_principal} (Principal) criado: {len(lutas_novo_round)} lutas")
         lutas_anteriores = lutas_novo_round
+        round_num_principal += 1
     
-    # Criar repescagem para 3º lugar (perdedores das semifinais)
-    # Identificar semifinais (penúltimo round antes da final)
-    rounds_list = sorted(estrutura["rounds"].keys())
-    if len(rounds_list) >= 2:
-        # Se há pelo menos 2 rounds, criar luta de repescagem
-        # A repescagem será entre os perdedores das semifinais
-        semifinal_round = rounds_list[-2]  # Penúltimo round (semifinais)
-        semifinal_lutas = estrutura["rounds"][semifinal_round]
+    # ========== CHAVE DE REPESCAGEM: PERDEDORES DO ROUND 1 ==========
+    # A repescagem será criada dinamicamente quando as lutas do Round 1 forem finalizadas
+    # Mas precisamos criar a estrutura básica agora
+    
+    # Identificar quantos perdedores teremos (número de lutas do Round 1)
+    num_perdedores_round1 = len([l for l in lutas_round1 if True])  # Todos os perdedores do Round 1
+    
+    # Criar estrutura de repescagem (será preenchida quando as lutas forem finalizadas)
+    # Round 100 = primeira rodada da repescagem (perdedores do Round 1)
+    # Round 101 = segunda rodada da repescagem
+    # etc.
+    
+    repescagem_round = 100
+    num_lutas_repescagem = num_lutas_round1 // 2  # Metade dos perdedores vão para próxima rodada
+    
+    if num_lutas_repescagem > 0:
+        print(f"   🔧 Criando estrutura de repescagem (Round {repescagem_round})")
+        lutas_repescagem_round1 = []
         
-        if len(semifinal_lutas) == 2:
-            print(f"   🔧 Criando luta de repescagem para 3º lugar")
+        for i in range(num_lutas_repescagem):
             try:
-                # Criar luta de repescagem para 3º lugar
-                repescagem_luta = Luta.objects.create(
+                luta = Luta.objects.create(
                     chave=chave,
-                    atleta_a=None,  # Será preenchido com perdedor da semifinal 1
-                    atleta_b=None,  # Será preenchido com perdedor da semifinal 2
-                    round=999,  # Round especial para repescagem
+                    atleta_a=None,  # Será preenchido com perdedor do Round 1
+                    atleta_b=None,  # Será preenchido com perdedor do Round 1
+                    round=repescagem_round,
                     proxima_luta=None
                 )
-                estrutura["repescagem"]["3_lugar"] = repescagem_luta.id
-                estrutura["rounds"][999] = [repescagem_luta.id]
-                print(f"      ✅ Luta de repescagem criada (ID: {repescagem_luta.id})")
+                lutas_repescagem_round1.append(luta.id)
+                print(f"      ✅ Luta Repescagem Round {repescagem_round} criada (ID: {luta.id})")
             except Exception as e:
                 print(f"      ❌ ERRO ao criar luta de repescagem: {str(e)}")
                 import traceback
                 traceback.print_exc()
+        
+        estrutura["repescagem"]["rounds"][repescagem_round] = lutas_repescagem_round1
+        
+        # Criar rounds seguintes da repescagem se necessário
+        lutas_rep_anteriores = lutas_repescagem_round1
+        repescagem_round += 1
+        
+        while len(lutas_rep_anteriores) > 1:
+            num_lutas_rep = len(lutas_rep_anteriores) // 2
+            lutas_rep_novo_round = []
+            
+            for i in range(num_lutas_rep):
+                try:
+                    luta = Luta.objects.create(
+                        chave=chave,
+                        atleta_a=None,
+                        atleta_b=None,
+                        round=repescagem_round,
+                        proxima_luta=None
+                    )
+                    lutas_rep_novo_round.append(luta.id)
+                except Exception as e:
+                    print(f"      ❌ ERRO ao criar luta de repescagem Round {repescagem_round}: {str(e)}")
+            
+            # Vincular lutas da repescagem
+            for idx, luta_ant_id in enumerate(lutas_rep_anteriores):
+                try:
+                    luta_ant = Luta.objects.get(id=luta_ant_id)
+                    proxima_luta_idx = idx // 2
+                    if proxima_luta_idx < len(lutas_rep_novo_round):
+                        luta_ant.proxima_luta = lutas_rep_novo_round[proxima_luta_idx]
+                        luta_ant.save()
+                except Luta.DoesNotExist:
+                    pass
+            
+            estrutura["repescagem"]["rounds"][repescagem_round] = lutas_rep_novo_round
+            lutas_rep_anteriores = lutas_rep_novo_round
+            repescagem_round += 1
+    
+    # ========== LUTA DE 3º LUGAR ==========
+    # Vencedor da repescagem vs Perdedor da semifinal da chave principal
+    print(f"   🔧 Criando luta de 3º lugar (Round 999)")
+    try:
+        luta_3_lugar = Luta.objects.create(
+            chave=chave,
+            atleta_a=None,  # Será preenchido com vencedor da repescagem
+            atleta_b=None,  # Será preenchido com perdedor da semifinal principal
+            round=999,  # Round especial para 3º lugar
+            proxima_luta=None
+        )
+        estrutura["repescagem"]["luta_3_lugar"] = luta_3_lugar.id
+        estrutura["rounds"][999] = [luta_3_lugar.id]  # Incluir no rounds para facilitar busca
+        print(f"      ✅ Luta de 3º lugar criada (ID: {luta_3_lugar.id})")
+    except Exception as e:
+        print(f"      ❌ ERRO ao criar luta de 3º lugar: {str(e)}")
+        import traceback
+        traceback.print_exc()
     
     total_lutas = sum(len(lutas) for lutas in estrutura["rounds"].values())
-    print(f"   ✅ Eliminatória com repescagem gerada: {total_lutas} lutas totais")
+    total_lutas_rep = sum(len(lutas) for lutas in estrutura["repescagem"]["rounds"].values())
+    print(f"   ✅ Eliminatória com repescagem gerada:")
+    print(f"      - Chave Principal: {total_lutas - 1} lutas (sem contar 3º lugar)")
+    print(f"      - Chave Repescagem: {total_lutas_rep} lutas")
+    print(f"      - Luta 3º lugar: 1 luta")
+    print(f"      - Total: {total_lutas + total_lutas_rep} lutas")
+    
     return estrutura
 
 
@@ -1107,36 +1192,71 @@ def atualizar_proxima_luta(luta):
         except Luta.DoesNotExist:
             pass
     
-    # Atualizar repescagem se a chave tiver repescagem
+    # Atualizar repescagem se a chave tiver repescagem (SISTEMA CORRETO)
     estrutura = luta.chave.estrutura or {}
     if estrutura.get("tipo") == "eliminatoria_repescagem":
         repescagem = estrutura.get("repescagem", {})
-        if repescagem.get("3_lugar"):
-            # Verificar se esta luta é uma semifinal que deve alimentar a repescagem
-            rounds_dict = estrutura.get("rounds", {})
-            rounds_keys = [int(k) for k in rounds_dict.keys() if str(k).isdigit() and int(k) < 999]
-            
-            if rounds_keys:
-                ultimo_round = max(rounds_keys)
-                if luta.round == ultimo_round - 1:  # Semifinal
-                    # Esta é uma semifinal, o perdedor deve ir para repescagem
-                    perdedor = None
-                    if luta.atleta_a == luta.vencedor:
-                        perdedor = luta.atleta_b
-                    elif luta.atleta_b == luta.vencedor:
-                        perdedor = luta.atleta_a
-                    
-                    if perdedor:
+        rounds_dict = estrutura.get("rounds", {})
+        rounds_keys = [int(k) for k in rounds_dict.keys() if str(k).isdigit() and int(k) < 100]
+        
+        # Identificar perdedor
+        perdedor = None
+        if luta.atleta_a == luta.vencedor:
+            perdedor = luta.atleta_b
+        elif luta.atleta_b == luta.vencedor:
+            perdedor = luta.atleta_a
+        
+        # ROUND 1: Perdedores vão para repescagem (Round 100)
+        if luta.round == 1 and perdedor:
+            repescagem_rounds = repescagem.get("rounds", {})
+            if 100 in repescagem_rounds:
+                lutas_repescagem_round1 = repescagem_rounds[100]
+                # Encontrar próxima luta vazia na repescagem
+                for luta_rep_id in lutas_repescagem_round1:
+                    try:
+                        luta_rep = Luta.objects.get(id=luta_rep_id, chave=luta.chave)
+                        if luta_rep.atleta_a is None:
+                            luta_rep.atleta_a = perdedor
+                            luta_rep.save()
+                            break
+                        elif luta_rep.atleta_b is None:
+                            luta_rep.atleta_b = perdedor
+                            luta_rep.save()
+                            break
+                    except Luta.DoesNotExist:
+                        continue
+        
+        # SEMIFINAL PRINCIPAL: Perdedor vai para luta de 3º lugar
+        if rounds_keys:
+            ultimo_round_principal = max(rounds_keys)
+            if luta.round == ultimo_round_principal - 1:  # Semifinal da chave principal
+                if perdedor and repescagem.get("luta_3_lugar"):
+                    try:
+                        luta_3_lugar = Luta.objects.get(id=repescagem["luta_3_lugar"], chave=luta.chave)
+                        # Perdedor da semifinal vai para posição B da luta de 3º lugar
+                        if luta_3_lugar.atleta_b is None:
+                            luta_3_lugar.atleta_b = perdedor
+                            luta_3_lugar.save()
+                    except Luta.DoesNotExist:
+                        pass
+        
+        # FINAL DA REPESCAGEM: Vencedor vai para luta de 3º lugar
+        repescagem_rounds = repescagem.get("rounds", {})
+        if repescagem_rounds:
+            rounds_rep_keys = sorted([int(k) for k in repescagem_rounds.keys()])
+            if rounds_rep_keys:
+                ultimo_round_rep = max(rounds_rep_keys)
+                # Verificar se esta é a última luta da repescagem
+                lutas_ultimo_round_rep = repescagem_rounds[ultimo_round_rep]
+                if len(lutas_ultimo_round_rep) == 1 and luta.round == ultimo_round_rep:
+                    # Esta é a final da repescagem, vencedor vai para 3º lugar
+                    if luta.vencedor and repescagem.get("luta_3_lugar"):
                         try:
-                            luta_repescagem = Luta.objects.get(id=repescagem["3_lugar"], chave=luta.chave)
-                            
-                            # Preencher vaga na repescagem
-                            if luta_repescagem.atleta_a is None:
-                                luta_repescagem.atleta_a = perdedor
-                            elif luta_repescagem.atleta_b is None:
-                                luta_repescagem.atleta_b = perdedor
-                            
-                            luta_repescagem.save()
+                            luta_3_lugar = Luta.objects.get(id=repescagem["luta_3_lugar"], chave=luta.chave)
+                            # Vencedor da repescagem vai para posição A da luta de 3º lugar
+                            if luta_3_lugar.atleta_a is None:
+                                luta_3_lugar.atleta_a = luta.vencedor
+                                luta_3_lugar.save()
                         except Luta.DoesNotExist:
                             pass
 
@@ -1575,13 +1695,13 @@ def get_resultados_chave(chave):
         else:
             segundo = luta_final.atleta_a.id if luta_final.atleta_a else None
         
-        # 3º lugar (repescagem)
+        # 3º lugar (vencedor da luta de 3º lugar)
         terceiro = None
         repescagem = estrutura.get("repescagem", {})
-        if repescagem.get("3_lugar"):
-            luta_repescagem = Luta.objects.filter(id=repescagem["3_lugar"]).first()
-            if luta_repescagem and luta_repescagem.vencedor:
-                terceiro = luta_repescagem.vencedor.id
+        if repescagem.get("luta_3_lugar"):
+            luta_3_lugar = Luta.objects.filter(id=repescagem["luta_3_lugar"]).first()
+            if luta_3_lugar and luta_3_lugar.vencedor:
+                terceiro = luta_3_lugar.vencedor.id
         
         resultados = [primeiro, segundo]
         if terceiro:

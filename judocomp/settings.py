@@ -21,8 +21,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 RESET_ADMIN_PASSWORD = os.environ.get('RESET_ADMIN_PASSWORD')
 
 # Senha obrigatória para acesso ao módulo operacional
-# Esta senha deve ser definida como variável de ambiente ou alterada aqui
-SENHA_OPERACIONAL = os.environ.get('SENHA_OPERACIONAL', 'SHIAI2024')
+# NUNCA deixar senha hardcoded - sempre ler da variável de ambiente
+senha_render = os.getenv("SENHA_OPERACIONAL")
+if not senha_render:
+    # Em produção (Render), a variável DEVE estar configurada
+    if os.environ.get("RENDER"):
+        import logging
+        logger = logging.getLogger('django')
+        logger.error("SENHA_OPERACIONAL não configurada no Render. Configure a variável de ambiente SENHA_OPERACIONAL.")
+        raise ValueError("SENHA_OPERACIONAL não configurada. Configure a variável de ambiente SENHA_OPERACIONAL no Render.")
+    # Em desenvolvimento local, usar valor padrão apenas para não quebrar
+    # ATENÇÃO: Em produção, SEMPRE configure a variável de ambiente
+    senha_render = 'SHIAI2024'  # Apenas para desenvolvimento local
+    import logging
+    logger = logging.getLogger('django')
+    logger.warning("SENHA_OPERACIONAL não configurada. Usando valor padrão apenas para desenvolvimento local.")
+SENHA_OPERACIONAL = senha_render
 
 
 # Quick-start development settings - unsuitable for production
@@ -172,9 +186,9 @@ USE_THOUSAND_SEPARATOR = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
+    BASE_DIR / 'static',
 ]
 
 # Media files (uploads)

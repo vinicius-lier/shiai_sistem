@@ -10,9 +10,13 @@ echo "🚀 Iniciando build do projeto..."
 echo "📦 Instalando dependências Python..."
 pip install -r requirements.txt
 
-# Aplicar migrations
+# Aplicar migrations (forçar aplicação de todas)
 echo "🗄️  Aplicando migrations do banco de dados..."
-python manage.py migrate --noinput
+python manage.py migrate --noinput --run-syncdb
+
+# Verificar migrations pendentes
+echo "🔍 Verificando migrations pendentes..."
+python manage.py showmigrations | grep "\[ \]" || echo "✅ Todas as migrations aplicadas"
 
 # Coletar arquivos estáticos
 echo "📁 Coletando arquivos estáticos..."

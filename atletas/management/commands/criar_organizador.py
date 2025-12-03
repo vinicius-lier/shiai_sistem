@@ -76,4 +76,11 @@ class Command(BaseCommand):
         self.stdout.write(f'   Nome: {organizador.nome}')
         self.stdout.write(f'   Email: {organizador.email}')
         self.stdout.write(f'   ID: {organizador.id}')
+        
+        if username:
+            self.stdout.write(self.style.SUCCESS(f'\n📝 Próximos passos:'))
+            self.stdout.write(f'   1. O usuário "{username}" já está associado ao organizador')
+            self.stdout.write(f'   2. Configure permissões operacionais se necessário:')
+            self.stdout.write(f'      python manage.py atualizar_perfil_principal --username {username}')
+            self.stdout.write(f'   3. O usuário pode fazer login em /login/operacional/')
 

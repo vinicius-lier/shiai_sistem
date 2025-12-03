@@ -33,7 +33,41 @@ def foto_perfil_academia_upload_path(instance, filename):
         return f'fotos/temp/{uuid.uuid4()}_{filename}'
 
 
+def logo_organizador_upload_path(instance, filename):
+    """Define o caminho de upload do logo do organizador"""
+    if hasattr(instance, 'id') and instance.id:
+        return f'organizadores/logos/{instance.id}/{filename}'
+    else:
+        import uuid
+        return f'organizadores/temp/{uuid.uuid4()}_{filename}'
+
+
+class Organizador(models.Model):
+    """Organizador de eventos - Multi-tenant principal"""
+    nome = models.CharField(max_length=255, verbose_name="Nome do Organizador")
+    email = models.EmailField(verbose_name="E-mail")
+    telefone = models.CharField(max_length=30, blank=True, verbose_name="Telefone")
+    logo = models.ImageField(
+        upload_to=logo_organizador_upload_path,
+        blank=True,
+        null=True,
+        verbose_name="Logo",
+        help_text="Logo do organizador (JPG, PNG)"
+    )
+    data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
+    ativo = models.BooleanField(default=True, verbose_name="Ativo")
+
+    class Meta:
+        verbose_name = "Organizador"
+        verbose_name_plural = "Organizadores"
+        ordering = ['nome']
+
+    def __str__(self):
+        return self.nome
+
+
 class Academia(models.Model):
+    organizador = models.ForeignKey(Organizador, on_delete=models.CASCADE, related_name='academias', verbose_name="Organizador", null=True, blank=True)
     nome = models.CharField(max_length=200)
     cidade = models.CharField(max_length=100)
     estado = models.CharField(max_length=2)
@@ -319,6 +353,7 @@ class FormaPagamento(models.Model):
 
 
 class Campeonato(models.Model):
+    organizador = models.ForeignKey(Organizador, on_delete=models.CASCADE, related_name='campeonatos', verbose_name="Organizador", null=True, blank=True)
     nome = models.CharField(max_length=200, default="Campeonato Padrão")
     data_inicio = models.DateField(null=True, blank=True, help_text="Data de início das inscrições")
     data_competicao = models.DateField(null=True, blank=True, help_text="Data da competição")
@@ -586,6 +621,7 @@ class CadastroOperacional(models.Model):
         ('insumo', 'Insumo'),
     ]
     
+    organizador = models.ForeignKey(Organizador, on_delete=models.CASCADE, related_name='cadastros_operacionais', verbose_name="Organizador", null=True, blank=True)
     tipo = models.CharField(max_length=50, choices=TIPO_CHOICES, verbose_name="Tipo")
     nome = models.CharField(max_length=200, verbose_name="Nome")
     telefone = models.CharField(max_length=20, blank=True, verbose_name="Telefone")
@@ -600,6 +636,21 @@ class CadastroOperacional(models.Model):
     
     def __str__(self):
         return f"{self.get_tipo_display()} - {self.nome}"
+
+
+class UserProfile(models.Model):
+    """Perfil do usuário com organizador (multi-tenant)"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name="Usuário")
+    organizador = models.ForeignKey(Organizador, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios', verbose_name="Organizador", help_text="Organizador ao qual o usuário pertence")
+
+    class Meta:
+        verbose_name = "Perfil de Usuário"
+        verbose_name_plural = "Perfis de Usuário"
+
+    def __str__(self):
+        if self.organizador:
+            return f"{self.user.username} - {self.organizador.nome}"
+        return f"{self.user.username} - Sem organizador"
 
 
 class UsuarioOperacional(models.Model):

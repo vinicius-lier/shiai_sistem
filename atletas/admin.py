@@ -3,14 +3,39 @@ from django.utils.html import format_html
 from django.urls import path
 from django.shortcuts import render
 from django.http import JsonResponse
-from .models import Academia, Classe, Categoria, Atleta, Chave, Luta, AdminLog, Inscricao, Campeonato, EquipeTecnicaCampeonato, PessoaEquipeTecnica, PesagemHistorico
+from .models import (
+    Organizador, UserProfile, Academia, Classe, Categoria, Atleta, Chave, Luta, 
+    AdminLog, Inscricao, Campeonato, EquipeTecnicaCampeonato, PessoaEquipeTecnica, 
+    PesagemHistorico, CadastroOperacional
+)
+
+
+@admin.register(Organizador)
+class OrganizadorAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'email', 'telefone', 'ativo', 'data_criacao')
+    list_filter = ('ativo', 'data_criacao')
+    search_fields = ('nome', 'email', 'telefone')
+    readonly_fields = ('data_criacao',)
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'organizador', 'get_username')
+    list_filter = ('organizador',)
+    search_fields = ('user__username', 'user__email', 'organizador__nome')
+    raw_id_fields = ('user', 'organizador')
+    
+    def get_username(self, obj):
+        return obj.user.username
+    get_username.short_description = 'Username'
 
 
 @admin.register(Academia)
 class AcademiaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'cidade', 'estado', 'pontos')
-    list_filter = ('estado',)
-    search_fields = ('nome', 'cidade')
+    list_display = ('nome', 'organizador', 'cidade', 'estado', 'pontos')
+    list_filter = ('organizador', 'estado')
+    search_fields = ('nome', 'cidade', 'organizador__nome')
+    raw_id_fields = ('organizador',)
 
 
 @admin.register(Classe)
@@ -82,9 +107,10 @@ class InscricaoAdmin(admin.ModelAdmin):
 
 @admin.register(Campeonato)
 class CampeonatoAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'data_competicao', 'data_limite_inscricao', 'ativo', 'get_total_inscricoes')
-    list_filter = ('ativo',)
-    search_fields = ('nome',)
+    list_display = ('nome', 'organizador', 'data_competicao', 'data_limite_inscricao', 'ativo', 'get_total_inscricoes')
+    list_filter = ('organizador', 'ativo')
+    search_fields = ('nome', 'organizador__nome')
+    raw_id_fields = ('organizador',)
     
     def get_total_inscricoes(self, obj):
         return obj.inscricoes.count()
@@ -150,6 +176,15 @@ class PesagemHistoricoAdmin(admin.ModelAdmin):
     readonly_fields = ('data_hora',)
     date_hierarchy = 'data_hora'
     ordering = ['-data_hora']
+
+
+@admin.register(CadastroOperacional)
+class CadastroOperacionalAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'organizador', 'tipo', 'telefone', 'ativo', 'data_cadastro')
+    list_filter = ('organizador', 'tipo', 'ativo', 'data_cadastro')
+    search_fields = ('nome', 'telefone', 'organizador__nome')
+    raw_id_fields = ('organizador',)
+    date_hierarchy = 'data_cadastro'
 
 
 class JudoAdminSite(admin.AdminSite):

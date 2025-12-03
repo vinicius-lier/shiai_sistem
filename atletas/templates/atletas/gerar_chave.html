@@ -1,6 +1,5 @@
 {% extends 'atletas/base.html' %}
 
-<<<<<<< HEAD
 {% block title %}Gerar Chave - SHIAI SISTEM{% endblock %}
 
 {% block content %}
@@ -124,43 +123,7 @@ function atualizarDescricaoModelo() {
     }
 }
 
-=======
-{% block title %}Gerar Chave{% endblock %}
-
-{% block content %}
-<h1>Gerar Chave</h1>
-
-<form method="post">
-    {% csrf_token %}
-    
-    <label for="classe">Classe:</label>
-    <select id="classe" name="classe" required>
-        <option value="">Selecione</option>
-        {% for classe in classes %}
-        <option value="{{ classe }}">{{ classe }}</option>
-        {% endfor %}
-    </select>
-    
-    <label for="sexo">Sexo:</label>
-    <select id="sexo" name="sexo" required onchange="filtrarCategorias()">
-        <option value="">Selecione</option>
-        <option value="M" {% if sexo_selecionado == 'M' %}selected{% endif %}>Masculino</option>
-        <option value="F" {% if sexo_selecionado == 'F' %}selected{% endif %}>Feminino</option>
-    </select>
-    
-    <label for="categoria">Categoria:</label>
-    <select id="categoria" name="categoria" required>
-        <option value="">Selecione primeiro o Sexo</option>
-        {% for categoria in categorias %}
-        <option value="{{ categoria.categoria_nome }}">{{ categoria.label }}</option>
-        {% endfor %}
-    </select>
-    
-    <button type="submit">Gerar Chave</button>
-</form>
-
 <script>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 function filtrarCategorias() {
     const sexo = document.getElementById('sexo').value;
     const classe = document.getElementById('classe').value;
@@ -211,8 +174,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<<<<<<< HEAD
-=======
-<a href="{% url 'lista_chaves' %}" class="btn">Voltar para Lista</a>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 {% endblock %}

@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import (
     Academia, Atleta, Chave, Luta, Inscricao, Campeonato, 
-    Categoria, AcademiaPontuacao, AcademiaCampeonato, Despesa,
+    Classe, Categoria, AcademiaPontuacao, AcademiaCampeonato, Despesa,
     UsuarioOperacional, AcademiaCampeonatoSenha, FormaPagamento,
     EquipeTecnicaCampeonato, PessoaEquipeTecnica, CategoriaInsumo, InsumoEstrutura,
     PesagemHistorico, ConferenciaPagamento, HistoricoSistema, Ocorrencia
@@ -696,7 +696,41 @@ def editar_academia(request, academia_id):
     return render(request, 'atletas/editar_academia.html', {'academia': academia})
 
 def lista_categorias(request):
-    return render(request, 'atletas/lista_categorias.html', {'categorias': Categoria.objects.all()})
+    """Lista todas as categorias com filtros opcionais"""
+    # Aplicar filtros
+    classe_filtro = request.GET.get('classe', '').strip()
+    sexo_filtro = request.GET.get('sexo', '').strip()
+    categoria_filtro = request.GET.get('categoria', '').strip()
+    
+    # Buscar categorias com select_related para evitar N+1 queries
+    categorias_query = Categoria.objects.select_related('classe').all()
+    
+    # Aplicar filtros
+    if classe_filtro:
+        categorias_query = categorias_query.filter(classe__nome=classe_filtro)
+    if sexo_filtro:
+        categorias_query = categorias_query.filter(sexo=sexo_filtro)
+    if categoria_filtro:
+        categorias_query = categorias_query.filter(
+            categoria_nome__icontains=categoria_filtro
+        ) | categorias_query.filter(
+            label__icontains=categoria_filtro
+        )
+    
+    categorias = categorias_query.order_by('classe__idade_min', 'sexo', 'limite_min')
+    
+    # Buscar classes para o filtro
+    classes = Classe.objects.all().order_by('idade_min').values_list('nome', flat=True)
+    
+    context = {
+        'categorias': categorias,
+        'classes': classes,
+        'classe_filtro': classe_filtro,
+        'sexo_filtro': sexo_filtro,
+        'categoria_filtro': categoria_filtro,
+    }
+    
+    return render(request, 'atletas/lista_categorias.html', context)
 
 def cadastrar_categoria(request):
     return render(request, 'atletas/cadastrar_categoria.html')

@@ -3,7 +3,6 @@
 {% block title %}Lista de Chaves{% endblock %}
 
 {% block content %}
-<<<<<<< HEAD
 <div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
     <div>
         <h1 class="page-title">Chaves</h1>
@@ -46,67 +45,35 @@
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" for="classe">Classe</label>
                     <select id="classe" name="classe" class="form-select">
-=======
-<h1>Lista de Chaves</h1>
-
-<a href="{% url 'gerar_chave_view' %}" class="btn">Gerar Nova Chave</a>
-<a href="{% url 'gerar_chave_manual' %}" class="btn btn-success">Gerar Lutas Casadas (Manual)</a>
-
-{% if total_chaves %}
-    <p style="margin-top: 10px;"><strong>Total de chaves encontradas:</strong> {{ total_chaves }}</p>
-{% endif %}
-
-<div class="filter-box" style="margin: 20px 0;">
-    <h3 style="margin-top: 0;">Filtros</h3>
-    <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-        <div>
-            <label for="classe">Classe:</label>
-            <select id="classe" name="classe" style="width: 100%;">
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
-                <option value="">Todas</option>
-                {% for c in classes %}
-                <option value="{{ c }}" {% if c == classe_filtro %}selected{% endif %}>{{ c }}</option>
-                {% endfor %}
-            </select>
-        </div>
-<<<<<<< HEAD
+                        <option value="">Todas</option>
+                        {% for c in classes %}
+                        <option value="{{ c }}" {% if c == classe_filtro %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" for="sexo">Sexo</label>
                     <select id="sexo" name="sexo" class="form-select">
-=======
-
-        <div>
-            <label for="sexo">Sexo:</label>
-            <select id="sexo" name="sexo" style="width: 100%;">
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
-                <option value="">Todos</option>
-                <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
-                <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
-            </select>
-        </div>
-<<<<<<< HEAD
+                        <option value="">Todos</option>
+                        <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
+                    </select>
+                </div>
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" for="categoria">Categoria</label>
                     <select id="categoria" name="categoria" class="form-select">
-=======
-
-        <div>
-            <label for="categoria">Categoria:</label>
-            <select id="categoria" name="categoria" style="width: 100%;">
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
-                <option value="">Todas</option>
-                {% for cat in categorias %}
-                <option value="{{ cat }}" {% if cat == categoria_filtro %}selected{% endif %}>{{ cat }}</option>
-                {% endfor %}
-            </select>
-        </div>
-<<<<<<< HEAD
+                        <option value="">Todas</option>
+                        {% for cat in categorias %}
+                        <option value="{{ cat }}" {% if cat == categoria_filtro %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
             <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
                 <a href="{% url 'lista_chaves' %}" class="btn btn-secondary">Limpar Filtros</a>
                 <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
-        </div>
-    </form>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -123,32 +90,11 @@
                 <th style="text-align: center;">Nº Atletas</th>
                 <th>Tipo</th>
                 <th style="text-align: right;">Ações</th>
-=======
-
-        <div style="display: flex; gap: 8px; align-items: flex-end;">
-            <button type="submit" class="btn" style="flex: 1;">Aplicar filtros</button>
-            <a href="{% url 'lista_chaves' %}" class="btn" style="flex: 1; text-align: center;">Limpar</a>
-        </div>
-    </form>
-</div>
-
-<div class="table-responsive">
-    <table>
-        <thead>
-            <tr>
-                <th>Classe</th>
-                <th>Sexo</th>
-                <th>Categoria</th>
-                <th>Nº Atletas</th>
-                <th>Tipo</th>
-                <th>Ações</th>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
             </tr>
         </thead>
         <tbody>
             {% for chave in chaves %}
             <tr>
-<<<<<<< HEAD
                 <td>
                     {% if chave.campeonato %}
                         <strong style="color: var(--color-primary);">{{ chave.campeonato.nome }}</strong>
@@ -178,26 +124,14 @@
                     </a>
                 </td>
             </tr>
-=======
-                <td>{{ chave.classe }}</td>
-                <td>{{ chave.get_sexo_display }}</td>
-                <td>{{ chave.categoria }}</td>
-                <td>{{ chave.atletas.count }}</td>
-                <td>{{ chave.estrutura.tipo|default:"-" }}</td>
-                <td>
-                    <a href="{% url 'detalhe_chave' chave.id %}" class="btn">Ver Detalhes</a>
-                </td>
-            </tr>
             {% empty %}
             <tr>
-                <td colspan="6" style="text-align: center;">Nenhuma chave gerada</td>
+                <td colspan="7" style="text-align: center;">Nenhuma chave gerada</td>
             </tr>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
             {% endfor %}
         </tbody>
     </table>
 </div>
-<<<<<<< HEAD
 {% else %}
 <div class="card">
     <div class="empty-state">
@@ -213,7 +147,4 @@
     </div>
 </div>
 {% endif %}
-=======
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 {% endblock %}
-

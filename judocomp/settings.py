@@ -47,7 +47,9 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+# Em desenvolvimento local, usar DEBUG=True
+# Em produção (Render), usar variável de ambiente DEBUG=False
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['*']
 
@@ -193,17 +195,10 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # STATICFILES_DIRS: Onde o Django procura arquivos estáticos antes de coletar
-# Apenas incluir se a pasta existir e tiver conteúdo útil
 # Os arquivos do app 'atletas' estão em atletas/static/ (descobertos automaticamente)
-STATICFILES_DIRS = []
-if (BASE_DIR / 'static').exists():
-    # Verificar se há arquivos (ignorando .gitkeep e pastas vazias)
-    has_files = any(
-        f.is_file() and not f.name.startswith('.')
-        for f in (BASE_DIR / 'static').rglob('*')
-    )
-    if has_files:
-        STATICFILES_DIRS.append(BASE_DIR / 'static')
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 # WhiteNoise para servir arquivos estáticos em produção
 # Usar CompressedStaticFilesStorage (mais simples e robusto)

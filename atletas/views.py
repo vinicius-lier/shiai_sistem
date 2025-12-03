@@ -10,6 +10,7 @@ from django.views.decorators.http import require_http_methods
 from django.db.models import Q, Sum, Count, F
 from django.utils import timezone
 from django.contrib.auth import login as django_login, logout as django_logout, authenticate
+from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -4495,7 +4496,124 @@ def administracao_cadastros_operacionais(request, tipo):
 
 @pode_criar_usuarios_required
 def gerenciar_usuarios_operacionais(request):
-    return render(request, 'atletas/administracao/gerenciar_usuarios.html', {'usuarios_operacionais': UsuarioOperacional.objects.all()})
+    """Gerencia usuários operacionais - criar, editar, deletar"""
+    import logging
+    logger = logging.getLogger('atletas')
+    
+    if request.method == 'POST':
+        try:
+            # Criar novo usuário
+            if request.POST.get('criar') == '1':
+                username = request.POST.get('username', '').strip()
+                password = request.POST.get('password', '').strip()
+                email = request.POST.get('email', '').strip() or None
+                primeiro_nome = request.POST.get('primeiro_nome', '').strip() or ''
+                ultimo_nome = request.POST.get('ultimo_nome', '').strip() or ''
+                
+                if not username or not password:
+                    messages.error(request, 'Nome de usuário e senha são obrigatórios.')
+                elif User.objects.filter(username=username).exists():
+                    messages.error(request, f'Usuário "{username}" já existe.')
+                else:
+                    # Criar usuário Django
+                    user = User.objects.create_user(
+                        username=username,
+                        password=password,
+                        email=email,
+                        first_name=primeiro_nome,
+                        last_name=ultimo_nome
+                    )
+                    
+                    # Criar perfil operacional (30 dias de validade)
+                    from datetime import timedelta
+                    data_expiracao = timezone.now() + timedelta(days=30)
+                    
+                    UsuarioOperacional.objects.create(
+                        user=user,
+                        pode_resetar_campeonato=False,
+                        pode_criar_usuarios=False,
+                        data_expiracao=data_expiracao,
+                        ativo=True
+                    )
+                    
+                    messages.success(request, f'Usuário "{username}" criado com sucesso!')
+                    logger.info(f'Usuário operacional criado: {username} por {request.user.username}')
+                    return redirect('gerenciar_usuarios_operacionais')
+            
+            # Editar usuário existente
+            elif request.POST.get('editar') == '1':
+                user_id = request.POST.get('user_id')
+                if not user_id:
+                    messages.error(request, 'ID do usuário não fornecido.')
+                else:
+                    try:
+                        user = User.objects.get(id=user_id)
+                        perfil = user.perfil_operacional
+                        
+                        # Não permitir editar usuários protegidos (com permissões especiais)
+                        if perfil.pode_resetar_campeonato or perfil.pode_criar_usuarios:
+                            messages.error(request, 'Não é possível editar usuários protegidos.')
+                        else:
+                            # Atualizar senha se fornecida
+                            nova_senha = request.POST.get('password', '').strip()
+                            if nova_senha:
+                                user.set_password(nova_senha)
+                            
+                            # Atualizar outros campos
+                            email = request.POST.get('email', '').strip() or None
+                            if email:
+                                user.email = email
+                            
+                            user.first_name = request.POST.get('primeiro_nome', '').strip() or ''
+                            user.last_name = request.POST.get('ultimo_nome', '').strip() or ''
+                            user.save()
+                            
+                            # Atualizar status ativo
+                            perfil.ativo = request.POST.get('ativo') == 'on'
+                            perfil.save()
+                            
+                            messages.success(request, f'Usuário "{user.username}" atualizado com sucesso!')
+                            logger.info(f'Usuário operacional editado: {user.username} por {request.user.username}')
+                            return redirect('gerenciar_usuarios_operacionais')
+                    except User.DoesNotExist:
+                        messages.error(request, 'Usuário não encontrado.')
+                    except UsuarioOperacional.DoesNotExist:
+                        messages.error(request, 'Perfil operacional não encontrado.')
+            
+            # Deletar usuário
+            elif request.POST.get('deletar') == '1':
+                user_id = request.POST.get('user_id')
+                if not user_id:
+                    messages.error(request, 'ID do usuário não fornecido.')
+                else:
+                    try:
+                        user = User.objects.get(id=user_id)
+                        perfil = user.perfil_operacional
+                        
+                        # Não permitir deletar usuários protegidos
+                        if perfil.pode_resetar_campeonato or perfil.pode_criar_usuarios:
+                            messages.error(request, 'Não é possível remover usuários protegidos.')
+                        else:
+                            username = user.username
+                            user.delete()  # Isso também deleta o perfil operacional (CASCADE)
+                            messages.success(request, f'Usuário "{username}" removido com sucesso!')
+                            logger.info(f'Usuário operacional deletado: {username} por {request.user.username}')
+                            return redirect('gerenciar_usuarios_operacionais')
+                    except User.DoesNotExist:
+                        messages.error(request, 'Usuário não encontrado.')
+                    except UsuarioOperacional.DoesNotExist:
+                        messages.error(request, 'Perfil operacional não encontrado.')
+        
+        except Exception as e:
+            logger.error(f'Erro ao gerenciar usuário operacional: {str(e)}', exc_info=True)
+            messages.error(request, f'Erro ao processar solicitação: {str(e)}')
+    
+    # GET: Listar todos os usuários operacionais
+    usuarios_operacionais = UsuarioOperacional.objects.select_related('user').all().order_by('-user__date_joined')
+    
+    return render(request, 'atletas/administracao/gerenciar_usuarios.html', {
+        'usuarios_operacionais': usuarios_operacionais
+    })
 
 # ========== MÓDULO DE PAGAMENTOS ==========
 

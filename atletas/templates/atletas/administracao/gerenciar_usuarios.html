@@ -80,7 +80,7 @@
                 <tr>
                     <td>
                         <strong>{{ item.user.username }}</strong>
-                        {% if item.perfil.pode_resetar_campeonato %}
+                        {% if item.pode_resetar_campeonato %}
                         <span class="badge badge-primary" style="margin-left: var(--spacing-2);">Principal</span>
                         {% endif %}
                     </td>
@@ -89,16 +89,16 @@
                     <td>
                         {% if item.esta_expirado %}
                         <span class="badge badge-danger">Expirado</span>
-                        {% elif not item.perfil.ativo %}
+                        {% elif not item.ativo %}
                         <span class="badge" style="background: var(--color-gray-200); color: var(--color-gray-600);">Inativo</span>
                         {% else %}
                         <span class="badge badge-success">Ativo</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if item.perfil.data_expiracao %}
+                        {% if item.data_expiracao %}
                         <div style="font-size: var(--font-size-sm);">
-                            {{ item.perfil.data_expiracao|date:"d/m/Y" }}
+                            {{ item.data_expiracao|date:"d/m/Y" }}
                             {% if item.dias_restantes is not None %}
                             <br>
                             <span style="color: {% if item.dias_restantes <= 7 %}var(--color-danger){% elif item.dias_restantes <= 15 %}var(--color-warning){% else %}var(--color-gray-600){% endif %};">
@@ -112,19 +112,19 @@
                     </td>
                     <td>
                         <div style="font-size: var(--font-size-xs);">
-                            {% if item.perfil.pode_resetar_campeonato %}
+                            {% if item.pode_resetar_campeonato %}
                             <span class="badge badge-primary">Resetar</span>
                             {% endif %}
-                            {% if item.perfil.pode_criar_usuarios %}
+                            {% if item.pode_criar_usuarios %}
                             <span class="badge badge-primary">Criar Usuários</span>
                             {% endif %}
-                            {% if not item.perfil.pode_resetar_campeonato and not item.perfil.pode_criar_usuarios %}
+                            {% if not item.pode_resetar_campeonato and not item.pode_criar_usuarios %}
                             <span style="color: var(--color-gray-500);">Padrão</span>
                             {% endif %}
                         </div>
                     </td>
                     <td>
-                        {% if not item.perfil.pode_resetar_campeonato and not item.perfil.pode_criar_usuarios %}
+                        {% if not item.pode_resetar_campeonato and not item.pode_criar_usuarios %}
                         <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap;">
                             <button type="button" class="btn btn-secondary btn-sm" onclick="editarUsuario({{ item.user.id }}, '{{ item.user.username }}', '{{ item.user.email }}', '{{ item.user.first_name }}', '{{ item.user.last_name }}', {{ item.perfil.ativo|yesno:"true,false" }})">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">

@@ -192,9 +192,7 @@ STATICFILES_DIRS = [
 ]
 
 # WhiteNoise para servir arquivos estáticos em produção
-# Usar CompressedStaticFilesStorage (mais simples e robusto)
-# CompressedManifestStaticFilesStorage requer manifest.json que pode não ser gerado
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files (uploads)
 MEDIA_URL = '/media/'

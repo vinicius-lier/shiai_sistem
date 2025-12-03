@@ -82,18 +82,34 @@ class Academia(models.Model):
         self.senha_login = hashlib.sha256(senha.encode()).hexdigest()
 
 
+class Classe(models.Model):
+    """Classe de idade dos atletas (FESTIVAL, SUB 9, SUB 11, etc.)"""
+    nome = models.CharField(max_length=20, unique=True, verbose_name="Nome da Classe")
+    idade_min = models.PositiveIntegerField(verbose_name="Idade Mínima")
+    idade_max = models.PositiveIntegerField(verbose_name="Idade Máxima")
+
+    class Meta:
+        verbose_name = "Classe"
+        verbose_name_plural = "Classes"
+        ordering = ["idade_min"]
+
+    def __str__(self):
+        return self.nome
+
+
 class Categoria(models.Model):
-    classe = models.CharField(max_length=20)  # SUB 9, SUB 11, SUB 13...
-    sexo = models.CharField(max_length=1, choices=[('M', 'Masculino'), ('F', 'Feminino')])
-    categoria_nome = models.CharField(max_length=100)
-    limite_min = models.FloatField()
-    limite_max = models.FloatField()
-    label = models.CharField(max_length=150)  # ex.: "SUB 11 - Meio Leve"
+    """Categoria de peso por classe e sexo"""
+    classe = models.ForeignKey(Classe, on_delete=models.CASCADE, related_name="categorias", verbose_name="Classe")
+    sexo = models.CharField(max_length=1, choices=[('M', 'Masculino'), ('F', 'Feminino')], verbose_name="Sexo")
+    categoria_nome = models.CharField(max_length=50, verbose_name="Nome da Categoria")  # Meio Leve, Pesado…
+    limite_min = models.DecimalField(max_digits=6, decimal_places=2, verbose_name="Limite Mínimo (kg)")
+    limite_max = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, verbose_name="Limite Máximo (kg)")
+    label = models.CharField(max_length=80, verbose_name="Label")  # Ex: "SUB 11 - Meio Leve -42kg"
 
     class Meta:
         verbose_name = "Categoria"
         verbose_name_plural = "Categorias"
-        ordering = ['classe', 'sexo', 'limite_min']
+        ordering = ["classe__idade_min", "sexo", "limite_min"]
 
     def __str__(self):
         return self.label

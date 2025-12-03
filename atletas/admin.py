@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.urls import path
 from django.shortcuts import render
 from django.http import JsonResponse
-from .models import Academia, Categoria, Atleta, Chave, Luta, AdminLog, Inscricao, Campeonato, EquipeTecnicaCampeonato, PessoaEquipeTecnica, PesagemHistorico
+from .models import Academia, Classe, Categoria, Atleta, Chave, Luta, AdminLog, Inscricao, Campeonato, EquipeTecnicaCampeonato, PessoaEquipeTecnica, PesagemHistorico
 
 
 @admin.register(Academia)
@@ -13,11 +13,19 @@ class AcademiaAdmin(admin.ModelAdmin):
     search_fields = ('nome', 'cidade')
 
 
+@admin.register(Classe)
+class ClasseAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'idade_min', 'idade_max')
+    list_filter = ('idade_min',)
+    search_fields = ('nome',)
+    ordering = ('idade_min',)
+
+
 @admin.register(Categoria)
 class CategoriaAdmin(admin.ModelAdmin):
     list_display = ('label', 'classe', 'sexo', 'limite_min', 'limite_max')
     list_filter = ('classe', 'sexo')
-    search_fields = ('label', 'categoria_nome')
+    search_fields = ('label', 'categoria_nome', 'classe__nome')
 
 
 @admin.register(Atleta)

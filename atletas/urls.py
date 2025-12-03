@@ -37,6 +37,7 @@ urlpatterns = [
     # Chaves
     path('chaves/', views.lista_chaves, name='lista_chaves'),
     path('chaves/gerar/', views.gerar_chave_view, name='gerar_chave_view'),
+    path('chaves/gerar-todas/', views.gerar_todas_chaves, name='gerar_todas_chaves'),
     path('chaves/gerar-manual/', views.gerar_chave_manual, name='gerar_chave_manual'),
     path('chaves/<int:chave_id>/', views.detalhe_chave, name='detalhe_chave'),
     path('chaves/<int:chave_id>/imprimir/', views.imprimir_chave, name='imprimir_chave'),

@@ -302,3 +302,4 @@ def ocorrencias_historico(request):
     return render(request, 'atletas/administracao/ocorrencias_historico.html', context)
 
 
+

@@ -51,3 +51,4 @@ def registrar_historico(tipo_acao, descricao, usuario=None, campeonato=None,
     )
 
 
+

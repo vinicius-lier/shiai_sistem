@@ -78,6 +78,10 @@ def login_operacional(request):
                     messages.error(request, f'Seu acesso operacional expirou em {perfil.data_expiracao.strftime("%d/%m/%Y")}.')
                     return render(request, 'atletas/login_operacional.html')
                 
+                # Verificar se precisa alterar senha no primeiro acesso
+                if not perfil.senha_alterada:
+                    return redirect('alterar_senha_obrigatorio')
+                
                 # Usuário válido e autenticado - redirecionar para dashboard
                 return redirect('index')
             except UsuarioOperacional.DoesNotExist:
@@ -130,7 +134,8 @@ def login_operacional(request):
                             pode_resetar_campeonato=False,
                             pode_criar_usuarios=False,
                             data_expiracao=timezone.now() + timedelta(days=30),  # Temporário por padrão
-                            ativo=True
+                            ativo=True,
+                            senha_alterada=False  # Precisa alterar senha no primeiro acesso
                         )
                         messages.info(request, 'Perfil operacional criado. Acesso válido por 30 dias.')
                     except Exception as e:
@@ -141,6 +146,10 @@ def login_operacional(request):
                     # Fazer login (sem cache, sem login automático)
                     # A sessão expira conforme configuração do Django (SESSION_COOKIE_AGE)
                     django_login(request, user)
+                    
+                    # Verificar se precisa alterar senha no primeiro acesso
+                    if not perfil.senha_alterada:
+                        return redirect('alterar_senha_obrigatorio')
                     
                     # Limpar qualquer flag de validação de senha operacional (não usamos mais)
                     if 'senha_operacional_validada' in request.session:
@@ -4509,6 +4518,7 @@ def gerenciar_usuarios_operacionais(request):
                 email = request.POST.get('email', '').strip() or None
                 primeiro_nome = request.POST.get('primeiro_nome', '').strip() or ''
                 ultimo_nome = request.POST.get('ultimo_nome', '').strip() or ''
+                telefone = request.POST.get('telefone', '').strip() or None
                 
                 if not username or not password:
                     messages.error(request, 'Nome de usuário e senha são obrigatórios.')
@@ -4524,19 +4534,67 @@ def gerenciar_usuarios_operacionais(request):
                         last_name=ultimo_nome
                     )
                     
-                    # Criar perfil operacional (30 dias de validade)
+                    # Criar perfil operacional (30 dias de validade, senha não alterada)
                     from datetime import timedelta
                     data_expiracao = timezone.now() + timedelta(days=30)
                     
-                    UsuarioOperacional.objects.create(
+                    perfil = UsuarioOperacional.objects.create(
                         user=user,
                         pode_resetar_campeonato=False,
                         pode_criar_usuarios=False,
                         data_expiracao=data_expiracao,
-                        ativo=True
+                        ativo=True,
+                        senha_alterada=False,  # Primeiro acesso precisa mudar senha
+                        criado_por=request.user
                     )
                     
-                    messages.success(request, f'Usuário "{username}" criado com sucesso!')
+                    # Enviar WhatsApp com credenciais se telefone fornecido
+                    if telefone:
+                        try:
+                            import urllib.parse
+                            # Normalizar telefone
+                            telefone_limpo = telefone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+                            if telefone_limpo.startswith('0'):
+                                telefone_limpo = telefone_limpo[1:]
+                            if not telefone_limpo.startswith('55'):
+                                telefone_limpo = '55' + telefone_limpo
+                            
+                            # Gerar URL de login
+                            try:
+                                dominio = request.get_host()
+                                # Remover porta se estiver em desenvolvimento
+                                if ':' in dominio:
+                                    dominio = dominio.split(':')[0]
+                            except:
+                                dominio = 'localhost:8000'
+                            
+                            login_url = f"https://{dominio}/login/operacional/"
+                            
+                            # Mensagem WhatsApp
+                            nome_completo = f"{primeiro_nome} {ultimo_nome}".strip() or username
+                            mensagem = (
+                                f"Olá {nome_completo}! 🥋\n\n"
+                                f"Suas credenciais de acesso ao sistema SHIAI foram criadas:\n\n"
+                                f"🔑 *Usuário:* {username}\n"
+                                f"🔒 *Senha:* {password}\n\n"
+                                f"*IMPORTANTE:* No primeiro acesso, você precisará alterar sua senha por segurança.\n\n"
+                                f"Link de acesso:\n{login_url}\n\n"
+                                f"Escolha 'Login Operacional' e use as credenciais acima.\n\n"
+                                f"Agradecemos pela confiança! 🙏"
+                            )
+                            
+                            mensagem_encoded = urllib.parse.quote(mensagem)
+                            whatsapp_url = f"https://wa.me/{telefone_limpo}?text={mensagem_encoded}"
+                            
+                            messages.success(request, f'Usuário "{username}" criado com sucesso!')
+                            messages.info(request, f'<a href="{whatsapp_url}" target="_blank" style="color: var(--color-success);">📱 Clique aqui para enviar WhatsApp com as credenciais</a>')
+                        except Exception as e:
+                            logger.error(f'Erro ao gerar link WhatsApp: {str(e)}', exc_info=True)
+                            messages.warning(request, f'Usuário criado, mas não foi possível gerar link do WhatsApp. Erro: {str(e)}')
+                    else:
+                        messages.success(request, f'Usuário "{username}" criado com sucesso!')
+                        messages.warning(request, 'Telefone não fornecido. Envie as credenciais manualmente.')
+                    
                     logger.info(f'Usuário operacional criado: {username} por {request.user.username}')
                     return redirect('gerenciar_usuarios_operacionais')
             
@@ -4619,7 +4677,10 @@ def gerenciar_usuarios_operacionais(request):
         # Se não for vitalício, tornar vitalício
         if perfil_atual.data_expiracao is not None:
             perfil_atual.data_expiracao = None
-            perfil_atual.save()
+        # Garantir que senha já foi alterada (não forçar mudança)
+        if not perfil_atual.senha_alterada:
+            perfil_atual.senha_alterada = True
+        perfil_atual.save()
     except UsuarioOperacional.DoesNotExist:
         # Criar perfil operacional vitalício para o usuário atual
         UsuarioOperacional.objects.create(
@@ -4627,12 +4688,59 @@ def gerenciar_usuarios_operacionais(request):
             pode_resetar_campeonato=True,
             pode_criar_usuarios=True,
             data_expiracao=None,  # Vitalício
-            ativo=True
+            ativo=True,
+            senha_alterada=True  # Usuário atual não precisa mudar senha
         )
     
     return render(request, 'atletas/administracao/gerenciar_usuarios.html', {
         'usuarios_operacionais': usuarios_operacionais
     })
+
+
+@operacional_required
+def alterar_senha_obrigatorio(request):
+    """View para alteração obrigatória de senha no primeiro acesso"""
+    import logging
+    logger = logging.getLogger('atletas')
+    
+    try:
+        perfil = request.user.perfil_operacional
+    except UsuarioOperacional.DoesNotExist:
+        messages.error(request, 'Perfil operacional não encontrado.')
+        return redirect('login_operacional')
+    
+    # Se já alterou a senha, redirecionar
+    if perfil.senha_alterada:
+        return redirect('index')
+    
+    if request.method == 'POST':
+        senha_atual = request.POST.get('senha_atual', '').strip()
+        nova_senha = request.POST.get('nova_senha', '').strip()
+        confirmar_senha = request.POST.get('confirmar_senha', '').strip()
+        
+        # Validar campos
+        if not senha_atual or not nova_senha or not confirmar_senha:
+            messages.error(request, 'Preencha todos os campos.')
+        elif nova_senha != confirmar_senha:
+            messages.error(request, 'As senhas não coincidem.')
+        elif len(nova_senha) < 6:
+            messages.error(request, 'A nova senha deve ter pelo menos 6 caracteres.')
+        elif not request.user.check_password(senha_atual):
+            messages.error(request, 'Senha atual incorreta.')
+        else:
+            # Alterar senha
+            request.user.set_password(nova_senha)
+            request.user.save()
+            
+            # Marcar como senha alterada
+            perfil.senha_alterada = True
+            perfil.save()
+            
+            messages.success(request, 'Senha alterada com sucesso!')
+            logger.info(f'Usuário {request.user.username} alterou senha no primeiro acesso')
+            return redirect('index')
+    
+    return render(request, 'atletas/alterar_senha_obrigatorio.html')
 
 # ========== MÓDULO DE PAGAMENTOS ==========
 

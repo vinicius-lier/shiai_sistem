@@ -115,6 +115,7 @@ urlpatterns = [
     path('administracao/relatorios/', views.administracao_relatorios, name='administracao_relatorios'),
     path('administracao/banco-operacional/<str:tipo>/', views.administracao_cadastros_operacionais, name='administracao_cadastros_operacionais'),
     path('administracao/usuarios-operacionais/', views.gerenciar_usuarios_operacionais, name='gerenciar_usuarios_operacionais'),
+    path('alterar-senha-obrigatorio/', views.alterar_senha_obrigatorio, name='alterar_senha_obrigatorio'),
     
     # Ajuda e Manuais
     path('ajuda/', views.ajuda_manual, name='ajuda_manual'),

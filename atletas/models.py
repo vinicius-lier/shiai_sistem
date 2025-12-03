@@ -662,6 +662,7 @@ class UsuarioOperacional(models.Model):
     criado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios_criados', verbose_name="Criado Por")
     data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
     ativo = models.BooleanField(default=True, verbose_name="Ativo")
+    senha_alterada = models.BooleanField(default=False, verbose_name="Senha Alterada", help_text="Indica se o usuário já alterou a senha no primeiro acesso")
     
     class Meta:
         verbose_name = "Usuário Operacional"

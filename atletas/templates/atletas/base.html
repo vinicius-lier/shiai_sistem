@@ -1487,8 +1487,7 @@
         <nav class="navbar navbar-expand-lg navbar-dark navbar-shiai fixed-top">
             <div class="container-fluid">
                 <a class="navbar-brand" href="{% url 'index' %}">
-                    <img src="{% static 'atletas/images/logo_white.png' %}" alt="SHIAI" height="32" class="d-inline-block align-text-top" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
-                    <span style="display: none; font-weight: 700; font-size: 1.25rem; letter-spacing: -0.02em;">SHIAI</span>
+                    <img src="{% static 'atletas/images/logo_white.png' %}" alt="SHIAI SISTEM" height="32" class="d-inline-block align-text-top">
                 </a>
                 <!-- Botão Hambúrguer (Mobile) -->
                 <button class="navbar-toggler-shiai" type="button" id="sidebarToggle" aria-label="Toggle navigation">
@@ -1598,7 +1597,7 @@
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}" href="{% url 'administracao_relatorios' %}">Relatórios</a></li>
                                 {% if user.is_authenticated %}
-                                    {% if user.perfil_operacional.pode_criar_usuarios %}
+                                    {% if user.perfil_operacional and user.perfil_operacional.pode_criar_usuarios %}
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}" href="{% url 'gerenciar_usuarios_operacionais' %}">Usuários Operacionais</a></li>
                                     {% endif %}
@@ -1661,8 +1660,7 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-brand">
-                    <img src="{% static 'atletas/images/logo_white.png' %}" alt="SHIAI" onerror="this.style.display='none';">
-                    <span>SHIAI</span>
+                    <img src="{% static 'atletas/images/logo_white.png' %}" alt="SHIAI SISTEM">
                 </div>
                 <button class="sidebar-close" id="sidebarClose" aria-label="Fechar menu">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1792,7 +1790,7 @@
                                 <a href="{% url 'administracao_relatorios' %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}">Relatórios</a>
                             </li>
                             {% if user.is_authenticated %}
-                                {% if user.perfil_operacional.pode_criar_usuarios %}
+                                {% if user.perfil_operacional and user.perfil_operacional.pode_criar_usuarios %}
                                 <li><div class="sidebar-submenu-divider"></div></li>
                                 <li class="nav-item">
                                     <a href="{% url 'gerenciar_usuarios_operacionais' %}" class="nav-link {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}">Usuários Operacionais</a>

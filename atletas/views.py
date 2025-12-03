@@ -62,6 +62,28 @@ def login_operacional(request):
         # Se já está autenticado, verificar perfil e redirecionar
         # IMPORTANTE: Mesmo autenticado, se a sessão expirar, será redirecionado aqui novamente
         if request.user.is_authenticated:
+            # Superusers sempre têm acesso direto
+            if request.user.is_superuser:
+                # Garantir que superuser tenha perfil com senha_alterada=True
+                try:
+                    perfil = request.user.perfil_operacional
+                    if not perfil.senha_alterada:
+                        perfil.senha_alterada = True
+                        perfil.data_expiracao = None  # Vitalício
+                        perfil.pode_resetar_campeonato = True
+                        perfil.pode_criar_usuarios = True
+                        perfil.save()
+                except UsuarioOperacional.DoesNotExist:
+                    UsuarioOperacional.objects.create(
+                        user=request.user,
+                        pode_resetar_campeonato=True,
+                        pode_criar_usuarios=True,
+                        data_expiracao=None,
+                        ativo=True,
+                        senha_alterada=True
+                    )
+                return redirect('index')
+            
             try:
                 perfil = request.user.perfil_operacional
                 
@@ -78,7 +100,7 @@ def login_operacional(request):
                     messages.error(request, f'Seu acesso operacional expirou em {perfil.data_expiracao.strftime("%d/%m/%Y")}.')
                     return render(request, 'atletas/login_operacional.html')
                 
-                # Verificar se precisa alterar senha no primeiro acesso
+                # Verificar se precisa alterar senha no primeiro acesso (apenas usuários não-superuser)
                 if not perfil.senha_alterada:
                     return redirect('alterar_senha_obrigatorio')
                 
@@ -111,7 +133,33 @@ def login_operacional(request):
                 user = authenticate(request, username=username, password=password)
                 
                 if user is not None:
-                    # Verificar perfil operacional e status
+                    # Superusers sempre têm acesso direto
+                    if user.is_superuser:
+                        # Garantir que superuser tenha perfil com senha_alterada=True
+                        try:
+                            perfil = user.perfil_operacional
+                            if not perfil.senha_alterada:
+                                perfil.senha_alterada = True
+                                perfil.data_expiracao = None  # Vitalício
+                                perfil.pode_resetar_campeonato = True
+                                perfil.pode_criar_usuarios = True
+                                perfil.save()
+                        except UsuarioOperacional.DoesNotExist:
+                            from datetime import timedelta
+                            perfil = UsuarioOperacional.objects.create(
+                                user=user,
+                                pode_resetar_campeonato=True,
+                                pode_criar_usuarios=True,
+                                data_expiracao=None,  # Vitalício
+                                ativo=True,
+                                senha_alterada=True  # Superuser não precisa mudar senha
+                            )
+                        
+                        django_login(request, user)
+                        messages.success(request, f'Bem-vindo, {user.username}!')
+                        return redirect('index')
+                    
+                    # Verificar perfil operacional e status para usuários normais
                     try:
                         perfil = user.perfil_operacional
                         
@@ -147,7 +195,7 @@ def login_operacional(request):
                     # A sessão expira conforme configuração do Django (SESSION_COOKIE_AGE)
                     django_login(request, user)
                     
-                    # Verificar se precisa alterar senha no primeiro acesso
+                    # Verificar se precisa alterar senha no primeiro acesso (apenas usuários não-superuser)
                     if not perfil.senha_alterada:
                         return redirect('alterar_senha_obrigatorio')
                     

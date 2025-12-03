@@ -57,6 +57,29 @@ def operacional_required(view_func):
             messages.warning(request, 'Você precisa fazer login operacional para acessar esta página.')
             return redirect('login_operacional')
         
+        # Superusers sempre têm acesso
+        if request.user.is_superuser:
+            # Garantir que superuser tenha perfil
+            try:
+                perfil = request.user.perfil_operacional
+                if not perfil.senha_alterada:
+                    perfil.senha_alterada = True
+                    perfil.data_expiracao = None
+                    perfil.pode_resetar_campeonato = True
+                    perfil.pode_criar_usuarios = True
+                    perfil.save()
+            except UsuarioOperacional.DoesNotExist:
+                from datetime import timedelta
+                UsuarioOperacional.objects.create(
+                    user=request.user,
+                    pode_resetar_campeonato=True,
+                    pode_criar_usuarios=True,
+                    data_expiracao=None,
+                    ativo=True,
+                    senha_alterada=True
+                )
+            return view_func(request, *args, **kwargs)
+        
         # Verificar se o usuário tem perfil operacional e se está ativo
         try:
             perfil = request.user.perfil_operacional
@@ -76,7 +99,8 @@ def operacional_required(view_func):
                 pode_resetar_campeonato=False,
                 pode_criar_usuarios=False,
                 data_expiracao=timezone.now() + timedelta(days=30),
-                ativo=True
+                ativo=True,
+                senha_alterada=False  # Precisa alterar senha
             )
             messages.info(request, 'Perfil operacional criado. Acesso válido por 30 dias.')
         

@@ -272,11 +272,6 @@
 
 {% block content %}
 <div class="page-header">
-    <!-- Logo SHIAI -->
-    <div style="text-align: center; margin-bottom: var(--spacing-4);">
-        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" style="max-width: 180px; height: auto;" onerror="this.style.display='none';">
-    </div>
-    
     <a href="{% url 'academia_painel' %}" class="btn-back">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -284,7 +279,15 @@
         Voltar para eventos
     </a>
     
-    <h1 class="page-title">{{ campeonato.nome }}</h1>
+    <div style="display: flex; align-items: center; gap: var(--spacing-4); margin-top: var(--spacing-4); flex-wrap: wrap;">
+        {% if academia.foto_perfil %}
+        <img src="{{ academia.foto_perfil.url }}" alt="{{ academia.nome }}" style="max-width: 60px; max-height: 60px; height: auto; border-radius: var(--border-radius-md); object-fit: contain; flex-shrink: 0;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" style="max-width: 60px; height: auto; display: none; flex-shrink: 0;">
+        {% else %}
+        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" style="max-width: 60px; height: auto; flex-shrink: 0;">
+        {% endif %}
+        <h1 class="page-title" style="margin: 0; flex: 1; min-width: 200px;">{{ campeonato.nome }}</h1>
+    </div>
     {% if campeonato.data_competicao %}
     <p class="page-description">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: var(--spacing-1);">

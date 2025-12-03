@@ -53,16 +53,20 @@
             <div>
                 <strong style="color: var(--color-gray-600); font-size: var(--font-size-sm);">Classe Atual</strong>
                 <div style="font-size: var(--font-size-lg); font-weight: 500; margin-top: var(--spacing-1);">
-                    <span class="badge badge-info">{{ atleta.get_classe_atual }}</span>
+                    {% if atleta.get_classe_atual %}
+                        <span class="badge badge-info" style="background: #DBEAFE; color: #1E40AF; padding: var(--spacing-1) var(--spacing-2); border-radius: var(--border-radius-sm); font-weight: 500;">{{ atleta.get_classe_atual }}</span>
+                    {% else %}
+                        <span style="color: var(--color-gray-400);">Não informado</span>
+                    {% endif %}
                 </div>
             </div>
             <div>
                 <strong style="color: var(--color-gray-600); font-size: var(--font-size-sm);">Faixa</strong>
                 <div style="font-size: var(--font-size-lg); font-weight: 500; margin-top: var(--spacing-1);">
                     {% if atleta.faixa %}
-                        <span class="badge badge-primary">{{ atleta.get_faixa_display }}</span>
+                        <span class="badge badge-primary" style="background: var(--color-primary); color: white; padding: var(--spacing-1) var(--spacing-2); border-radius: var(--border-radius-sm); font-weight: 500;">{{ atleta.get_faixa_display }}</span>
                     {% else %}
-                        <span style="color: var(--color-gray-400);">-</span>
+                        <span style="color: var(--color-gray-400);">Não informado</span>
                     {% endif %}
                 </div>
             </div>

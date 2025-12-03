@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import mimetypes
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,17 +20,41 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Carregar variáveis de ambiente
 RESET_ADMIN_PASSWORD = os.environ.get('RESET_ADMIN_PASSWORD')
 
+# Senha obrigatória para acesso ao módulo operacional
+# NUNCA deixar senha hardcoded - sempre ler da variável de ambiente
+senha_render = os.getenv("SENHA_OPERACIONAL")
+if not senha_render:
+    # Em produção (Render), a variável DEVE estar configurada
+    if os.environ.get("RENDER"):
+        import logging
+        logger = logging.getLogger('django')
+        logger.error("SENHA_OPERACIONAL não configurada no Render. Configure a variável de ambiente SENHA_OPERACIONAL.")
+        raise ValueError("SENHA_OPERACIONAL não configurada. Configure a variável de ambiente SENHA_OPERACIONAL no Render.")
+    # Em desenvolvimento local, usar valor padrão apenas para não quebrar
+    # ATENÇÃO: Em produção, SEMPRE configure a variável de ambiente
+    senha_render = 'SHIAI2024'  # Apenas para desenvolvimento local
+    import logging
+    logger = logging.getLogger('django')
+    logger.warning("SENHA_OPERACIONAL não configurada. Usando valor padrão apenas para desenvolvimento local.")
+SENHA_OPERACIONAL = senha_render
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-9c^_^fx1t+d!&xz-tbnogy)$cu7%)nmx2$i&frejw)l@$=wtj8')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = False
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = ['*']
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://shiai-sistem.onrender.com',
+    'https://*.shiai-sistem.onrender.com',
+]
 
 
 # Application definition
@@ -47,7 +72,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Servir arquivos estáticos em produção
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',  # Middleware de localização (deve vir após SessionMiddleware)
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'atletas.middleware.MobileRedirectMiddleware',  # Detecção automática mobile/desktop
@@ -79,41 +106,23 @@ WSGI_APPLICATION = 'judocomp.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-# Configuração para Heroku (usa PostgreSQL) ou SQLite localmente
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL:
-    try:
-        import dj_database_url
-        DATABASES = {
-            'default': dj_database_url.config(
-                default=DATABASE_URL,
-                conn_max_age=600
-            )
+
+if os.environ.get("RENDER"):
+    # Ambiente de PRODUÇÃO (Render) usa disco persistente
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join("/var/data", "db.sqlite3"),
         }
-    except ImportError:
-        # Fallback para SQLite se dj_database_url não estiver instalado
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-        }
+    }
 else:
+    # Ambiente LOCAL (normal)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-
-# Adicionar WhiteNoise apenas em produção (Heroku)
-# WhiteNoise só é necessário no Heroku, não em desenvolvimento local
-if DATABASE_URL or not DEBUG:
-    try:
-        import whitenoise
-        MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-    except ImportError:
-        pass  # whitenoise não instalado localmente, não é problema em dev
 
 
 # Password validation
@@ -140,29 +149,52 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'pt-br'
 
+# Idiomas disponíveis no sistema
+LANGUAGES = [
+    ('pt-br', 'Português (Brasil)'),
+    ('en', 'English'),
+]
+
+# Caminho para arquivos de tradução (locale)
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
+
 TIME_ZONE = 'America/Sao_Paulo'
 
 USE_I18N = True
 
 USE_TZ = True
 
+# Formato de data e hora para português do Brasil
+DATE_FORMAT = 'd/m/Y'
+DATETIME_FORMAT = 'd/m/Y H:i'
+TIME_FORMAT = 'H:i'
+YEAR_MONTH_FORMAT = 'F Y'
+MONTH_DAY_FORMAT = 'd F'
+SHORT_DATE_FORMAT = 'd/m/Y'
+SHORT_DATETIME_FORMAT = 'd/m/Y H:i'
+FIRST_DAY_OF_WEEK = 0  # Domingo (0 = Domingo, 1 = Segunda)
+
+# Separador decimal e milhar
+DECIMAL_SEPARATOR = ','
+THOUSAND_SEPARATOR = '.'
+USE_THOUSAND_SEPARATOR = True
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [
-    BASE_DIR / 'atletas' / 'static',
-]
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
-# WhiteNoise para servir arquivos estáticos em produção (apenas no Heroku)
-# Em desenvolvimento local, o Django usa seu próprio servidor de arquivos estáticos
-if DATABASE_URL or not DEBUG:
-    try:
-        STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    except:
-        pass  # Em desenvolvimento local, usa o servidor padrão do Django
+# WhiteNoise para servir arquivos estáticos em produção
+# Usar CompressedStaticFilesStorage (mais simples e robusto)
+# CompressedManifestStaticFilesStorage pode causar problemas com manifest.json
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Media files (uploads)
 MEDIA_URL = '/media/'
@@ -174,9 +206,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configurações de Sessão - Segurança
-# Sessões expiram quando o navegador fecha (não persistem)
+# Sessões expiram quando o navegador fecha (não persistem) - NUNCA salvar senha em cache
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-# Sessões expiram após 1 hora de inatividade
+# Sessões expiram após 1 hora de inatividade - Se expirar, exigir login novamente
 SESSION_COOKIE_AGE = 3600  # 1 hora em segundos
 # Cookie de sessão só via HTTPS em produção (ajustar quando tiver SSL)
 SESSION_COOKIE_SECURE = False  # Mudar para True em produção com HTTPS
@@ -186,3 +218,37 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 # Não salvar sessão em cada requisição (melhor performance e segurança)
 SESSION_SAVE_EVERY_REQUEST = False
+# NUNCA permitir login automático - sempre exigir usuário e senha
+
+# Logging para capturar erros
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'class': 'logging.FileHandler',
+            'level': 'ERROR',
+            'filename': os.path.join(BASE_DIR, 'error.log'),
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'ERROR',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        'atletas': {
+            'handlers': ['file', 'console'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}
+
+# Adicionar tipos MIME
+mimetypes.add_type("text/css", ".css", True)
+mimetypes.add_type("application/javascript", ".js", True)

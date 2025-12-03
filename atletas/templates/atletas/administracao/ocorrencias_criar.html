@@ -1,0 +1,89 @@
+{% extends 'atletas/administracao/base_admin.html' %}
+
+{% block admin_page_title %}Nova Ocorrência{% endblock %}
+{% block admin_page_description %}Registrar nova ocorrência, problema ou situação durante o evento{% endblock %}
+
+{% block admin_content %}
+<section class="section-spacing">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Registrar Ocorrência</h2>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="campeonato_id" value="{{ campeonato_selecionado.id }}">
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Evento <span class="text-danger">*</span></label>
+                        <select class="form-select" name="campeonato_id" required>
+                            {% for camp in campeonatos %}
+                            <option value="{{ camp.id }}" {% if campeonato_selecionado and campeonato_selecionado.id == camp.id %}selected{% endif %}>{{ camp.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Categoria <span class="text-danger">*</span></label>
+                        <select class="form-select" name="categoria" required>
+                            {% for value, label in CATEGORIA_CHOICES %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Prioridade <span class="text-danger">*</span></label>
+                        <select class="form-select" name="prioridade" required>
+                            {% for value, label in PRIORIDADE_CHOICES %}
+                            <option value="{{ value }}" {% if value == 'MEDIA' %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Data e Hora da Ocorrência <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" name="data_ocorrencia" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Academia (opcional)</label>
+                        <select class="form-select" name="academia_id">
+                            <option value="">Selecione...</option>
+                            {% for academia in academias %}
+                            <option value="{{ academia.id }}">{{ academia.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Atleta Envolvido (opcional)</label>
+                        <select class="form-select" name="atleta_id">
+                            <option value="">Selecione...</option>
+                            {% for atleta in atletas %}
+                            <option value="{{ atleta.id }}">{{ atleta.nome }} - {{ atleta.academia.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Título <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="titulo" required placeholder="Ex: Problema na pesagem do atleta X">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Descrição Detalhada <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="descricao" rows="5" required placeholder="Descreva detalhadamente o que aconteceu..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Observações Adicionais</label>
+                        <textarea class="form-control" name="observacoes" rows="3" placeholder="Informações complementares..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Registrar Ocorrência</button>
+                    <a href="{% url 'ocorrencias_lista' %}{% if campeonato_selecionado %}?campeonato_id={{ campeonato_selecionado.id }}{% endif %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+
+

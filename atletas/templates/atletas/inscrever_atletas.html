@@ -5,7 +5,11 @@
 {% block content %}
 <div class="page-header">
     <h1 class="page-title">Inscrever Atletas no Campeonato</h1>
+    {% if campeonato_ativo %}
     <p class="page-description">{{ campeonato_ativo.nome }}</p>
+    {% else %}
+    <p class="page-description" style="color: var(--color-warning);">Nenhum campeonato ativo</p>
+    {% endif %}
 </div>
 
 <!-- Filtros -->
@@ -76,7 +80,7 @@
                             </td>
                             <td>
                                 <span class="badge {% if item.atleta.sexo == 'M' %}badge-success{% else %}badge-warning{% endif %}">
-                                    {{ item.atleta.get_sexo_display }}
+                                    {% if item.atleta.sexo == 'M' %}Masculino{% else %}Feminino{% endif %}
                                 </span>
                             </td>
                             <td>
@@ -152,6 +156,7 @@
             </button>
         </div>
         <form id="form-inscricao" method="post" action="{% url 'inscrever_atletas' %}">
+            <input type="hidden" name="campeonato_id" value="{{ campeonato_ativo.id }}">
             {% csrf_token %}
             <input type="hidden" id="atleta_id_inscricao" name="atleta_id">
             
@@ -188,6 +193,7 @@
                     <select id="categoria_escolhida" name="categoria_escolhida" class="form-select" required disabled>
                         <option value="">Selecione primeiro a classe</option>
                     </select>
+                    <input type="hidden" id="categoria_label" name="categoria_label">
                     <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">
                         Após selecionar a classe, escolha a categoria de peso
                     </small>
@@ -316,6 +322,9 @@ function categoriasPermitidas(classeAtleta) {
         classesPermitidas = ['VETERANOS', 'SÊNIOR'];
     } else if (classeNormalizada === 'SUB 18' || classeNormalizada === 'SUB18') {
         classesPermitidas = ['SUB 18', 'SUB 21', 'SÊNIOR'];
+    } else if (classeNormalizada === 'FESTIVAL') {
+        // Festival: apenas sua própria classe
+        classesPermitidas = ['Festival'];
     } else {
         // Regra padrão: apenas sua própria classe
         classesPermitidas = [classeAtleta];
@@ -367,8 +376,20 @@ if (classeSelectEl) {
                 const option = document.createElement('option');
                 option.value = cat.id;
                 option.textContent = cat.label;
+                option.dataset.label = cat.label; // Armazenar label para envio
                 categoriaSelect.appendChild(option);
             });
+        }
+    });
+}
+
+// Atualizar campo hidden com label da categoria ao selecionar
+const categoriaSelectEl = document.getElementById('categoria_escolhida');
+if (categoriaSelectEl) {
+    categoriaSelectEl.addEventListener('change', function() {
+        const categoriaLabelInput = document.getElementById('categoria_label');
+        if (categoriaLabelInput && this.selectedOptions[0]) {
+            categoriaLabelInput.value = this.selectedOptions[0].dataset.label || this.selectedOptions[0].textContent;
         }
     });
 }

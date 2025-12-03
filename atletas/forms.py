@@ -24,6 +24,10 @@ class CampeonatoForm(forms.ModelForm):
                 'type': 'date',
                 'class': 'form-input'
             }),
+            'data_limite_inscricao_academia': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-input'
+            }),
             'regulamento': forms.Textarea(attrs={
                 'class': 'form-textarea',
                 'rows': 20,

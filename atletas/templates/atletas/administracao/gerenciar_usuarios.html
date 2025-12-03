@@ -39,6 +39,17 @@
                 <label class="form-label" for="ultimo_nome">Último Nome</label>
                 <input type="text" id="ultimo_nome" name="ultimo_nome" class="form-input" placeholder="Sobrenome">
             </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="telefone">
+                    Telefone/WhatsApp
+                    <span style="color: var(--color-danger);">*</span>
+                </label>
+                <input type="text" id="telefone" name="telefone" class="form-input" required 
+                       placeholder="(99) 99999-9999" pattern="[0-9()\s-]+">
+                <small style="color: var(--color-gray-500); font-size: var(--font-size-xs);">
+                    Será enviado WhatsApp com as credenciais
+                </small>
+            </div>
         </div>
         <div style="margin-top: var(--spacing-6); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
             <p style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin: 0 0 var(--spacing-4) 0;">
@@ -80,7 +91,7 @@
                 <tr>
                     <td>
                         <strong>{{ item.user.username }}</strong>
-                        {% if item.perfil.pode_resetar_campeonato %}
+                        {% if item.pode_resetar_campeonato %}
                         <span class="badge badge-primary" style="margin-left: var(--spacing-2);">Principal</span>
                         {% endif %}
                     </td>
@@ -89,16 +100,16 @@
                     <td>
                         {% if item.esta_expirado %}
                         <span class="badge badge-danger">Expirado</span>
-                        {% elif not item.perfil.ativo %}
+                        {% elif not item.ativo %}
                         <span class="badge" style="background: var(--color-gray-200); color: var(--color-gray-600);">Inativo</span>
                         {% else %}
                         <span class="badge badge-success">Ativo</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if item.perfil.data_expiracao %}
+                        {% if item.data_expiracao %}
                         <div style="font-size: var(--font-size-sm);">
-                            {{ item.perfil.data_expiracao|date:"d/m/Y" }}
+                            {{ item.data_expiracao|date:"d/m/Y" }}
                             {% if item.dias_restantes is not None %}
                             <br>
                             <span style="color: {% if item.dias_restantes <= 7 %}var(--color-danger){% elif item.dias_restantes <= 15 %}var(--color-warning){% else %}var(--color-gray-600){% endif %};">
@@ -112,19 +123,19 @@
                     </td>
                     <td>
                         <div style="font-size: var(--font-size-xs);">
-                            {% if item.perfil.pode_resetar_campeonato %}
+                            {% if item.pode_resetar_campeonato %}
                             <span class="badge badge-primary">Resetar</span>
                             {% endif %}
-                            {% if item.perfil.pode_criar_usuarios %}
+                            {% if item.pode_criar_usuarios %}
                             <span class="badge badge-primary">Criar Usuários</span>
                             {% endif %}
-                            {% if not item.perfil.pode_resetar_campeonato and not item.perfil.pode_criar_usuarios %}
+                            {% if not item.pode_resetar_campeonato and not item.pode_criar_usuarios %}
                             <span style="color: var(--color-gray-500);">Padrão</span>
                             {% endif %}
                         </div>
                     </td>
                     <td>
-                        {% if not item.perfil.pode_resetar_campeonato and not item.perfil.pode_criar_usuarios %}
+                        {% if not item.pode_resetar_campeonato and not item.pode_criar_usuarios %}
                         <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap;">
                             <button type="button" class="btn btn-secondary btn-sm" onclick="editarUsuario({{ item.user.id }}, '{{ item.user.username }}', '{{ item.user.email }}', '{{ item.user.first_name }}', '{{ item.user.last_name }}', {{ item.perfil.ativo|yesno:"true,false" }})">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
@@ -164,18 +175,18 @@
 </section>
 
 <!-- Modal de Edição -->
-<div class="modal-overlay" id="modal-editar-usuario" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center; padding: var(--spacing-4);">
-    <div class="modal-content" style="background: var(--color-white); border-radius: var(--border-radius-lg); max-width: 500px; width: 100%; box-shadow: var(--shadow-xl);">
-        <div class="modal-header" style="padding: var(--spacing-6); border-bottom: 1px solid var(--color-gray-200); display: flex; justify-content: space-between; align-items: center;">
-            <h3 class="modal-title" style="font-size: var(--font-size-xl); font-weight: 600; color: var(--color-gray-900); margin: 0;">Editar Usuário</h3>
-            <button class="modal-close" onclick="fecharModalEditar()" style="background: none; border: none; font-size: var(--font-size-2xl); color: var(--color-gray-400); cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--border-radius-sm);">
+<div class="modal-overlay" id="modal-editar-usuario">
+    <div class="modal" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Editar Usuário</h3>
+            <button class="modal-close" onclick="fecharModalEditar()" aria-label="Fechar">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
             </button>
         </div>
-        <div class="modal-body" style="padding: var(--spacing-6);">
+        <div class="modal-body">
             <form method="post" id="form-editar-usuario">
                 {% csrf_token %}
                 <input type="hidden" name="editar" value="1">
@@ -231,13 +242,35 @@ function editarUsuario(userId, username, email, primeiroNome, ultimoNome, ativo)
     document.getElementById('edit_primeiro_nome').value = primeiroNome || '';
     document.getElementById('edit_ultimo_nome').value = ultimoNome || '';
     document.getElementById('edit_ativo').checked = ativo;
-    document.getElementById('modal-editar-usuario').style.display = 'flex';
+    
+    const modal = document.getElementById('modal-editar-usuario');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
 }
 
 function fecharModalEditar() {
-    document.getElementById('modal-editar-usuario').style.display = 'none';
-    document.getElementById('form-editar-usuario').reset();
+    const modal = document.getElementById('modal-editar-usuario');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    const form = document.getElementById('form-editar-usuario');
+    if (form) {
+        form.reset();
+    }
 }
+
+// Fechar modal ao clicar no overlay
+document.getElementById('modal-editar-usuario')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        fecharModalEditar();
+    }
+});
 </script>
 {% endblock %}
+
+
+
 

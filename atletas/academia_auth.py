@@ -44,7 +44,7 @@ def academia_required(view_func):
 
 
 def operacional_required(view_func):
-    """Decorator para verificar se é acesso operacional (não academia)"""
+    """Decorator para verificar se é acesso operacional (não academia) - SEMPRE exige login e senha"""
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         # Se está logado como academia, redirecionar
@@ -52,10 +52,33 @@ def operacional_required(view_func):
             messages.warning(request, 'Você está logado como academia. Faça logout para acessar o módulo operacional.')
             return redirect('academia_painel')
         
-        # Verificar se está autenticado operacionalmente (Django auth)
+        # Verificar se está autenticado operacionalmente (Django auth) - OBRIGATÓRIO
         if not request.user.is_authenticated:
             messages.warning(request, 'Você precisa fazer login operacional para acessar esta página.')
             return redirect('login_operacional')
+        
+        # Superusers sempre têm acesso
+        if request.user.is_superuser:
+            # Garantir que superuser tenha perfil
+            try:
+                perfil = request.user.perfil_operacional
+                if not perfil.senha_alterada:
+                    perfil.senha_alterada = True
+                    perfil.data_expiracao = None
+                    perfil.pode_resetar_campeonato = True
+                    perfil.pode_criar_usuarios = True
+                    perfil.save()
+            except UsuarioOperacional.DoesNotExist:
+                from datetime import timedelta
+                UsuarioOperacional.objects.create(
+                    user=request.user,
+                    pode_resetar_campeonato=True,
+                    pode_criar_usuarios=True,
+                    data_expiracao=None,
+                    ativo=True,
+                    senha_alterada=True
+                )
+            return view_func(request, *args, **kwargs)
         
         # Verificar se o usuário tem perfil operacional e se está ativo
         try:
@@ -76,7 +99,8 @@ def operacional_required(view_func):
                 pode_resetar_campeonato=False,
                 pode_criar_usuarios=False,
                 data_expiracao=timezone.now() + timedelta(days=30),
-                ativo=True
+                ativo=True,
+                senha_alterada=False  # Precisa alterar senha
             )
             messages.info(request, 'Perfil operacional criado. Acesso válido por 30 dias.')
         
@@ -108,23 +132,40 @@ def pode_resetar_required(view_func):
 
 
 def pode_criar_usuarios_required(view_func):
-    """Decorator para verificar se o usuário pode criar outros usuários"""
+    """Decorator para verificar se o usuário pode criar outros usuários
+    Permite acesso para:
+    - Superusers (is_superuser = True)
+    - Usuários com organizador (user.profile.organizador)
+    - Usuários com perfil_operacional.pode_criar_usuarios = True
+    """
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             messages.error(request, 'Você precisa estar autenticado.')
             return redirect('login_operacional')
         
+        # Superusers sempre têm acesso
+        if request.user.is_superuser:
+            return view_func(request, *args, **kwargs)
+        
+        # Usuários com organizador têm acesso
+        try:
+            if hasattr(request.user, 'profile') and request.user.profile.organizador:
+                return view_func(request, *args, **kwargs)
+        except Exception:
+            pass
+        
+        # Usuários com perfil operacional e permissão específica
         try:
             perfil = request.user.perfil_operacional
-            if not perfil.pode_criar_usuarios:
-                messages.error(request, 'Você não tem permissão para criar usuários operacionais.')
-                return redirect('index')
+            if perfil.pode_criar_usuarios:
+                return view_func(request, *args, **kwargs)
         except UsuarioOperacional.DoesNotExist:
-            messages.error(request, 'Você não tem permissão para criar usuários operacionais.')
-            return redirect('index')
+            pass
         
-        return view_func(request, *args, **kwargs)
+        # Se chegou aqui, não tem permissão
+        messages.error(request, 'Você não tem permissão para criar usuários operacionais.')
+        return redirect('index')
     
     return _wrapped_view
 

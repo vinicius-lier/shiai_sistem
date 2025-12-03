@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <style>
         :root {
             /* Design System Colors - IDÊNTICO AO OPERACIONAL */
@@ -529,12 +531,355 @@
                 max-width: 450px;
             }
         }
+
+        /* ============================================
+           NAVBAR RESPONSIVA COM SIDEBAR MOBILE
+           ============================================ */
+        
+        /* Navbar Principal - Estilo Escuro SHIAI */
+        .navbar-shiai {
+            background: var(--color-dark) !important;
+            border-bottom: 1px solid var(--color-gray-800);
+            padding: var(--spacing-3) var(--spacing-4);
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+        }
+
+        .navbar-shiai .navbar-brand {
+            color: var(--color-white) !important;
+            font-weight: 600;
+            font-size: var(--font-size-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            text-decoration: none;
+        }
+
+        .navbar-shiai .navbar-brand:hover {
+            color: var(--color-white) !important;
+        }
+
+        .navbar-shiai .navbar-brand img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        /* Botão Hambúrguer - Visível apenas em mobile */
+        .navbar-toggler-shiai {
+            display: none;
+            background: transparent;
+            border: 1px solid var(--color-gray-700);
+            border-radius: var(--border-radius-sm);
+            padding: var(--spacing-2);
+            color: var(--color-white);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .navbar-toggler-shiai:hover {
+            background: var(--color-gray-800);
+            border-color: var(--color-gray-600);
+        }
+
+        .navbar-toggler-shiai:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--color-primary);
+        }
+
+        .navbar-toggler-shiai svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        @media (max-width: 991.98px) {
+            .navbar-toggler-shiai {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        /* Navbar Links Desktop - Ocultos em mobile */
+        .navbar-nav-desktop {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-4);
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar-nav-desktop .nav-link {
+            color: var(--color-gray-300) !important;
+            text-decoration: none;
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+            padding: var(--spacing-2) var(--spacing-3);
+            border-radius: var(--border-radius-sm);
+            transition: all var(--transition-base);
+        }
+
+        .navbar-nav-desktop .nav-link:hover {
+            color: var(--color-white) !important;
+            background: var(--color-gray-800);
+        }
+
+        @media (max-width: 991.98px) {
+            .navbar-nav-desktop {
+                display: none;
+            }
+        }
+
+        /* Sidebar - Menu Off-Canvas */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -260px;
+            width: 260px;
+            height: 100vh;
+            background: var(--color-dark);
+            border-right: 1px solid var(--color-gray-800);
+            z-index: 1040;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .sidebar.open {
+            left: 0;
+        }
+
+        /* Sidebar Header */
+        .sidebar-header {
+            padding: var(--spacing-4);
+            border-bottom: 1px solid var(--color-gray-800);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-header .sidebar-brand {
+            color: var(--color-white);
+            font-weight: 600;
+            font-size: var(--font-size-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+        }
+
+        .sidebar-header .sidebar-brand img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
+
+        .sidebar-close {
+            background: transparent;
+            border: none;
+            color: var(--color-gray-400);
+            cursor: pointer;
+            padding: var(--spacing-1);
+            border-radius: var(--border-radius-sm);
+            transition: all var(--transition-base);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-close:hover {
+            color: var(--color-white);
+            background: var(--color-gray-800);
+        }
+
+        .sidebar-close svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar-nav {
+            list-style: none;
+            margin: 0;
+            padding: var(--spacing-2) 0;
+        }
+
+        .sidebar-nav .nav-item {
+            margin: 0;
+        }
+
+        .sidebar-nav .nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-3);
+            padding: var(--spacing-3) var(--spacing-4);
+            color: var(--color-gray-300);
+            text-decoration: none;
+            font-size: var(--font-size-base);
+            font-weight: 500;
+            transition: all var(--transition-base);
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-nav .nav-link:hover {
+            background: var(--color-gray-800);
+            color: var(--color-white);
+            border-left-color: var(--color-primary);
+        }
+
+        .sidebar-nav .nav-link svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-nav .nav-link.active {
+            background: var(--color-gray-800);
+            color: var(--color-white);
+            border-left-color: var(--color-primary);
+        }
+
+        /* Dark Overlay */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1035;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Ajustar conteúdo quando sidebar está aberta em mobile */
+        @media (max-width: 991.98px) {
+            body.sidebar-open {
+                overflow: hidden;
+            }
+        }
+
+        /* Desktop: Sidebar não deve aparecer */
+        @media (min-width: 992px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .sidebar-overlay {
+                display: none;
+            }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    {% block navbar %}
+    <!-- Navbar Responsiva -->
+    <nav class="navbar navbar-expand-lg navbar-shiai">
+        <div class="container-fluid" style="max-width: 100%; padding: 0 var(--spacing-4);">
+            <a class="navbar-brand" href="{% url 'academia_painel' %}">
+                <img src="{% static 'atletas/images/logo_white.png' %}" alt="SHIAI SISTEM">
+            </a>
+            
+            <!-- Botão Hambúrguer (Mobile) -->
+            <button class="navbar-toggler-shiai" type="button" id="sidebarToggle" aria-label="Toggle navigation">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            
+            <!-- Menu Desktop -->
+            <ul class="navbar-nav-desktop">
+                <li><a href="{% url 'academia_painel' %}" class="nav-link">Painel</a></li>
+                {% if campeonato_ativo %}
+                <li><a href="{% url 'academia_evento' campeonato_ativo.id %}" class="nav-link">Evento Ativo</a></li>
+                {% endif %}
+                <li><a href="{% url 'academia_lista_atletas' %}" class="nav-link">Atletas</a></li>
+                <li><a href="{% url 'academia_logout' %}" class="nav-link">Sair</a></li>
+            </ul>
+        </div>
+    </nav>
+    {% endblock %}
+
+    {% block sidebar %}
+    <!-- Dark Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Mobile -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <img src="{% static 'atletas/images/logo_white.png' %}" alt="SHIAI SISTEM">
+            </div>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Fechar menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <nav>
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="{% url 'academia_painel' %}" class="nav-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        <span>Painel</span>
+                    </a>
+                </li>
+                {% if campeonato_ativo %}
+                <li class="nav-item">
+                    <a href="{% url 'academia_evento' campeonato_ativo.id %}" class="nav-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>Evento Ativo</span>
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a href="{% url 'academia_lista_atletas' %}" class="nav-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Atletas</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'academia_logout' %}" class="nav-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        <span>Sair</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+    {% endblock %}
+
     {% if messages %}
-        <div style="position: fixed; top: var(--spacing-4); left: var(--spacing-4); right: var(--spacing-4); z-index: 1000; max-width: 600px; margin: 0 auto;">
+        <div style="position: fixed; top: var(--spacing-4); left: var(--spacing-4); right: var(--spacing-4); z-index: 1050; max-width: 600px; margin: 0 auto;">
             {% for message in messages %}
             <div class="alert alert-{{ message.tags }}">
                 {{ message }}
@@ -547,6 +892,9 @@
         {% block content %}{% endblock %}
     </div>
 
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    
     <script>
         // Auto-fechar alerts após 5 segundos
         setTimeout(() => {
@@ -556,6 +904,71 @@
                 setTimeout(() => alert.remove(), 300);
             });
         }, 5000);
+
+        // ============================================
+        // SIDEBAR MOBILE - CONTROLE DE ABERTURA/FECHAMENTO
+        // ============================================
+        (function() {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarClose = document.getElementById('sidebarClose');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            
+            if (!sidebar || !sidebarToggle) return;
+            
+            function openSidebar() {
+                sidebar.classList.add('open');
+                sidebarOverlay.classList.add('active');
+                document.body.classList.add('sidebar-open');
+            }
+            
+            function closeSidebar() {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('active');
+                document.body.classList.remove('sidebar-open');
+            }
+            
+            function toggleSidebar() {
+                if (sidebar.classList.contains('open')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            }
+            
+            // Event listeners
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', toggleSidebar);
+            }
+            
+            if (sidebarClose) {
+                sidebarClose.addEventListener('click', closeSidebar);
+            }
+            
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', closeSidebar);
+            }
+            
+            // Fechar sidebar ao clicar em link (mobile)
+            const sidebarLinks = sidebar.querySelectorAll('.nav-link');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    // Pequeno delay para permitir navegação
+                    setTimeout(closeSidebar, 100);
+                });
+            });
+            
+            // Fechar sidebar ao redimensionar para desktop
+            let resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    if (window.innerWidth >= 992) {
+                        closeSidebar();
+                    }
+                }, 100);
+            });
+        })();
     </script>
     {% block extra_js %}{% endblock %}
 </body>

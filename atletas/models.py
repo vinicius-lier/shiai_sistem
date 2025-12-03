@@ -33,7 +33,41 @@ def foto_perfil_academia_upload_path(instance, filename):
         return f'fotos/temp/{uuid.uuid4()}_{filename}'
 
 
+def logo_organizador_upload_path(instance, filename):
+    """Define o caminho de upload do logo do organizador"""
+    if hasattr(instance, 'id') and instance.id:
+        return f'organizadores/logos/{instance.id}/{filename}'
+    else:
+        import uuid
+        return f'organizadores/temp/{uuid.uuid4()}_{filename}'
+
+
+class Organizador(models.Model):
+    """Organizador de eventos - Multi-tenant principal"""
+    nome = models.CharField(max_length=255, verbose_name="Nome do Organizador")
+    email = models.EmailField(verbose_name="E-mail")
+    telefone = models.CharField(max_length=30, blank=True, verbose_name="Telefone")
+    logo = models.ImageField(
+        upload_to=logo_organizador_upload_path,
+        blank=True,
+        null=True,
+        verbose_name="Logo",
+        help_text="Logo do organizador (JPG, PNG)"
+    )
+    data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
+    ativo = models.BooleanField(default=True, verbose_name="Ativo")
+
+    class Meta:
+        verbose_name = "Organizador"
+        verbose_name_plural = "Organizadores"
+        ordering = ['nome']
+
+    def __str__(self):
+        return self.nome
+
+
 class Academia(models.Model):
+    organizador = models.ForeignKey(Organizador, on_delete=models.CASCADE, related_name='academias', verbose_name="Organizador", null=True, blank=True)
     nome = models.CharField(max_length=200)
     cidade = models.CharField(max_length=100)
     estado = models.CharField(max_length=2)
@@ -82,18 +116,34 @@ class Academia(models.Model):
         self.senha_login = hashlib.sha256(senha.encode()).hexdigest()
 
 
+class Classe(models.Model):
+    """Classe de idade dos atletas (FESTIVAL, SUB 9, SUB 11, etc.)"""
+    nome = models.CharField(max_length=20, unique=True, verbose_name="Nome da Classe")
+    idade_min = models.PositiveIntegerField(verbose_name="Idade Mínima")
+    idade_max = models.PositiveIntegerField(verbose_name="Idade Máxima")
+
+    class Meta:
+        verbose_name = "Classe"
+        verbose_name_plural = "Classes"
+        ordering = ["idade_min"]
+
+    def __str__(self):
+        return self.nome
+
+
 class Categoria(models.Model):
-    classe = models.CharField(max_length=20)  # SUB 9, SUB 11, SUB 13...
-    sexo = models.CharField(max_length=1, choices=[('M', 'Masculino'), ('F', 'Feminino')])
-    categoria_nome = models.CharField(max_length=100)
-    limite_min = models.FloatField()
-    limite_max = models.FloatField()
-    label = models.CharField(max_length=150)  # ex.: "SUB 11 - Meio Leve"
+    """Categoria de peso por classe e sexo"""
+    classe = models.ForeignKey(Classe, on_delete=models.CASCADE, related_name="categorias", verbose_name="Classe")
+    sexo = models.CharField(max_length=1, choices=[('M', 'Masculino'), ('F', 'Feminino')], verbose_name="Sexo")
+    categoria_nome = models.CharField(max_length=50, verbose_name="Nome da Categoria")  # Meio Leve, Pesado…
+    limite_min = models.DecimalField(max_digits=6, decimal_places=2, verbose_name="Limite Mínimo (kg)")
+    limite_max = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, verbose_name="Limite Máximo (kg)")
+    label = models.CharField(max_length=80, verbose_name="Label")  # Ex: "SUB 11 - Meio Leve -42kg"
 
     class Meta:
         verbose_name = "Categoria"
         verbose_name_plural = "Categorias"
-        ordering = ['classe', 'sexo', 'limite_min']
+        ordering = ["classe__idade_min", "sexo", "limite_min"]
 
     def __str__(self):
         return self.label
@@ -158,6 +208,12 @@ class Atleta(models.Model):
     federado = models.BooleanField(default=False, verbose_name="Federado")
     numero_zempo = models.CharField(max_length=50, blank=True, null=True, verbose_name="Número Zempo", help_text="Número Zempo (obrigatório para atletas federados)")
     
+    # Campos para Equipe Técnica
+    pode_ser_equipe_tecnica = models.BooleanField(default=False, verbose_name="Pode Fazer Parte da Equipe Técnica", help_text="Permite que esta pessoa seja selecionada para compor a equipe técnica em eventos")
+    funcao_equipe_tecnica = models.CharField(max_length=100, blank=True, null=True, verbose_name="Função/Cargo na Equipe Técnica", help_text="Função padrão na equipe técnica (ex: Árbitro, Mesário, Coordenador)")
+    chave_pix = models.CharField(max_length=200, blank=True, null=True, verbose_name="Chave PIX", help_text="Chave PIX para pagamento (obrigatório para equipe técnica)")
+    telefone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Telefone", help_text="Telefone de contato")
+    
     # Campos de auditoria
     data_cadastro = models.DateTimeField(auto_now_add=True, null=True, blank=True, verbose_name="Data de Cadastro")
     data_atualizacao = models.DateTimeField(auto_now=True, null=True, blank=True, verbose_name="Data de Atualização")
@@ -191,10 +247,18 @@ class Atleta(models.Model):
             from .utils import calcular_classe
             ano = self.get_ano_nasc()
             if ano:
-                return calcular_classe(ano)
-            return self.classe_inicial or "SÊNIOR"
-        except:
-            return self.classe_inicial or "SÊNIOR"
+                classe = calcular_classe(ano)
+                if classe:
+                    return classe
+            # Fallback para classe_inicial ou padrão
+            if self.classe_inicial:
+                return self.classe_inicial
+            return "SÊNIOR"  # Padrão se não houver dados
+        except Exception as e:
+            # Em caso de erro, retornar classe_inicial ou padrão
+            if self.classe_inicial:
+                return self.classe_inicial
+            return "SÊNIOR"  # Padrão se não houver dados
 
     def __str__(self):
         return f"{self.nome} ({self.academia.nome})"
@@ -222,6 +286,7 @@ class Luta(models.Model):
     TIPO_VITORIA_CHOICES = [
         ("IPPON", "Ippon"),
         ("WAZARI", "Wazari"),
+        ("WAZARI_WAZARI", "Wazari-Wazari"),
         ("YUKO", "Yuko"),
     ]
     
@@ -288,10 +353,12 @@ class FormaPagamento(models.Model):
 
 
 class Campeonato(models.Model):
+    organizador = models.ForeignKey(Organizador, on_delete=models.CASCADE, related_name='campeonatos', verbose_name="Organizador", null=True, blank=True)
     nome = models.CharField(max_length=200, default="Campeonato Padrão")
     data_inicio = models.DateField(null=True, blank=True, help_text="Data de início das inscrições")
     data_competicao = models.DateField(null=True, blank=True, help_text="Data da competição")
     data_limite_inscricao = models.DateField(null=True, blank=True, help_text="Data limite para inscrições")
+    data_limite_inscricao_academia = models.DateField(null=True, blank=True, verbose_name="Data Limite para Inscrições por Academia", help_text="Após esta data, academias não poderão mais inscrever ou editar atletas. Apenas a equipe operacional poderá fazer inscrições.")
     ativo = models.BooleanField(default=True)
     regulamento = models.TextField(blank=True, help_text="Regulamento do campeonato")
     valor_inscricao_federado = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Valor da inscrição para atletas federados")
@@ -360,6 +427,48 @@ class Inscricao(models.Model):
         return self.status_inscricao == 'aprovado' and self.peso is not None
 
 
+class PesagemHistorico(models.Model):
+    """Histórico de pesagens por evento - registra todas as pesagens realizadas"""
+    inscricao = models.ForeignKey(Inscricao, on_delete=models.CASCADE, related_name='historico_pesagens', verbose_name="Inscrição")
+    campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='pesagens_historico', verbose_name="Campeonato")
+    peso_registrado = models.FloatField(verbose_name="Peso Registrado (kg)")
+    categoria_ajustada = models.CharField(max_length=100, blank=True, verbose_name="Categoria Ajustada")
+    motivo_ajuste = models.TextField(blank=True, verbose_name="Motivo do Ajuste")
+    observacoes = models.TextField(blank=True, verbose_name="Observações")
+    pesado_por = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='pesagens_realizadas', verbose_name="Pesado por")
+    data_hora = models.DateTimeField(auto_now_add=True, verbose_name="Data e Hora da Pesagem")
+    
+    class Meta:
+        verbose_name = "Histórico de Pesagem"
+        verbose_name_plural = "Históricos de Pesagem"
+        ordering = ['-data_hora']
+        indexes = [
+            models.Index(fields=['campeonato', '-data_hora']),
+            models.Index(fields=['inscricao', '-data_hora']),
+        ]
+    
+    def __str__(self):
+        return f"{self.inscricao.atleta.nome} - {self.peso_registrado}kg - {self.data_hora.strftime('%d/%m/%Y %H:%M')}"
+
+
+class AcademiaCampeonato(models.Model):
+    """Relação entre Academia e Campeonato com controle de permissão"""
+    academia = models.ForeignKey(Academia, on_delete=models.CASCADE, related_name='vinculos_campeonatos', verbose_name="Academia")
+    campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='academias_vinculadas', verbose_name="Campeonato")
+    permitido = models.BooleanField(default=True, verbose_name="Permitido no Campeonato", help_text="Se desmarcado, a academia não poderá participar deste campeonato")
+    data_vinculacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Vinculação")
+    
+    class Meta:
+        verbose_name = "Academia no Campeonato"
+        verbose_name_plural = "Academias nos Campeonatos"
+        unique_together = ('academia', 'campeonato')
+        ordering = ['academia__nome']
+    
+    def __str__(self):
+        status = "Permitida" if self.permitido else "Bloqueada"
+        return f"{self.academia.nome} - {self.campeonato.nome} ({status})"
+
+
 class AcademiaPontuacao(models.Model):
     campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='pontuacoes')
     academia = models.ForeignKey(Academia, on_delete=models.CASCADE, related_name='pontuacoes')
@@ -383,8 +492,13 @@ class AcademiaPontuacao(models.Model):
 
 
 class Despesa(models.Model):
-    """Despesas do campeonato"""
-    CATEGORIA_CHOICES = [
+    """Despesas e Receitas do campeonato"""
+    TIPO_CHOICES = [
+        ('despesa', 'Despesa'),
+        ('receita', 'Receita'),
+    ]
+    
+    CATEGORIA_DESPESA_CHOICES = [
         ('arbitros', 'Árbitros'),
         ('mesarios', 'Mesários'),
         ('coordenadores', 'Coordenadores'),
@@ -392,35 +506,106 @@ class Despesa(models.Model):
         ('oficiais_mesa', 'Oficiais de Mesa'),
         ('insumos', 'Insumos'),
         ('ambulancia', 'Ambulância'),
-        ('patrocinios', 'Patrocínios (entrada)'),
         ('estrutura', 'Estrutura'),
         ('limpeza', 'Limpeza'),
         ('outras', 'Outras'),
     ]
     
+    CATEGORIA_RECEITA_CHOICES = [
+        ('inscricoes', 'Inscrições'),
+        ('venda_camisas', 'Venda de Camisas'),
+        ('venda_ingressos', 'Venda de Ingressos'),
+        ('venda_alimentos', 'Venda de Alimentos/Bebidas'),
+        ('patrocinio', 'Patrocínio'),
+        ('venda_equipamentos', 'Venda de Equipamentos'),
+        ('outras_receitas', 'Outras Receitas'),
+    ]
+    
     STATUS_CHOICES = [
-        ('pago', 'Pago'),
+        ('pago', 'Pago/Recebido'),
         ('pendente', 'Pendente'),
     ]
     
-    campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='despesas', verbose_name="Campeonato")
-    categoria = models.CharField(max_length=50, choices=CATEGORIA_CHOICES, verbose_name="Categoria")
-    nome = models.CharField(max_length=200, verbose_name="Nome da Despesa")
+    campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='despesas', verbose_name="Campeonato", null=False, blank=False)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='despesa', verbose_name="Tipo")
+    categoria = models.CharField(max_length=50, verbose_name="Categoria")
+    nome = models.CharField(max_length=200, verbose_name="Nome")
     valor = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendente', verbose_name="Status")
     observacao = models.TextField(blank=True, verbose_name="Observação")
     contato_nome = models.CharField(max_length=200, blank=True, verbose_name="Contato Responsável")
     contato_whatsapp = models.CharField(max_length=20, blank=True, verbose_name="WhatsApp do Contato")
     data_cadastro = models.DateTimeField(auto_now_add=True, verbose_name="Data de Cadastro")
-    data_pagamento = models.DateField(null=True, blank=True, verbose_name="Data de Pagamento")
+    data_pagamento = models.DateField(null=True, blank=True, verbose_name="Data de Pagamento/Recebimento")
+    comprovante_pagamento = models.FileField(upload_to='comprovantes_pagamento/', null=True, blank=True, verbose_name="Comprovante de Pagamento")
     
     class Meta:
         verbose_name = "Despesa"
         verbose_name_plural = "Despesas"
         ordering = ['-data_cadastro']
     
+    def get_categoria_display(self):
+        """Retorna o display da categoria baseado no tipo"""
+        if self.tipo == 'despesa':
+            return dict(self.CATEGORIA_DESPESA_CHOICES).get(self.categoria, self.categoria)
+        else:
+            return dict(self.CATEGORIA_RECEITA_CHOICES).get(self.categoria, self.categoria)
+    
     def __str__(self):
-        return f"{self.nome} - {self.get_categoria_display()} - R$ {self.valor}"
+        tipo_display = "Despesa" if self.tipo == 'despesa' else "Receita"
+        return f"{tipo_display}: {self.nome} - {self.get_categoria_display()} - R$ {self.valor}"
+
+
+class CategoriaInsumo(models.Model):
+    """Categorias customizáveis de insumos e estrutura"""
+    nome = models.CharField(max_length=100, unique=True, verbose_name="Nome da Categoria", help_text="Ex: Tatames, Aluguéis, Transportes, etc.")
+    descricao = models.TextField(blank=True, verbose_name="Descrição", help_text="Descrição opcional da categoria")
+    ativo = models.BooleanField(default=True, verbose_name="Ativo", help_text="Se desativado, não aparecerá nas opções")
+    data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
+    
+    class Meta:
+        verbose_name = "Categoria de Insumo"
+        verbose_name_plural = "Categorias de Insumos"
+        ordering = ['nome']
+    
+    def __str__(self):
+        return self.nome
+
+
+class InsumoEstrutura(models.Model):
+    """Insumos e estrutura do campeonato"""
+    STATUS_CHOICES = [
+        ('pago', 'Pago'),
+        ('pendente', 'Pendente'),
+    ]
+    
+    campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='insumos_estrutura', verbose_name="Campeonato")
+    categoria = models.ForeignKey(CategoriaInsumo, on_delete=models.PROTECT, related_name='insumos', verbose_name="Categoria")
+    nome = models.CharField(max_length=200, verbose_name="Nome do Item", help_text="Ex: Aluguel de tatames, Transporte de equipamentos, etc.")
+    valor = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor (R$)")
+    quantidade = models.IntegerField(default=1, verbose_name="Quantidade", help_text="Quantidade de itens ou unidades")
+    valor_unitario = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Valor Unitário", help_text="Valor por unidade (calculado automaticamente)")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendente', verbose_name="Status do Pagamento")
+    fornecedor = models.CharField(max_length=200, blank=True, verbose_name="Fornecedor", help_text="Nome do fornecedor ou empresa")
+    contato_nome = models.CharField(max_length=200, blank=True, verbose_name="Contato Responsável")
+    contato_whatsapp = models.CharField(max_length=20, blank=True, verbose_name="WhatsApp do Contato")
+    observacao = models.TextField(blank=True, verbose_name="Observações", help_text="Observações adicionais sobre o insumo")
+    data_cadastro = models.DateTimeField(auto_now_add=True, verbose_name="Data de Cadastro")
+    data_pagamento = models.DateField(null=True, blank=True, verbose_name="Data de Pagamento")
+    
+    class Meta:
+        verbose_name = "Insumo/Estrutura"
+        verbose_name_plural = "Insumos e Estrutura"
+        ordering = ['-data_cadastro']
+    
+    def save(self, *args, **kwargs):
+        """Calcula valor unitário automaticamente"""
+        if self.valor and self.quantidade and self.quantidade > 0:
+            self.valor_unitario = self.valor / self.quantidade
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.nome} - {self.categoria.nome} - R$ {self.valor}"
 
 
 class CadastroOperacional(models.Model):
@@ -436,6 +621,7 @@ class CadastroOperacional(models.Model):
         ('insumo', 'Insumo'),
     ]
     
+    organizador = models.ForeignKey(Organizador, on_delete=models.CASCADE, related_name='cadastros_operacionais', verbose_name="Organizador", null=True, blank=True)
     tipo = models.CharField(max_length=50, choices=TIPO_CHOICES, verbose_name="Tipo")
     nome = models.CharField(max_length=200, verbose_name="Nome")
     telefone = models.CharField(max_length=20, blank=True, verbose_name="Telefone")
@@ -452,6 +638,21 @@ class CadastroOperacional(models.Model):
         return f"{self.get_tipo_display()} - {self.nome}"
 
 
+class UserProfile(models.Model):
+    """Perfil do usuário com organizador (multi-tenant)"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name="Usuário")
+    organizador = models.ForeignKey(Organizador, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios', verbose_name="Organizador", help_text="Organizador ao qual o usuário pertence")
+
+    class Meta:
+        verbose_name = "Perfil de Usuário"
+        verbose_name_plural = "Perfis de Usuário"
+
+    def __str__(self):
+        if self.organizador:
+            return f"{self.user.username} - {self.organizador.nome}"
+        return f"{self.user.username} - Sem organizador"
+
+
 class UsuarioOperacional(models.Model):
     """Perfil de usuário operacional com permissões e expiração"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil_operacional', verbose_name="Usuário")
@@ -461,6 +662,7 @@ class UsuarioOperacional(models.Model):
     criado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios_criados', verbose_name="Criado Por")
     data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
     ativo = models.BooleanField(default=True, verbose_name="Ativo")
+    senha_alterada = models.BooleanField(default=False, verbose_name="Senha Alterada", help_text="Indica se o usuário já alterou a senha no primeiro acesso")
     
     class Meta:
         verbose_name = "Usuário Operacional"
@@ -487,6 +689,133 @@ class UsuarioOperacional(models.Model):
             return None  # Vitalício
         delta = self.data_expiracao - timezone.now()
         return max(0, delta.days)
+
+
+class PessoaEquipeTecnica(models.Model):
+    """Lista fixa de pessoas que podem fazer parte da equipe técnica (cadastradas uma única vez)"""
+    # Pessoa pode ser um atleta cadastrado OU uma pessoa externa
+    atleta = models.ForeignKey(Atleta, on_delete=models.CASCADE, related_name='pessoa_equipe_tecnica', verbose_name="Atleta", help_text="Selecione um atleta cadastrado (opcional)", null=True, blank=True)
+    
+    # Campos para pessoa externa (quando não é atleta)
+    nome = models.CharField(max_length=200, blank=True, verbose_name="Nome Completo", help_text="Nome completo da pessoa (obrigatório se não for atleta)")
+    telefone = models.CharField(max_length=20, blank=True, verbose_name="Telefone/WhatsApp", help_text="Telefone para contato e envio de convites")
+    chave_pix = models.CharField(max_length=200, blank=True, verbose_name="Chave PIX", help_text="Chave PIX para pagamentos")
+    
+    observacao = models.TextField(blank=True, verbose_name="Observações", help_text="Observações gerais sobre esta pessoa")
+    data_cadastro = models.DateTimeField(auto_now_add=True, verbose_name="Data de Cadastro")
+    ativo = models.BooleanField(default=True, verbose_name="Ativo", help_text="Se desativado, não aparecerá nas opções")
+    
+    class Meta:
+        verbose_name = "Pessoa da Equipe Técnica"
+        verbose_name_plural = "Pessoas da Equipe Técnica"
+        ordering = ['nome']
+        unique_together = [
+            ('atleta',),  # Atleta só pode aparecer uma vez
+        ]
+    
+    def clean(self):
+        """Validação: deve ter OU atleta OU nome preenchido"""
+        from django.core.exceptions import ValidationError
+        if not self.atleta and not self.nome:
+            raise ValidationError('É necessário informar um atleta ou o nome da pessoa.')
+        if self.atleta and self.nome:
+            # Se é atleta, usar nome do atleta
+            self.nome = self.atleta.nome
+    
+    def save(self, *args, **kwargs):
+        """Atualiza nome automaticamente se for atleta"""
+        if self.atleta:
+            self.nome = self.atleta.nome
+            # Se atleta tem telefone/PIX, usar deles se não preenchido
+            if not self.telefone and self.atleta.telefone:
+                self.telefone = self.atleta.telefone
+            if not self.chave_pix and self.atleta.chave_pix:
+                self.chave_pix = self.atleta.chave_pix
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        if self.atleta:
+            return f"{self.atleta.nome} (Atleta)"
+        return f"{self.nome} (Externo)"
+    
+    @property
+    def nome_completo(self):
+        """Retorna o nome completo"""
+        if self.atleta:
+            return self.atleta.nome
+        return self.nome
+    
+    @property
+    def e_atleta(self):
+        """Retorna True se é um atleta cadastrado"""
+        return self.atleta is not None
+
+
+class EquipeTecnicaCampeonato(models.Model):
+    """Vínculo de pessoas da lista fixa à equipe técnica de um campeonato específico"""
+    FUNCAO_CHOICES = [
+        ('arbitro', 'Árbitro'),
+        ('mesario', 'Mesário'),
+        ('coordenador', 'Coordenador'),
+        ('oficial_pesagem', 'Oficial de Pesagem'),
+        ('oficial_mesa', 'Oficial de Mesa'),
+        ('outro', 'Outro'),
+    ]
+    
+    pessoa = models.ForeignKey(PessoaEquipeTecnica, on_delete=models.CASCADE, related_name='vinculos_campeonatos', verbose_name="Pessoa", help_text="Pessoa da lista fixa de equipe técnica", null=True, blank=True)
+    campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='equipe_tecnica', verbose_name="Campeonato")
+    funcao = models.CharField(max_length=50, choices=FUNCAO_CHOICES, verbose_name="Função no Evento", help_text="Função específica neste campeonato")
+    funcao_customizada = models.CharField(max_length=100, blank=True, null=True, verbose_name="Função Customizada", help_text="Se 'Outro', especifique a função")
+    pro_labore = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Pró-Labore", help_text="Valor do pró-labore/salário para esta função (será contabilizado como despesa)")
+    despesa_gerada = models.ForeignKey('Despesa', on_delete=models.SET_NULL, null=True, blank=True, related_name='equipe_tecnica_origem', verbose_name="Despesa Gerada", help_text="Despesa gerada automaticamente a partir do pró-labore")
+    
+    observacao = models.TextField(blank=True, verbose_name="Observação", help_text="Observações sobre a participação desta pessoa na equipe técnica deste evento")
+    data_vinculacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Vinculação")
+    ativo = models.BooleanField(default=True, verbose_name="Ativo", help_text="Se desativado, a pessoa não faz parte da equipe técnica deste evento")
+    
+    class Meta:
+        verbose_name = "Membro da Equipe Técnica no Campeonato"
+        verbose_name_plural = "Equipe Técnica nos Campeonatos"
+        ordering = ['campeonato', 'funcao', 'pessoa__nome']
+        unique_together = [
+            ('pessoa', 'campeonato', 'funcao'),  # Mesma pessoa não pode ter mesma função duas vezes no mesmo campeonato
+        ]
+    
+    def __str__(self):
+        funcao_display = self.funcao_customizada if self.funcao == 'outro' and self.funcao_customizada else self.get_funcao_display()
+        return f"{self.pessoa.nome_completo} - {self.campeonato.nome} ({funcao_display})"
+    
+    @property
+    def nome_completo(self):
+        """Retorna o nome completo da pessoa"""
+        return self.pessoa.nome_completo
+    
+    @property
+    def telefone(self):
+        """Retorna o telefone da pessoa"""
+        return self.pessoa.telefone or ""
+    
+    @property
+    def chave_pix(self):
+        """Retorna a chave PIX da pessoa"""
+        return self.pessoa.chave_pix or ""
+    
+    @property
+    def documento(self):
+        """Retorna o documento da pessoa (se disponível)"""
+        if self.atleta.documento_oficial:
+            return "Documento cadastrado"
+        return "Sem documento"
+    
+    @property
+    def telefone_contato(self):
+        """Retorna o telefone da pessoa"""
+        return self.atleta.telefone or "Não informado"
+    
+    @property
+    def chave_pix_pagamento(self):
+        """Retorna a chave PIX da pessoa"""
+        return self.atleta.chave_pix or "Não informado"
 
 
 class AcademiaCampeonatoSenha(models.Model):
@@ -552,7 +881,7 @@ class Pagamento(models.Model):
     comprovante = models.FileField(
         upload_to='comprovantes/%Y/%m/',
         verbose_name="Comprovante",
-        help_text="Comprovante de pagamento (JPG, PNG ou PDF)"
+        help_text="Comprovante de pagamento (JPG, PNG, PDF ou HEIC)"
     )
     data_envio = models.DateTimeField(auto_now_add=True, verbose_name="Data de Envio")
     status = models.CharField(
@@ -580,3 +909,240 @@ class Pagamento(models.Model):
     
     def __str__(self):
         return f"{self.academia.nome} - {self.campeonato.nome} - R$ {self.valor_total}"
+
+
+class ConferenciaPagamento(models.Model):
+    """Modelo unificado para controle de pagamento por academia por evento"""
+    STATUS_CHOICES = [
+        ('PENDENTE', 'Pendente'),
+        ('CONFIRMADO', 'Confirmado'),
+        ('DIVERGENTE', 'Divergente'),
+        ('NAO_ENCONTRADO', 'Não Encontrado'),
+    ]
+    
+    academia = models.ForeignKey(Academia, on_delete=models.CASCADE, related_name='conferencias_pagamento', verbose_name="Academia")
+    campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='conferencias_pagamento', verbose_name="Campeonato", null=False, blank=False)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='PENDENTE',
+        verbose_name="Status da Conferência"
+    )
+    valor_esperado = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor Esperado")
+    valor_recebido = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Valor Recebido")
+    comprovante = models.FileField(
+        upload_to='comprovantes/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name="Comprovante",
+        help_text="Comprovante de pagamento enviado pela academia (JPG, PNG, PDF ou HEIC)"
+    )
+    conferido_por = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='conferencias_realizadas',
+        verbose_name="Conferido por"
+    )
+    data_conferencia = models.DateTimeField(null=True, blank=True, verbose_name="Data da Conferência")
+    atualizado_em = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
+    observacoes = models.TextField(blank=True, verbose_name="Observações")
+    quantidade_atletas = models.IntegerField(default=0, verbose_name="Quantidade de Atletas")
+    
+    class Meta:
+        verbose_name = "Conferência de Pagamento"
+        verbose_name_plural = "Conferências de Pagamento"
+        ordering = ['-data_conferencia']
+        unique_together = ('academia', 'campeonato')
+    
+    def __str__(self):
+        return f"{self.academia.nome} - {self.campeonato.nome} - {self.get_status_display()}"
+
+
+class HistoricoSistema(models.Model):
+    """Registro de histórico de todas as ações importantes no sistema"""
+    TIPO_ACAO_CHOICES = [
+        ('INSCRICAO', 'Inscrição'),
+        ('PESAGEM', 'Pesagem'),
+        ('PAGAMENTO', 'Pagamento'),
+        ('CONFERENCIA_PAGAMENTO', 'Conferência de Pagamento'),
+        ('CHAVE', 'Geração de Chave'),
+        ('RESULTADO', 'Registro de Resultado'),
+        ('PONTUACAO', 'Cálculo de Pontuação'),
+        ('ACADEMIA', 'Cadastro/Edição de Academia'),
+        ('ATLETA', 'Cadastro/Edição de Atleta'),
+        ('CAMPEONATO', 'Cadastro/Edição de Campeonato'),
+        ('USUARIO', 'Criação/Edição de Usuário'),
+        ('OUTRO', 'Outro'),
+    ]
+    
+    tipo_acao = models.CharField(max_length=50, choices=TIPO_ACAO_CHOICES, verbose_name="Tipo de Ação")
+    descricao = models.TextField(verbose_name="Descrição")
+    usuario = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='historico_acoes',
+        verbose_name="Usuário"
+    )
+    campeonato = models.ForeignKey(
+        Campeonato,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='historico_acoes',
+        verbose_name="Campeonato"
+    )
+    academia = models.ForeignKey(
+        Academia,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='historico_acoes',
+        verbose_name="Academia"
+    )
+    atleta = models.ForeignKey(
+        Atleta,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='historico_acoes',
+        verbose_name="Atleta"
+    )
+    dados_extras = models.JSONField(null=True, blank=True, verbose_name="Dados Extras", help_text="Dados adicionais em formato JSON")
+    data_hora = models.DateTimeField(auto_now_add=True, verbose_name="Data e Hora")
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name="Endereço IP")
+    
+    class Meta:
+        verbose_name = "Histórico do Sistema"
+        verbose_name_plural = "Históricos do Sistema"
+        ordering = ['-data_hora']
+        indexes = [
+            models.Index(fields=['tipo_acao', 'data_hora']),
+            models.Index(fields=['campeonato', 'data_hora']),
+            models.Index(fields=['usuario', 'data_hora']),
+        ]
+    
+    def __str__(self):
+        return f"{self.get_tipo_acao_display()} - {self.descricao[:50]} - {self.data_hora.strftime('%d/%m/%Y %H:%M')}"
+
+
+class Ocorrencia(models.Model):
+    """Registro de ocorrências e problemas durante eventos"""
+    CATEGORIA_CHOICES = [
+        ('RELATO_PROFESSOR', 'Relato de Professor'),
+        ('PROBLEMA_PESAGEM', 'Problema em Pesagem'),
+        ('INDISCIPLINA', 'Indisciplina'),
+        ('ACIDENTE', 'Acidente'),
+        ('PROBLEMA_TECNICO', 'Problema Técnico'),
+        ('PROBLEMA_ORGANIZACIONAL', 'Problema Organizacional'),
+        ('RECLAMACAO', 'Reclamação'),
+        ('SUGESTAO', 'Sugestão'),
+        ('OUTRO', 'Outro'),
+    ]
+    
+    PRIORIDADE_CHOICES = [
+        ('BAIXA', 'Baixa'),
+        ('MEDIA', 'Média'),
+        ('ALTA', 'Alta'),
+        ('URGENTE', 'Urgente'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('ABERTA', 'Aberta'),
+        ('EM_ANDAMENTO', 'Em Andamento'),
+        ('RESOLVIDA', 'Resolvida'),
+        ('ENCERRADA', 'Encerrada'),
+    ]
+    
+    categoria = models.CharField(max_length=50, choices=CATEGORIA_CHOICES, verbose_name="Categoria")
+    titulo = models.CharField(max_length=200, verbose_name="Título")
+    descricao = models.TextField(verbose_name="Descrição Detalhada")
+    prioridade = models.CharField(max_length=20, choices=PRIORIDADE_CHOICES, default='MEDIA', verbose_name="Prioridade")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ABERTA', verbose_name="Status")
+    
+    campeonato = models.ForeignKey(
+        Campeonato,
+        on_delete=models.CASCADE,
+        related_name='ocorrencias',
+        verbose_name="Campeonato"
+    )
+    academia = models.ForeignKey(
+        Academia,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ocorrencias',
+        verbose_name="Academia"
+    )
+    atleta = models.ForeignKey(
+        Atleta,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ocorrencias',
+        verbose_name="Atleta Envolvido"
+    )
+    inscricao = models.ForeignKey(
+        Inscricao,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ocorrencias',
+        verbose_name="Inscrição Relacionada"
+    )
+    
+    # Responsáveis
+    registrado_por = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ocorrencias_registradas',
+        verbose_name="Registrado por"
+    )
+    responsavel_resolucao = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ocorrencias_responsavel',
+        verbose_name="Responsável pela Resolução"
+    )
+    
+    # Datas
+    data_ocorrencia = models.DateTimeField(verbose_name="Data da Ocorrência", help_text="Data e hora em que o problema ocorreu")
+    data_registro = models.DateTimeField(auto_now_add=True, verbose_name="Data de Registro")
+    data_resolucao = models.DateTimeField(null=True, blank=True, verbose_name="Data de Resolução")
+    
+    # Resolução
+    solucao = models.TextField(blank=True, verbose_name="Solução Aplicada")
+    observacoes = models.TextField(blank=True, verbose_name="Observações Adicionais")
+    
+    # Anexos (fotos, documentos)
+    anexos = models.JSONField(null=True, blank=True, verbose_name="Anexos", help_text="Lista de URLs de arquivos anexados")
+    
+    class Meta:
+        verbose_name = "Ocorrência"
+        verbose_name_plural = "Ocorrências"
+        ordering = ['-data_ocorrencia', '-data_registro']
+        indexes = [
+            models.Index(fields=['campeonato', 'status']),
+            models.Index(fields=['categoria', 'status']),
+            models.Index(fields=['prioridade', 'status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.get_categoria_display()} - {self.titulo} - {self.campeonato.nome}"
+    
+    def marcar_como_resolvida(self, usuario, solucao=''):
+        """Marca a ocorrência como resolvida"""
+        from django.utils import timezone
+        self.status = 'RESOLVIDA'
+        self.data_resolucao = timezone.now()
+        self.responsavel_resolucao = usuario
+        if solucao:
+            self.solucao = solucao
+        self.save()

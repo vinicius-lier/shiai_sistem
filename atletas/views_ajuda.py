@@ -107,11 +107,11 @@ def ajuda_manual(request):
 def ajuda_manual_web(request, tipo):
     """Exibe manual em formato web (markdown renderizado)"""
     if tipo == 'operacional':
-        manual_path = os.path.join(settings.BASE_DIR, 'MANUAL_OPERACIONAL.md')
+        manual_path = os.path.join(settings.BASE_DIR, 'docs', 'manuais', 'MANUAL_OPERACIONAL.md')
         titulo = 'Manual Operacional'
         descricao = 'Guia completo para gestores e organizadores de competições'
     elif tipo == 'academia':
-        manual_path = os.path.join(settings.BASE_DIR, 'MANUAL_ACADEMIA.md')
+        manual_path = os.path.join(settings.BASE_DIR, 'docs', 'manuais', 'MANUAL_ACADEMIA.md')
         titulo = 'Manual Academia'
         descricao = 'Guia completo para academias participantes'
     else:

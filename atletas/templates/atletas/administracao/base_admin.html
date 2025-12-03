@@ -10,14 +10,6 @@
     </p>
 </div>
 
-{% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}" style="margin-bottom: var(--spacing-4);">
-            {{ message }}
-        </div>
-    {% endfor %}
-{% endif %}
-
 <div class="admin-container" style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--spacing-8);">
     {% block admin_content %}{% endblock %}
 </div>

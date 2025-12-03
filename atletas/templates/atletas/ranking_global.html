@@ -259,7 +259,16 @@
 <div class="card">
     <div class="empty-state">
         <div class="empty-state-title">Nenhum dado disponível</div>
-        <div class="empty-state-description">Ainda não há resultados consolidados no ranking global de atletas.</div>
+        <div class="empty-state-description">
+            {% if campeonato_ativo %}
+                Ainda não há resultados consolidados no ranking global de atletas.<br>
+                <small style="margin-top: var(--spacing-2); display: block;">
+                    Para gerar o ranking, é necessário criar chaves e registrar os resultados das lutas no campeonato "{{ campeonato_ativo.nome }}".
+                </small>
+            {% else %}
+                Nenhum campeonato ativo encontrado. Ative um campeonato para visualizar o ranking.
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endif %}

@@ -63,10 +63,24 @@
                         <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
                     </label>
                     {{ form.data_limite_inscricao }}
-                    <small class="form-help-text">Última data para realizar inscrições</small>
+                    <small class="form-help-text">Última data para realizar inscrições (geral)</small>
                     {% if form.data_limite_inscricao.errors %}
                     <div class="text-danger" style="font-size: var(--font-size-xs); margin-top: var(--spacing-1);">
                         {{ form.data_limite_inscricao.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.data_limite_inscricao_academia.id_for_label }}">
+                        {{ form.data_limite_inscricao_academia.label }}
+                        <small style="color: var(--color-gray-500); font-weight: normal;">(opcional)</small>
+                    </label>
+                    {{ form.data_limite_inscricao_academia }}
+                    <small class="form-help-text">Após esta data, academias não poderão mais inscrever ou editar atletas. Apenas a equipe operacional poderá fazer inscrições.</small>
+                    {% if form.data_limite_inscricao_academia.errors %}
+                    <div class="text-danger" style="font-size: var(--font-size-xs); margin-top: var(--spacing-1);">
+                        {{ form.data_limite_inscricao_academia.errors }}
                     </div>
                     {% endif %}
                 </div>

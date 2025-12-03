@@ -1,0 +1,202 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Validar Pagamento - Sistema de Gestão de Competições de Judô{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Validar Pagamento</h1>
+    <p class="page-description">Revise o comprovante e valide o pagamento para confirmar as inscrições automaticamente</p>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-6);">
+    <!-- Informações do Pagamento -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Informações do Pagamento</h3>
+        </div>
+        <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
+                <div>
+                    <label style="font-size: var(--font-size-xs); color: var(--color-gray-600); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Academia</label>
+                    <div style="font-size: var(--font-size-lg); font-weight: 600; color: var(--color-gray-900); margin-top: var(--spacing-1);">
+                        {{ pagamento.academia.nome }}
+                    </div>
+                    <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">
+                        {{ pagamento.academia.cidade }}, {{ pagamento.academia.estado }}
+                    </div>
+                </div>
+                
+                <div>
+                    <label style="font-size: var(--font-size-xs); color: var(--color-gray-600); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Evento</label>
+                    <div style="font-size: var(--font-size-lg); font-weight: 600; color: var(--color-gray-900); margin-top: var(--spacing-1);">
+                        {{ pagamento.campeonato.nome }}
+                    </div>
+                    {% if pagamento.campeonato.data_competicao %}
+                    <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">
+                        Data: {{ pagamento.campeonato.data_competicao|date:"d/m/Y" }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label style="font-size: var(--font-size-xs); color: var(--color-gray-600); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Valor Total</label>
+                    <div style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-primary); margin-top: var(--spacing-1);">
+                        R$ {{ pagamento.valor_total|floatformat:2 }}
+                    </div>
+                </div>
+                
+                <div>
+                    <label style="font-size: var(--font-size-xs); color: var(--color-gray-600); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Data de Envio</label>
+                    <div style="font-size: var(--font-size-base); color: var(--color-gray-900); margin-top: var(--spacing-1);">
+                        {{ pagamento.data_envio|date:"d/m/Y H:i" }}
+                    </div>
+                </div>
+                
+                <div>
+                    <label style="font-size: var(--font-size-xs); color: var(--color-gray-600); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Status Atual</label>
+                    <div style="margin-top: var(--spacing-1);">
+                        <span class="badge {% if pagamento.status == 'AGUARDANDO' %}badge-warning{% elif pagamento.status == 'PENDENTE' %}badge-secondary{% else %}badge-info{% endif %}">
+                            {{ pagamento.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Comprovante e Ações -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Comprovante de Pagamento</h3>
+        </div>
+        <div class="card-body">
+            {% if pagamento.comprovante %}
+            <div style="margin-bottom: var(--spacing-4);">
+                <a href="{{ pagamento.comprovante.url }}" target="_blank" class="btn btn-primary" style="width: 100%; justify-content: center; margin-bottom: var(--spacing-3);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    Abrir Comprovante em Nova Aba
+                </a>
+                
+                {% if pagamento.comprovante.name|slice:"-4:" == ".pdf" %}
+                <iframe src="{{ pagamento.comprovante.url }}" style="width: 100%; height: 500px; border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-md);"></iframe>
+                {% else %}
+                <img src="{{ pagamento.comprovante.url }}" alt="Comprovante" style="width: 100%; border-radius: var(--border-radius-md); border: 1px solid var(--color-gray-200);">
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding: var(--spacing-8);">
+                <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; margin: 0 auto var(--spacing-4); color: var(--color-gray-400);">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <div class="empty-state-title">Comprovante não disponível</div>
+            </div>
+            {% endif %}
+            
+            <!-- Ações -->
+            <div style="display: flex; flex-direction: column; gap: var(--spacing-3); margin-top: var(--spacing-4);">
+                <form method="post" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success" style="width: 100%; justify-content: center; padding: var(--spacing-3); font-size: var(--font-size-base); font-weight: 600;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        ✅ Validar Pagamento e Confirmar Inscrições
+                    </button>
+                </form>
+                
+                <a href="{% url 'rejeitar_pagamento' pagamento.id %}" class="btn btn-danger" style="width: 100%; justify-content: center; padding: var(--spacing-3); font-size: var(--font-size-base); font-weight: 600;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    ❌ Rejeitar Pagamento
+                </a>
+                
+                <a href="{% url 'validacao_pagamentos' %}" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+                    ← Voltar para Lista
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inscrições que serão confirmadas -->
+{% if inscricoes %}
+<div class="card" style="margin-top: var(--spacing-6);">
+    <div class="card-header">
+        <h3 class="card-title">📋 Inscrições que serão Confirmadas</h3>
+        <p style="margin: var(--spacing-1) 0 0 0; font-size: var(--font-size-sm); color: var(--color-gray-600);">
+            Ao validar o pagamento, estas inscrições serão automaticamente confirmadas
+        </p>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Atleta</th>
+                        <th>Classe</th>
+                        <th>Categoria</th>
+                        <th>Status Atual</th>
+                        <th>Valor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inscricao in inscricoes %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600; color: var(--color-gray-900);">{{ inscricao.atleta.nome }}</div>
+                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-600);">{{ inscricao.atleta.academia.nome }}</div>
+                        </td>
+                        <td>
+                            <span class="badge badge-success">{{ inscricao.classe_escolhida }}</span>
+                        </td>
+                        <td>{{ inscricao.categoria_escolhida|default:"—" }}</td>
+                        <td>
+                            <span class="badge {% if inscricao.status_inscricao == 'pendente' %}badge-warning{% elif inscricao.status_inscricao == 'confirmado' %}badge-info{% else %}badge-success{% endif %}">
+                                {{ inscricao.get_status_inscricao_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if inscricao.atleta.federado %}
+                                R$ {{ pagamento.campeonato.valor_inscricao_federado|default:0|floatformat:2 }}
+                            {% else %}
+                                R$ {{ pagamento.campeonato.valor_inscricao_nao_federado|default:0|floatformat:2 }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.page-header {
+    margin-bottom: var(--spacing-6);
+}
+
+.page-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin: 0 0 var(--spacing-2) 0;
+}
+
+.page-description {
+    font-size: var(--font-size-base);
+    color: var(--color-gray-600);
+    margin: 0;
+}
+</style>
+{% endblock %}
+
+

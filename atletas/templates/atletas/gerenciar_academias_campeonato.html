@@ -1,0 +1,190 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Gerenciar Academias - {{ campeonato.nome }} - SHIAI SISTEM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
+        <div>
+            <h1 class="page-title">Gerenciar Academias do Campeonato</h1>
+            <p class="page-description">{{ campeonato.nome }}</p>
+        </div>
+        <a href="{% url 'lista_campeonatos' %}" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: var(--spacing-2);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Voltar para Campeonatos
+        </a>
+    </div>
+</div>
+
+<!-- Resumo -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Resumo</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+            <div>
+                <p style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: var(--spacing-1);">Total Vinculadas</p>
+                <p style="font-size: var(--font-size-2xl); font-weight: 600; color: var(--color-gray-900);">{{ academias_vinculadas|length }}</p>
+            </div>
+            <div>
+                <p style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: var(--spacing-1);">Permitidas</p>
+                <p style="font-size: var(--font-size-2xl); font-weight: 600; color: var(--color-success);">{{ total_permitidas }}</p>
+            </div>
+            <div>
+                <p style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: var(--spacing-1);">Bloqueadas</p>
+                <p style="font-size: var(--font-size-2xl); font-weight: 600; color: var(--color-danger);">{{ total_bloqueadas }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Academias Vinculadas -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Academias Vinculadas ao Campeonato</h3>
+    </div>
+    <div class="card-body">
+        {% if academias_vinculadas %}
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Academia</th>
+                        <th>Cidade/Estado</th>
+                        <th>Responsável</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in academias_vinculadas %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 500; color: var(--color-gray-900);">{{ item.academia.nome }}</div>
+                            {% if item.academia.telefone %}
+                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-500); margin-top: var(--spacing-1);">
+                                {{ item.academia.telefone }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div>{{ item.academia.cidade }}</div>
+                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">{{ item.academia.estado }}</div>
+                        </td>
+                        <td>{{ item.academia.responsavel|default:"—" }}</td>
+                        <td>
+                            {% if item.permitido %}
+                            <span class="badge badge-success">Permitida</span>
+                            {% else %}
+                            <span class="badge badge-danger">Bloqueada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja {% if item.permitido %}bloquear{% else %}permitir{% endif %} esta academia?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="toggle_permissao">
+                                <input type="hidden" name="academia_id" value="{{ item.academia.id }}">
+                                <input type="hidden" name="permitido" value="{% if item.permitido %}false{% else %}true{% endif %}">
+                                <button type="submit" class="btn {% if item.permitido %}btn-danger{% else %}btn-success{% endif %}" style="padding: var(--spacing-1) var(--spacing-3); font-size: var(--font-size-sm);">
+                                    {% if item.permitido %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                                    </svg>
+                                    Bloquear
+                                    {% else %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Permitir
+                                    {% endif %}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-title">Nenhuma academia vinculada</div>
+            <div class="empty-state-description">Adicione academias abaixo para vinculá-las ao campeonato.</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Academias Não Vinculadas -->
+{% if academias_nao_vinculadas %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Academias Disponíveis para Adicionar</h3>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Academia</th>
+                        <th>Cidade/Estado</th>
+                        <th>Responsável</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for academia in academias_nao_vinculadas %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 500; color: var(--color-gray-900);">{{ academia.nome }}</div>
+                            {% if academia.telefone %}
+                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-500); margin-top: var(--spacing-1);">
+                                {{ academia.telefone }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div>{{ academia.cidade }}</div>
+                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">{{ academia.estado }}</div>
+                        </td>
+                        <td>{{ academia.responsavel|default:"—" }}</td>
+                        <td>
+                            <form method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="adicionar_academia">
+                                <input type="hidden" name="academia_id" value="{{ academia.id }}">
+                                <button type="submit" class="btn btn-primary" style="padding: var(--spacing-1) var(--spacing-3); font-size: var(--font-size-sm);">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Adicionar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div style="margin-top: var(--spacing-6); padding: var(--spacing-4); background: var(--color-gray-50); border-radius: var(--border-radius-md);">
+    <h4 style="font-size: var(--font-size-sm); font-weight: 600; color: var(--color-gray-900); margin-bottom: var(--spacing-2);">ℹ️ Informações</h4>
+    <ul style="margin: 0; padding-left: var(--spacing-6); color: var(--color-gray-600); font-size: var(--font-size-sm); line-height: 1.6;">
+        <li>Academias <strong>permitidas</strong> podem inscrever atletas e aparecem no ranking.</li>
+        <li>Academias <strong>bloqueadas</strong> não podem inscrever atletas e não aparecem no ranking.</li>
+        <li>Academias bloqueadas continuam cadastradas no sistema, apenas não participam deste campeonato.</li>
+        <li>Novas academias são automaticamente vinculadas ao campeonato ativo quando criadas.</li>
+    </ul>
+</div>
+{% endblock %}
+
+
+

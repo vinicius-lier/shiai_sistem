@@ -1,17 +1,69 @@
 {% extends 'atletas/administracao/base_admin.html' %}
 
-{% block admin_page_title %}Despesas do Evento{% endblock %}
-{% block admin_page_description %}Controle completo das saídas financeiras no padrão visual do sistema{% endblock %}
+{% block admin_page_title %}Despesas e Receitas do Evento{% endblock %}
+{% block admin_page_description %}Controle completo das saídas e entradas financeiras no padrão visual do sistema{% endblock %}
 
 {% block admin_content %}
-<section class="card" style="margin-bottom: var(--spacing-8);">
+<!-- Resumo Financeiro -->
+<section class="card" style="margin-bottom: var(--spacing-6);">
     <div class="card-header">
-        <h3 class="card-title">Cadastrar Despesa</h3>
+        <h3 class="card-title">Resumo Financeiro</h3>
     </div>
     <div class="card-body">
-    <form method="post" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+            <div style="padding: var(--spacing-4); background: var(--color-gray-50); border-radius: var(--border-radius-md); border: 1px solid var(--color-gray-200);">
+                <div style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: var(--spacing-1);">Total de Despesas</div>
+                <div style="font-size: var(--font-size-2xl); font-weight: 600; color: var(--color-danger);">R$ {{ total_despesas|floatformat:2 }}</div>
+            </div>
+            <div style="padding: var(--spacing-4); background: var(--color-gray-50); border-radius: var(--border-radius-md); border: 1px solid var(--color-gray-200);">
+                <div style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: var(--spacing-1);">Total de Receitas</div>
+                <div style="font-size: var(--font-size-2xl); font-weight: 600; color: var(--color-success);">R$ {{ total_receitas|floatformat:2 }}</div>
+                {% if receita_inscricoes > 0 %}
+                <div style="color: var(--color-gray-500); font-size: var(--font-size-xs); margin-top: var(--spacing-1);">
+                    (Inclui R$ {{ receita_inscricoes|floatformat:2 }} de inscrições confirmadas)
+                </div>
+                {% endif %}
+            </div>
+            <div style="padding: var(--spacing-4); background: var(--color-gray-50); border-radius: var(--border-radius-md); border: 1px solid var(--color-gray-200);">
+                <div style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: var(--spacing-1);">Despesas Pagas</div>
+                <div style="font-size: var(--font-size-2xl); font-weight: 600; color: var(--color-gray-700);">R$ {{ despesas_pagas|floatformat:2 }}</div>
+            </div>
+            <div style="padding: var(--spacing-4); background: var(--color-gray-50); border-radius: var(--border-radius-md); border: 1px solid var(--color-gray-200);">
+                <div style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: var(--spacing-1);">Receitas Recebidas</div>
+                <div style="font-size: var(--font-size-2xl); font-weight: 600; color: var(--color-gray-700);">R$ {{ receitas_recebidas|floatformat:2 }}</div>
+            </div>
+            <div style="padding: var(--spacing-4); background: {% if saldo >= 0 %}var(--color-success-light){% else %}var(--color-danger-light){% endif %}; border-radius: var(--border-radius-md); border: 1px solid {% if saldo >= 0 %}var(--color-success){% else %}var(--color-danger){% endif %};">
+                <div style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: var(--spacing-1);">Saldo (Receitas - Despesas)</div>
+                <div style="font-size: var(--font-size-2xl); font-weight: 600; color: {% if saldo >= 0 %}var(--color-success){% else %}var(--color-danger){% endif %};">
+                    R$ {{ saldo|floatformat:2 }}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Cadastrar Nova Despesa/Receita -->
+<section class="card" style="margin-bottom: var(--spacing-8);">
+    <div class="card-header">
+        <h3 class="card-title">Cadastrar Nova Despesa ou Receita</h3>
+    </div>
+    <div class="card-body">
+    <form method="post" enctype="multipart/form-data" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
         {% csrf_token %}
-        <input type="hidden" name="criar" value="1">
+        <input type="hidden" name="acao" value="criar">
+        
+        <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="tipo">
+                Tipo
+                <span style="color: var(--color-danger);">*</span>
+            </label>
+            <select id="tipo" name="tipo" class="form-select" required onchange="toggleCategorias()">
+                {% for value, label in tipo_choices %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
         <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label" for="categoria">
                 Categoria
@@ -19,18 +71,27 @@
             </label>
             <select id="categoria" name="categoria" class="form-select" required>
                 <option value="">Selecione</option>
-                {% for value, label in categorias %}
-                <option value="{{ value }}">{{ label }}</option>
-                {% endfor %}
+                <optgroup label="Despesas" id="categorias-despesa">
+                    {% for value, label in categorias_despesa %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="Receitas" id="categorias-receita" style="display: none;">
+                    {% for value, label in categorias_receita %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </optgroup>
             </select>
         </div>
+        
         <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label" for="nome">
                 Nome
                 <span style="color: var(--color-danger);">*</span>
             </label>
-            <input type="text" id="nome" name="nome" class="form-input" required placeholder="Ex: Árbitro chefe">
+            <input type="text" id="nome" name="nome" class="form-input" required placeholder="Ex: Venda de camisas do evento">
         </div>
+        
         <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label" for="valor">
                 Valor
@@ -38,6 +99,7 @@
             </label>
             <input type="number" step="0.01" id="valor" name="valor" class="form-input" required placeholder="0,00">
         </div>
+        
         <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label" for="status">Status</label>
             <select id="status" name="status" class="form-select">
@@ -46,18 +108,35 @@
                 {% endfor %}
             </select>
         </div>
+        
+        <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="data_pagamento">Data de Pagamento/Recebimento</label>
+            <input type="date" id="data_pagamento" name="data_pagamento" class="form-input">
+        </div>
+        
         <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label" for="contato_nome">Contato Responsável</label>
             <input type="text" id="contato_nome" name="contato_nome" class="form-input" placeholder="Nome do responsável">
         </div>
+        
         <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label" for="contato_whatsapp">WhatsApp</label>
             <input type="text" id="contato_whatsapp" name="contato_whatsapp" class="form-input" placeholder="(99) 99999-9999">
         </div>
+        
+        <div class="form-group" style="grid-column: 1 / -1; margin-bottom: 0;">
+            <label class="form-label" for="comprovante_pagamento">Comprovante de Pagamento</label>
+            <input type="file" id="comprovante_pagamento" name="comprovante_pagamento" class="form-input" accept="image/*,.pdf">
+            <small style="color: var(--color-gray-500); display: block; margin-top: var(--spacing-1);">
+                Anexe um comprovante de pagamento (imagem ou PDF) para prova futura.
+            </small>
+        </div>
+        
         <div class="form-group" style="grid-column: 1 / -1; margin-bottom: 0;">
             <label class="form-label" for="observacao">Observação</label>
             <textarea id="observacao" name="observacao" class="form-input" placeholder="Notas adicionais" rows="4"></textarea>
         </div>
+        
         <div style="grid-column: 1 / -1; display:flex; gap: var(--spacing-3); justify-content:flex-end; margin-top: var(--spacing-6); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
             <button type="submit" class="btn btn-primary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
@@ -65,61 +144,149 @@
                     <polyline points="17 21 17 13 7 13 7 21"></polyline>
                     <polyline points="7 3 7 8 15 8"></polyline>
                 </svg>
-                Salvar Despesa
+                Salvar
             </button>
         </div>
     </form>
     </div>
 </section>
 
+<!-- Filtros -->
+<section class="card" style="margin-bottom: var(--spacing-6);">
+    <div class="card-header">
+        <h3 class="card-title">Filtros</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" style="display: flex; gap: var(--spacing-4); flex-wrap: wrap; align-items: flex-end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="tipo_filtro">Tipo</label>
+                <select id="tipo_filtro" name="tipo" class="form-select">
+                    <option value="">Todos</option>
+                    {% for value, label in tipo_choices %}
+                    <option value="{{ value }}" {% if tipo_filtro == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="status_filtro">Status</label>
+                <select id="status_filtro" name="status" class="form-select">
+                    <option value="">Todos</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filtro == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <button type="submit" class="btn btn-secondary">Filtrar</button>
+                <a href="{% url 'administracao_despesas' %}" class="btn btn-outline">Limpar</a>
+            </div>
+        </form>
+    </div>
+</section>
+
+<!-- Lista de Despesas e Receitas -->
 <section class="card">
     <div class="card-header">
-        <h3 class="card-title">Despesas Registradas</h3>
+        <h3 class="card-title">Despesas e Receitas Registradas</h3>
+        <small style="color: var(--color-gray-500);">Total: {{ despesas|length }} registro(s)</small>
     </div>
     <div class="card-body">
     {% if despesas %}
         <div style="display:flex; flex-direction:column; gap: var(--spacing-4);">
-            {% for despesa in despesas %}
-            <div class="card" style="padding: var(--spacing-6); border: 1px solid var(--color-gray-200);">
-            <form method="post">
+            {% for item in despesas %}
+            <div class="card" style="padding: var(--spacing-6); border: 1px solid var(--color-gray-200); {% if item.tipo == 'receita' %}border-left: 4px solid var(--color-success);{% else %}border-left: 4px solid var(--color-danger);{% endif %}">
+            <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                <input type="hidden" name="despesa_id" value="{{ despesa.id }}">
+                <input type="hidden" name="acao" value="editar">
+                <input type="hidden" name="despesa_id" value="{{ item.id }}">
+                
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-4);">
+                    <div>
+                        <span class="badge {% if item.tipo == 'receita' %}badge-success{% else %}badge-danger{% endif %}" style="margin-right: var(--spacing-2);">
+                            {{ item.get_tipo_display }}
+                        </span>
+                        <span class="badge {% if item.status == 'pago' %}badge-success{% else %}badge-warning{% endif %}">
+                            {{ item.get_status_display }}
+                        </span>
+                    </div>
+                    <div style="font-size: var(--font-size-xl); font-weight: 600; color: {% if item.tipo == 'receita' %}var(--color-success){% else %}var(--color-danger){% endif %};">
+                        R$ {{ item.valor|floatformat:2 }}
+                    </div>
+                </div>
+                
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-4);">
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label">Categoria</label>
-                        <select name="categoria" class="form-select">
-                            {% for value, label in categorias %}
-                            <option value="{{ value }}" {% if despesa.categoria == value %}selected{% endif %}>{{ label }}</option>
+                        <label class="form-label">Tipo</label>
+                        <select name="tipo" class="form-select">
+                            {% for value, label in tipo_choices %}
+                            <option value="{{ value }}" {% if item.tipo == value %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Categoria</label>
+                        <select name="categoria" class="form-select">
+                            {% if item.tipo == 'despesa' %}
+                                {% for value, label in categorias_despesa %}
+                                <option value="{{ value }}" {% if item.categoria == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            {% else %}
+                                {% for value, label in categorias_receita %}
+                                <option value="{{ value }}" {% if item.categoria == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label">Nome</label>
-                        <input type="text" name="nome" class="form-input" value="{{ despesa.nome }}">
+                        <input type="text" name="nome" class="form-input" value="{{ item.nome }}">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label">Valor</label>
-                        <input type="number" step="0.01" name="valor" class="form-input" value="{{ despesa.valor }}">
+                        <input type="number" step="0.01" name="valor" class="form-input" value="{{ item.valor }}">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label">Status</label>
                         <select name="status" class="form-select">
                             {% for value, label in status_choices %}
-                            <option value="{{ value }}" {% if despesa.status == value %}selected{% endif %}>{{ label }}</option>
+                            <option value="{{ value }}" {% if item.status == value %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Data de Pagamento/Recebimento</label>
+                        <input type="date" name="data_pagamento" class="form-input" value="{{ item.data_pagamento|date:'Y-m-d'|default:'' }}">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label">Contato</label>
-                        <input type="text" name="contato_nome" class="form-input" value="{{ despesa.contato_nome }}">
+                        <input type="text" name="contato_nome" class="form-input" value="{{ item.contato_nome }}">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label">WhatsApp</label>
-                        <input type="text" name="contato_whatsapp" class="form-input" value="{{ despesa.contato_whatsapp }}">
+                        <input type="text" name="contato_whatsapp" class="form-input" value="{{ item.contato_whatsapp }}">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1; margin-bottom: 0;">
+                        <label class="form-label">Comprovante de Pagamento</label>
+                        {% if item.comprovante_pagamento %}
+                        <div style="margin-bottom: var(--spacing-2);">
+                            <a href="{{ item.comprovante_pagamento.url }}" target="_blank" class="btn btn-sm btn-secondary" style="margin-right: var(--spacing-2);">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Ver Comprovante Atual
+                            </a>
+                        </div>
+                        {% endif %}
+                        <input type="file" name="comprovante_pagamento" class="form-input" accept="image/*,.pdf">
+                        <small style="color: var(--color-gray-500); display: block; margin-top: var(--spacing-1);">
+                            {% if item.comprovante_pagamento %}Substituir comprovante existente ou deixar em branco para manter o atual.{% else %}Anexe um comprovante de pagamento (imagem ou PDF).{% endif %}
+                        </small>
                     </div>
                     <div class="form-group" style="grid-column: 1 / -1; margin-bottom: 0;">
                         <label class="form-label">Observação</label>
-                        <textarea name="observacao" class="form-input" rows="3">{{ despesa.observacao }}</textarea>
+                        <textarea name="observacao" class="form-input" rows="3">{{ item.observacao }}</textarea>
                     </div>
                 </div>
 
@@ -132,20 +299,20 @@
                         </svg>
                         Atualizar
                     </button>
-                    <button type="submit" name="deletar" value="1" class="btn btn-outline" style="color: var(--color-danger); border-color: var(--color-danger);">
+                    <button type="submit" name="deletar" value="1" class="btn btn-outline" style="color: var(--color-danger); border-color: var(--color-danger);" onclick="return confirm('Tem certeza que deseja excluir este registro?');">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                         </svg>
                         Excluir
                     </button>
-                    {% if despesa.contato_whatsapp %}
+                    {% if item.contato_whatsapp %}
                     <button type="button"
                             class="btn btn-secondary"
-                            data-nome="{{ despesa.nome }}"
-                            data-valor="{{ despesa.valor|floatformat:2 }}"
-                            data-status="{{ despesa.get_status_display }}"
-                            data-telefone="{{ despesa.contato_whatsapp }}"
+                            data-nome="{{ item.nome }}"
+                            data-valor="{{ item.valor|floatformat:2 }}"
+                            data-status="{{ item.get_status_display }}"
+                            data-telefone="{{ item.contato_whatsapp }}"
                             onclick="enviarWhatsappDespesa(this)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
@@ -159,7 +326,7 @@
             {% endfor %}
         </div>
     {% else %}
-        <p style="color: var(--color-gray-500); margin:0;">Nenhuma despesa cadastrada.</p>
+        <p style="color: var(--color-gray-500); margin:0;">Nenhuma despesa ou receita cadastrada.</p>
     {% endif %}
     </div>
 </section>
@@ -167,6 +334,25 @@
 
 {% block extra_js %}
 <script>
+function toggleCategorias() {
+    const tipo = document.getElementById('tipo').value;
+    const categoriasDespesa = document.getElementById('categorias-despesa');
+    const categoriasReceita = document.getElementById('categorias-receita');
+    const categoriaSelect = document.getElementById('categoria');
+    
+    if (tipo === 'despesa') {
+        categoriasDespesa.style.display = 'block';
+        categoriasReceita.style.display = 'none';
+        // Resetar seleção
+        categoriaSelect.value = '';
+    } else {
+        categoriasDespesa.style.display = 'none';
+        categoriasReceita.style.display = 'block';
+        // Resetar seleção
+        categoriaSelect.value = '';
+    }
+}
+
 function normalizarTelefone(valor) {
     if (!valor) return null;
     let numeros = valor.replace(/\D/g, '');
@@ -185,9 +371,8 @@ function enviarWhatsappDespesa(button) {
         alert('Número de WhatsApp inválido.');
         return;
     }
-    const mensagem = `Olá! Referente à despesa *${button.dataset.nome}*.\nStatus atual: ${button.dataset.status}\nValor: R$ ${button.dataset.valor}`;
+    const mensagem = `Olá! Referente à *${button.dataset.nome}*.\nStatus atual: ${button.dataset.status}\nValor: R$ ${button.dataset.valor}`;
     window.open(`https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`, '_blank');
 }
 </script>
 {% endblock %}
-

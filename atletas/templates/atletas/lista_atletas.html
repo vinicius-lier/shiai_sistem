@@ -1,35 +1,18 @@
 {% extends 'atletas/base.html' %}
 
-<<<<<<< HEAD
 {% block title %}Atletas - Sistema de Gestão de Competições de Judô{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">Atletas</h1>
-    <p class="page-description">Gerencie todos os atletas cadastrados no sistema</p>
-    <div style="display: flex; flex-direction: column; gap: var(--spacing-3); margin-top: var(--spacing-4);">
-        <a href="{% url 'cadastrar_atleta' %}" class="btn btn-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Novo Atleta
-        </a>
+<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
+    <div>
+        <h1 class="page-title">Atletas</h1>
+        <p class="page-description">Gerencie todos os atletas cadastrados no sistema</p>
     </div>
+    <a href="{% url 'cadastrar_atleta' %}" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Novo Atleta
+    </a>
 </div>
-
-<style>
-@media (min-width: 768px) {
-    .page-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: var(--spacing-4);
-    }
-    .page-header > div:last-child {
-        flex-direction: row;
-        margin-top: 0;
-    }
-}
-</style>
 
 {% if total_encontrados > 0 %}
 <div style="margin-bottom: var(--spacing-6);">
@@ -60,62 +43,15 @@
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" for="sexo">Sexo</label>
                     <select id="sexo" name="sexo" class="form-select">
-=======
-{% block title %}Lista de Atletas{% endblock %}
-
-{% block content %}
-<h1>Lista de Atletas</h1>
-
-<a href="{% url 'cadastrar_atleta' %}" class="btn">Cadastrar Novo Atleta</a>
-<a href="{% url 'importar_atletas' %}" class="btn btn-success">Importar de Planilha</a>
-<a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}modo=imprimir" class="btn">🖨 Imprimir Filtrados</a>
-
-{% if total_encontrados > 0 %}
-    <p style="margin-top: 15px;"><strong>Total encontrado: {{ total_encontrados }} atleta(s)</strong></p>
-{% endif %}
-
-<div class="filter-box" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
-    <h3 style="margin-top: 0;">Filtros</h3>
-    <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-        <div>
-            <label for="nome">Nome:</label>
-            <input type="text" id="nome" name="nome" value="{{ nome_filtro }}" placeholder="Buscar por nome" style="width: 100%;">
-        </div>
-        
-        <div>
-            <label for="classe">Classe:</label>
-            <select id="classe" name="classe" style="width: 100%;">
-                <option value="">Todas</option>
-                {% for classe in classes %}
-                <option value="{{ classe }}" {% if classe == classe_filtro %}selected{% endif %}>{{ classe }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        
-        <div>
-            <label for="sexo">Sexo:</label>
-            <select id="sexo" name="sexo" style="width: 100%;">
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                 <option value="">Todos</option>
                 <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
                 <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
             </select>
         </div>
         
-<<<<<<< HEAD
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" for="academia">Academia</label>
                     <select id="academia" name="academia" class="form-select">
-=======
-        <div>
-            <label for="categoria">Categoria:</label>
-            <input type="text" id="categoria" name="categoria" value="{{ categoria_filtro }}" placeholder="Buscar categoria" style="width: 100%;">
-        </div>
-        
-        <div>
-            <label for="academia">Academia:</label>
-            <select id="academia" name="academia" style="width: 100%;">
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                 <option value="">Todas</option>
                 {% for academia in academias %}
                 <option value="{{ academia.id }}" {% if academia_filtro|default:""|stringformat:"s" == academia.id|stringformat:"s" %}selected{% endif %}>{{ academia.nome }}</option>
@@ -123,7 +59,6 @@
             </select>
         </div>
         
-<<<<<<< HEAD
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" for="status_ativo">Status</label>
                     <select id="status_ativo" name="status_ativo" class="form-select">
@@ -189,9 +124,6 @@
             {% if atleta.get_classe_atual %}
                 <span class="badge badge-info">{{ atleta.get_classe_atual }}</span>
             {% endif %}
-            {% if atleta.faixa %}
-                <span class="badge badge-primary">{{ atleta.get_faixa_display }}</span>
-            {% endif %}
             {% if atleta.data_nascimento and atleta.idade %}
                 <span>{{ atleta.idade }} anos</span>
             {% elif atleta.ano_nasc %}
@@ -201,12 +133,6 @@
         <div class="list-item-subtitle">
             <strong>Academia:</strong> {{ atleta.academia.nome }}
         </div>
-        {% if atleta.federado %}
-        <div class="list-item-subtitle">
-            <span class="badge badge-primary">Federado</span>
-            {% if atleta.numero_zempo %}<span>(Zempo: {{ atleta.numero_zempo }})</span>{% endif %}
-        </div>
-        {% endif %}
         {% if atleta.documento_oficial %}
         <div class="list-item-subtitle">
             <span class="badge badge-success">✓ Documento</span>
@@ -234,70 +160,21 @@
 <div class="desktop-table-view" style="display: none;">
     <div class="table-container">
         <table class="table">
-=======
-        <div>
-            <label for="status">Status:</label>
-            <select id="status" name="status" style="width: 100%;">
-                <option value="">Todos</option>
-                <option value="OK" {% if status_filtro == 'OK' %}selected{% endif %}>OK</option>
-                <option value="Eliminado Peso" {% if status_filtro == 'Eliminado Peso' %}selected{% endif %}>Eliminado por Peso</option>
-                <option value="Eliminado Indisciplina" {% if status_filtro == 'Eliminado Indisciplina' %}selected{% endif %}>Eliminado por Indisciplina</option>
-            </select>
-        </div>
-        
-        <div>
-            <label for="faixa">Faixa:</label>
-            <input type="text" id="faixa" name="faixa" value="{{ faixa_filtro }}" placeholder="Ex: Amarela, Azul..." style="width: 100%;">
-        </div>
-        
-        <div>
-            <label for="ordenar">Ordenar por:</label>
-            <select id="ordenar" name="ordenar" style="width: 100%;">
-                <option value="nome" {% if ordenacao == 'nome' %}selected{% endif %}>Nome</option>
-                <option value="classe" {% if ordenacao == 'classe' %}selected{% endif %}>Classe</option>
-                <option value="categoria_nome" {% if ordenacao == 'categoria_nome' %}selected{% endif %}>Categoria</option>
-                <option value="academia__nome" {% if ordenacao == 'academia__nome' %}selected{% endif %}>Academia</option>
-                <option value="peso_oficial" {% if ordenacao == 'peso_oficial' %}selected{% endif %}>Peso Oficial</option>
-                <option value="status" {% if ordenacao == 'status' %}selected{% endif %}>Status</option>
-            </select>
-        </div>
-        
-        <div style="display: flex; gap: 10px; align-items: end;">
-            <button type="submit" class="btn" style="flex: 1;">Aplicar Filtros</button>
-            <a href="{% url 'lista_atletas' %}" class="btn" style="flex: 1; text-align: center;">Limpar</a>
-        </div>
-    </form>
-</div>
-
-<div class="table-responsive">
-    <table>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
         <thead>
             <tr>
                 <th>Nome</th>
                 <th>Sexo</th>
-<<<<<<< HEAD
-                    <th>Idade</th>
+                <th>Idade</th>
                 <th>Classe</th>
                 <th>Academia</th>
-                    <th>Federado</th>
-                    <th>Documento</th>
+                <th>Documento</th>
                 <th>Status</th>
-                    <th>Ações</th>
-=======
-                <th>Classe</th>
-                <th>Categoria</th>
-                <th>Faixa</th>
-                <th>Academia</th>
-                <th>Peso Oficial</th>
-                <th>Status</th>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
+                <th>Ações</th>
             </tr>
         </thead>
         <tbody>
             {% for atleta in atletas %}
             <tr>
-<<<<<<< HEAD
                     <td>
                         <div style="display: flex; align-items: center; gap: var(--spacing-3);">
                             {% if atleta.foto_perfil %}
@@ -335,21 +212,8 @@
                         {% else %}
                             <span style="color: var(--color-gray-400);">-</span>
                         {% endif %}
-                        {% if atleta.faixa %}
-                            <div style="margin-top: var(--spacing-1);">
-                                <span class="badge badge-primary">{{ atleta.get_faixa_display }}</span>
-                            </div>
-                        {% endif %}
                     </td>
                     <td style="font-size: var(--font-size-sm); color: var(--color-gray-700);">{{ atleta.academia.nome }}</td>
-                    <td>
-                        {% if atleta.federado %}
-                            <span class="badge badge-primary">Sim</span>
-                            {% if atleta.numero_zempo %}<div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">{{ atleta.numero_zempo }}</div>{% endif %}
-                        {% else %}
-                            <span style="color: var(--color-gray-400);">Não</span>
-                        {% endif %}
-                    </td>
                 <td>
                         {% if atleta.tem_documento %}
                             <span class="badge badge-success">✓</span>
@@ -374,32 +238,11 @@
                             </a>
                         </div>
                     </td>
-=======
-                <td>{{ atleta.nome }}</td>
-                <td>{{ atleta.get_sexo_display }}</td>
-                <td>{{ atleta.classe }}</td>
-                <td>{{ atleta.categoria_ajustada|default:atleta.categoria_nome }}</td>
-                <td>{{ atleta.faixa }}</td>
-                <td>{{ atleta.academia.nome }}</td>
-                <td>{{ atleta.peso_oficial|default:"-" }} kg</td>
-                <td>
-                    {% if atleta.status == 'OK' %}
-                        <span class="status-ok">{{ atleta.status }}</span>
-                    {% else %}
-                        <span class="status-eliminado">{{ atleta.status }}</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="9" style="text-align: center;">Nenhum atleta cadastrado</td>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
-<<<<<<< HEAD
 </div>
 
 <style>
@@ -443,6 +286,4 @@
     </div>
 </div>
 {% endif %}
-=======
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 {% endblock %}

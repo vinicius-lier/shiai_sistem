@@ -105,6 +105,62 @@
     <p class="page-description">{{ campeonato.nome }}</p>
 </div>
 
+<!-- Filtros -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">Filtros</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% url 'academia_ver_chaves' campeonato.id %}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4); align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="classe">Classe</label>
+                <select id="classe" name="classe" class="form-select">
+                    <option value="">Todas as classes</option>
+                    {% for classe in classes %}
+                    <option value="{{ classe }}" {% if classe_filtro == classe %}selected{% endif %}>{{ classe }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="sexo">Sexo</label>
+                <select id="sexo" name="sexo" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="M" {% if sexo_filtro == "M" %}selected{% endif %}>Masculino</option>
+                    <option value="F" {% if sexo_filtro == "F" %}selected{% endif %}>Feminino</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="categoria">Categoria</label>
+                <select id="categoria" name="categoria" class="form-select">
+                    <option value="">Todas as categorias</option>
+                    {% for categoria in categorias %}
+                    <option value="{{ categoria }}" {% if categoria_filtro == categoria %}selected{% endif %}>{{ categoria }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: var(--spacing-2);">
+                <button type="submit" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                    Filtrar
+                </button>
+                <a href="{% url 'academia_ver_chaves' campeonato.id %}" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    </svg>
+                    Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
 {% if chaves %}
 <div class="chaves-grid">
     {% for chave in chaves %}
@@ -122,20 +178,12 @@
             </div>
         </div>
         <div class="chave-actions">
-            <a href="{% url 'academia_detalhe_chave' campeonato.id chave.id %}" class="btn btn-primary" style="text-decoration: none; flex: 1;">
+            <a href="{% url 'academia_detalhe_chave' campeonato.id chave.id %}" class="btn btn-primary" style="text-decoration: none; width: 100%;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                 </svg>
                 Ver Chave
-            </a>
-            <a href="{% url 'imprimir_chave' chave.id %}" target="_blank" rel="noopener" class="btn btn-secondary" style="text-decoration: none; flex: 1;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                PDF
             </a>
         </div>
     </div>

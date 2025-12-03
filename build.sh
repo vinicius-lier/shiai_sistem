@@ -1,0 +1,26 @@
+#!/bin/bash
+# Script de build para Render
+# Este script é executado automaticamente pelo Render antes de iniciar o servidor
+
+set -e  # Parar em caso de erro
+
+echo "🚀 Iniciando build do projeto..."
+
+# Instalar dependências
+echo "📦 Instalando dependências Python..."
+pip install -r requirements.txt
+
+# Aplicar migrations (forçar aplicação de todas)
+echo "🗄️  Aplicando migrations do banco de dados..."
+python manage.py migrate --noinput --run-syncdb
+
+# Verificar migrations pendentes
+echo "🔍 Verificando migrations pendentes..."
+python manage.py showmigrations | grep "\[ \]" || echo "✅ Todas as migrations aplicadas"
+
+# Coletar arquivos estáticos
+echo "📁 Coletando arquivos estáticos..."
+python manage.py collectstatic --noinput --clear
+
+echo "✅ Build concluído com sucesso!"
+

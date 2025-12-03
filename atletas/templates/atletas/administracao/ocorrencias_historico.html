@@ -1,0 +1,114 @@
+{% extends 'atletas/administracao/base_admin.html' %}
+
+{% block admin_page_title %}Histórico do Sistema{% endblock %}
+{% block admin_page_description %}Registro completo de todas as ações realizadas no sistema{% endblock %}
+
+{% block admin_content %}
+<section class="section-spacing">
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Tipo de Ação</label>
+                    <select class="form-select" name="tipo_acao">
+                        <option value="">Todos</option>
+                        {% for value, label in TIPO_ACAO_CHOICES %}
+                        <option value="{{ value }}" {% if tipo_acao_filtro == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Evento</label>
+                    <select class="form-select" name="campeonato_id">
+                        <option value="">Todos</option>
+                        {% for camp in campeonatos %}
+                        <option value="{{ camp.id }}" {% if campeonato_id == camp.id|stringformat:"s" %}selected{% endif %}>{{ camp.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Usuário</label>
+                    <select class="form-select" name="usuario_id">
+                        <option value="">Todos</option>
+                        {% for user in usuarios %}
+                        <option value="{{ user.id }}" {% if usuario_id == user.id|stringformat:"s" %}selected{% endif %}>{{ user.first_name|default:user.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Buscar</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="busca" value="{{ busca }}" placeholder="Descrição...">
+                        <button type="submit" class="btn btn-primary">Buscar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Histórico -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Histórico de Ações</h2>
+        </div>
+        <div class="card-body">
+            {% if historicos %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Tipo</th>
+                            <th>Descrição</th>
+                            <th>Usuário</th>
+                            <th>Evento</th>
+                            <th>Academia/Atleta</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for historico in historicos %}
+                        <tr>
+                            <td>{{ historico.data_hora|date:"d/m/Y H:i:s" }}</td>
+                            <td><span class="badge badge-info">{{ historico.get_tipo_acao_display }}</span></td>
+                            <td>{{ historico.descricao }}</td>
+                            <td>{{ historico.usuario.first_name|default:historico.usuario.username|default:"-" }}</td>
+                            <td>{{ historico.campeonato.nome|default:"-" }}</td>
+                            <td>
+                                {% if historico.academia %}{{ historico.academia.nome }}{% endif %}
+                                {% if historico.atleta %}<br><small>{{ historico.atleta.nome }}</small>{% endif %}
+                            </td>
+                            <td><small class="text-muted">{{ historico.ip_address|default:"-" }}</small></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            {% if historicos.has_other_pages %}
+            <nav aria-label="Paginação">
+                <ul class="pagination justify-content-center mt-4">
+                    {% if historicos.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ historicos.previous_page_number }}">Anterior</a></li>
+                    {% endif %}
+                    <li class="page-item active"><span class="page-link">{{ historicos.number }} de {{ historicos.paginator.num_pages }}</span></li>
+                    {% if historicos.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ historicos.next_page_number }}">Próxima</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-5">
+                <p class="text-muted">Nenhum registro de histórico encontrado.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+
+

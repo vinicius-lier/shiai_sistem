@@ -1,0 +1,37 @@
+{% extends 'atletas/pdf_base.html' %}
+
+{% block pdf_title %}Regulamento - {{ campeonato.nome }}{% endblock %}
+
+{% block pdf_heading %}REGULAMENTO - {{ campeonato.nome }}{% endblock %}
+
+{% block pdf_content %}
+<h1>REGULAMENTO - {{ campeonato.nome }}</h1>
+
+{% if campeonato.data_competicao %}
+<p class="text-center"><strong>Data do Evento:</strong> {{ campeonato.data_competicao|date:"d/m/Y" }}</p>
+{% endif %}
+
+<hr>
+
+<div class="regulamento-content">
+    {% if paragrafos %}
+        {% for paragrafo in paragrafos %}
+            {% if paragrafo.is_titulo %}
+                <h2 class="regulamento-titulo">{{ paragrafo.texto }}</h2>
+            {% else %}
+                <p class="regulamento-paragrafo">{{ paragrafo.texto|linebreaksbr }}</p>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <div style="white-space: pre-wrap;">{{ regulamento|linebreaksbr }}</div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block pdf_footer %}
+<p>SHIAI SISTEM - Regulamento do Campeonato</p>
+<p>Gerado em {% now "d/m/Y H:i" %}</p>
+{% endblock %}
+
+
+

@@ -2,108 +2,383 @@
 
 {% block title %}Métricas do Evento - Sistema de Gestão de Competições de Judô{% endblock %}
 
-{% block content %}
-<div class="page-header">
-    <h1 class="page-title">Métricas do Evento</h1>
-    <p class="page-description">{{ campeonato_ativo.nome }}</p>
-</div>
+{% block extra_css %}
+<style>
+.metric-card {
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-4);
+    text-align: center;
+    transition: transform 0.2s;
+}
+.metric-card:hover {
+    transform: translateY(-2px);
+}
+.metric-value {
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    margin-bottom: var(--spacing-2);
+}
+.metric-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+}
+.status-ok { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
+.status-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; }
+.status-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; }
+.status-info { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; }
 
-<!-- Indicadores Principais -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-6); margin-bottom: var(--spacing-8);">
-    <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
-            <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-primary);">{{ total_inscricoes }}</div>
-            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Total de Inscrições</div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
-            <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-success);">{{ inscricoes_aprovadas }}</div>
-            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Aprovados</div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
-            <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-warning);">{{ inscricoes_pendentes }}</div>
-            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Pendentes</div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
-            <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-primary);">{{ atletas_pesados }}</div>
-            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Atletas Pesados</div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
-            <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-primary);">{{ total_chaves }}</div>
-            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Chaves Geradas</div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
-            <div style="font-size: var(--font-size-3xl); font-weight: 600; color: var(--color-success);">{{ total_lutas }}</div>
-            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-top: var(--spacing-1);">Lutas Finalizadas</div>
-        </div>
-    </div>
-</div>
+.progress-bar-container {
+    background: var(--color-gray-200);
+    border-radius: var(--border-radius-full);
+    height: 24px;
+    overflow: hidden;
+    margin-top: var(--spacing-2);
+}
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
 
-<!-- Inscrições por Classe -->
-{% if inscricoes_por_classe %}
-<div class="card mb-6">
-    <div class="card-header">
-        <h3 class="card-title">Inscrições por Classe</h3>
-    </div>
-    <div class="card-body">
-        <div class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Classe</th>
-                        <th>Total de Inscrições</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in inscricoes_por_classe %}
-                    <tr>
-                        <td><span class="badge badge-info">{{ item.classe_escolhida }}</span></td>
-                        <td><strong>{{ item.total }}</strong></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-{% endif %}
+.category-card {
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-3);
+    margin-bottom: var(--spacing-3);
+}
+.category-header {
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-2);
+}
+.category-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: var(--spacing-2);
+    font-size: var(--font-size-sm);
+}
 
-<!-- Chaves por Classe -->
-{% if chaves_por_classe %}
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Chaves por Classe</h3>
-    </div>
-    <div class="card-body">
-        <div class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Classe</th>
-                        <th>Total de Chaves</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in chaves_por_classe %}
-                    <tr>
-                        <td><span class="badge badge-info">{{ item.classe }}</span></td>
-                        <td><strong>{{ item.total }}</strong></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-{% endif %}
+.remanejamento-item {
+    border-left: 3px solid var(--color-warning);
+    padding: var(--spacing-3);
+    margin-bottom: var(--spacing-3);
+    background: var(--color-gray-50);
+    border-radius: var(--border-radius-sm);
+}
+</style>
 {% endblock %}
 
+{% block content %}
+<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
+    <div>
+        <h1 class="page-title">Painel Operacional - Métricas do Evento</h1>
+        <p class="page-description">
+            {% if campeonato_ativo %}
+                <strong style="color: var(--color-primary);">{{ campeonato_ativo.nome }}</strong>
+                {% if campeonato_ativo.data_competicao %}
+                    - {{ campeonato_ativo.data_competicao|date:"d/m/Y" }}
+                {% endif %}
+            {% else %}
+                Nenhum campeonato ativo
+            {% endif %}
+        </p>
+    </div>
+    <div style="display: flex; gap: var(--spacing-2); align-items: center;">
+        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);" id="ultima-atualizacao">
+            Atualizado: {{ "now"|date:"H:i:s" }}
+        </span>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="location.reload()" title="Atualizar manualmente">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+        </button>
+    </div>
+</div>
+
+{% if not campeonato_ativo %}
+<div class="card">
+    <div class="card-body" style="text-align: center; padding: var(--spacing-8);">
+        <div style="font-size: var(--font-size-2xl); color: var(--color-gray-400); margin-bottom: var(--spacing-4);">
+            ⚠️ Nenhum campeonato ativo
+        </div>
+        <p style="color: var(--color-gray-600);">Ative um campeonato para visualizar as métricas.</p>
+    </div>
+</div>
+{% else %}
+
+<!-- ========== 1. INDICADORES DE PESAGEM ========== -->
+<section class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">📊 Indicadores de Pesagem</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--spacing-4);">
+            <div class="metric-card status-info">
+                <div class="metric-value">{{ indicadores_pesagem.total_inscritos }}</div>
+                <div class="metric-label">Total de Inscritos</div>
+            </div>
+            <div class="metric-card status-ok">
+                <div class="metric-value">{{ indicadores_pesagem.total_pesados }}</div>
+                <div class="metric-label">Pesados</div>
+                <div style="font-size: var(--font-size-xs); margin-top: var(--spacing-1); opacity: 0.9;">
+                    {{ indicadores_pesagem.percentual_pesados }}% concluído
+                </div>
+            </div>
+            <div class="metric-card status-warning">
+                <div class="metric-value">{{ indicadores_pesagem.total_pendentes }}</div>
+                <div class="metric-label">Pendentes</div>
+            </div>
+            <div class="metric-card status-danger">
+                <div class="metric-value">{{ indicadores_pesagem.total_fora_categoria }}</div>
+                <div class="metric-label">Fora de Categoria</div>
+            </div>
+            <div class="metric-card status-info">
+                <div class="metric-value">{{ indicadores_pesagem.remanejados_aceitos }}</div>
+                <div class="metric-label">Remanejados (Aceitos)</div>
+            </div>
+            <div class="metric-card status-warning">
+                <div class="metric-value">{{ indicadores_pesagem.remanejados_pendentes }}</div>
+                <div class="metric-label">Remanejados (Pendentes)</div>
+            </div>
+        </div>
+        
+        <!-- Barra de progresso da pesagem -->
+        <div style="margin-top: var(--spacing-6);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: var(--spacing-2);">
+                <span style="font-weight: 600; color: var(--color-gray-700);">Progresso da Pesagem</span>
+                <span style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                    {{ indicadores_pesagem.total_pesados }} / {{ indicadores_pesagem.total_inscritos }}
+                </span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" style="width: {{ indicadores_pesagem.percentual_pesados }}%;">
+                    {{ indicadores_pesagem.percentual_pesados }}%
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 2. ATLETAS POR CATEGORIA ========== -->
+<section class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">👥 Atletas por Categoria</h3>
+    </div>
+    <div class="card-body">
+        {% if atletas_por_categoria %}
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Classe</th>
+                        <th>Categoria</th>
+                        <th>Total</th>
+                        <th>Pesados</th>
+                        <th>Pendentes</th>
+                        <th>Remanejados</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in atletas_por_categoria %}
+                    <tr>
+                        <td><span class="badge badge-info">{{ item.classe }}</span></td>
+                        <td><strong>{{ item.categoria }}</strong></td>
+                        <td>{{ item.total }}</td>
+                        <td>
+                            <span style="color: var(--color-success); font-weight: 600;">{{ item.pesados }}</span>
+                        </td>
+                        <td>
+                            <span style="color: var(--color-warning); font-weight: 600;">{{ item.pendentes }}</span>
+                        </td>
+                        <td>
+                            {% if item.remanejados > 0 %}
+                            <span style="color: var(--color-danger); font-weight: 600;">{{ item.remanejados }}</span>
+                            {% else %}
+                            <span style="color: var(--color-gray-400);">0</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: var(--spacing-8); color: var(--color-gray-500);">
+            Nenhuma categoria com atletas inscritos
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- ========== 3. REMANEJAMENTOS ========== -->
+<section class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">🔄 Remanejamentos</h3>
+    </div>
+    <div class="card-body">
+        <!-- Indicadores de remanejamento -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-6);">
+            <div class="metric-card status-warning">
+                <div class="metric-value">{{ remanejamentos.pendentes }}</div>
+                <div class="metric-label">Pendentes</div>
+            </div>
+            <div class="metric-card status-ok">
+                <div class="metric-value">{{ remanejamentos.resolvidos }}</div>
+                <div class="metric-label">Resolvidos</div>
+            </div>
+            <div class="metric-card status-danger">
+                <div class="metric-value">{{ remanejamentos.desclassificados }}</div>
+                <div class="metric-label">Desclassificados</div>
+            </div>
+            <div class="metric-card status-info">
+                <div class="metric-value">{{ remanejamentos.total }}</div>
+                <div class="metric-label">Total</div>
+            </div>
+        </div>
+        
+        <!-- Lista de remanejamentos pendentes -->
+        {% if remanejamentos.lista_pendentes %}
+        <div>
+            <h4 style="margin-bottom: var(--spacing-4); color: var(--color-gray-700);">Remanejamentos Pendentes de Decisão</h4>
+            {% for rem in remanejamentos.lista_pendentes %}
+            <div class="remanejamento-item">
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: var(--spacing-4); align-items: center; flex-wrap: wrap;">
+                    <div>
+                        <strong style="color: var(--color-gray-900);">{{ rem.atleta_nome }}</strong>
+                        <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-top: var(--spacing-1);">
+                            {{ rem.academia }} - Prof. {{ rem.professor }}
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--font-size-xs); color: var(--color-gray-600);">Peso</div>
+                        <div style="font-weight: 600;">{{ rem.peso_registrado }} kg</div>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--font-size-xs); color: var(--color-gray-600);">Categoria Original</div>
+                        <div style="font-weight: 600; color: var(--color-danger);">{{ rem.categoria_original }}</div>
+                    </div>
+                    <div>
+                        <a href="{% url 'pesagem' %}?inscricao_id={{ rem.id }}" class="btn btn-sm btn-primary">
+                            Ver Detalhes
+                        </a>
+                    </div>
+                </div>
+                <div style="margin-top: var(--spacing-2); padding-top: var(--spacing-2); border-top: 1px solid var(--color-gray-200);">
+                    <span style="font-size: var(--font-size-xs); color: var(--color-gray-600);">
+                        Categoria Proposta: <strong>{{ rem.categoria_proposta }}</strong>
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+            {% if remanejamentos.pendentes > 10 %}
+            <div style="text-align: center; margin-top: var(--spacing-4);">
+                <a href="{% url 'pesagem' %}" class="btn btn-secondary">
+                    Ver todos os {{ remanejamentos.pendentes }} remanejamentos pendentes
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: var(--spacing-8); color: var(--color-gray-500);">
+            ✅ Nenhum remanejamento pendente
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- ========== 4. INDICADORES DE CHAVES ========== -->
+<section class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">🏆 Status das Chaves</h3>
+    </div>
+    <div class="card-body">
+        <!-- Cards de indicadores -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-6);">
+            <div class="metric-card status-ok">
+                <div class="metric-value">{{ indicadores_chaves.chaves_finalizadas }}</div>
+                <div class="metric-label">Chaves Finalizadas</div>
+            </div>
+            <div class="metric-card status-warning">
+                <div class="metric-value">{{ indicadores_chaves.chaves_pendentes }}</div>
+                <div class="metric-label">Chaves Pendentes</div>
+            </div>
+            <div class="metric-card status-info">
+                <div class="metric-value">{{ indicadores_chaves.chaves_em_construcao }}</div>
+                <div class="metric-label">Em Construção</div>
+            </div>
+            <div class="metric-card status-info">
+                <div class="metric-value">{{ indicadores_chaves.total_chaves }}</div>
+                <div class="metric-label">Total de Chaves</div>
+            </div>
+            <div class="metric-card status-info">
+                <div class="metric-value">{{ indicadores_chaves.total_lutas_geradas }}</div>
+                <div class="metric-label">Lutas Geradas</div>
+            </div>
+            <div class="metric-card status-ok">
+                <div class="metric-value">{{ indicadores_chaves.total_lutas_finalizadas }}</div>
+                <div class="metric-label">Lutas Finalizadas</div>
+            </div>
+        </div>
+        
+        <!-- Barra de progresso do campeonato -->
+        <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: var(--spacing-2);">
+                <span style="font-weight: 600; color: var(--color-gray-700);">Progresso Geral do Campeonato</span>
+                <span style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                    {{ indicadores_chaves.total_lutas_finalizadas }} / {{ indicadores_chaves.total_lutas_geradas }} lutas
+                </span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" style="width: {{ progresso_campeonato }}%;">
+                    {{ progresso_campeonato }}%
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endif %}
+
+<!-- Script para auto-refresh a cada 10 segundos -->
+<script>
+let autoRefreshInterval;
+let lastUpdateTime = new Date();
+
+function updateTimestamp() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('pt-BR');
+    const element = document.getElementById('ultima-atualizacao');
+    if (element) {
+        element.textContent = `Atualizado: ${timeStr}`;
+    }
+}
+
+function startAutoRefresh() {
+    // Atualizar timestamp a cada segundo
+    setInterval(updateTimestamp, 1000);
+    
+    // Recarregar página a cada 10 segundos
+    autoRefreshInterval = setInterval(() => {
+        location.reload();
+    }, 10000);
+}
+
+// Iniciar auto-refresh quando a página carregar
+document.addEventListener('DOMContentLoaded', startAutoRefresh);
+
+// Limpar intervalo quando sair da página
+window.addEventListener('beforeunload', () => {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+});
+</script>
+{% endblock %}

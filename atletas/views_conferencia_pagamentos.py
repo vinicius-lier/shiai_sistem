@@ -8,6 +8,7 @@ from django.db.models import Q, Sum, Count
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from decimal import Decimal
+import datetime
 from .models import (
     Academia, Campeonato, Inscricao, ConferenciaPagamento,
     AcademiaCampeonato

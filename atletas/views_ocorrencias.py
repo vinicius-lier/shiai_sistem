@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
 from django.core.paginator import Paginator
+import datetime
 from .models import Ocorrencia, Campeonato, Academia, Atleta, Inscricao
 from .academia_auth import operacional_required
 from .utils_historico import registrar_historico
@@ -117,9 +118,10 @@ def ocorrencias_criar(request):
         else:
             # Converter data_ocorrencia
             try:
-                from datetime import datetime
                 if data_ocorrencia:
-                    data_ocorrencia_obj = datetime.strptime(data_ocorrencia, '%Y-%m-%dT%H:%M')
+                    data_ocorrencia_obj = datetime.datetime.strptime(data_ocorrencia, '%Y-%m-%dT%H:%M')
+                    # Tornar timezone-aware
+                    data_ocorrencia_obj = timezone.make_aware(data_ocorrencia_obj)
                 else:
                     data_ocorrencia_obj = timezone.now()
             except:

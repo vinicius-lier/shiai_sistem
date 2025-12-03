@@ -1,64 +1,37 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Regulamento - {{ campeonato.nome }}</title>
-    <style>
-        @page {
-            size: A4;
-            margin: 2cm;
-        }
-        
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 11pt;
-            line-height: 1.6;
-            color: #000;
-            background: #fff;
-        }
-        
-        h1 {
-            font-size: 18pt;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 20pt;
-            color: #000;
-        }
-        
-        h2 {
-            font-size: 14pt;
-            font-weight: bold;
-            margin-top: 16pt;
-            margin-bottom: 8pt;
-            color: #000;
-        }
-        
-        p {
-            margin-bottom: 8pt;
-            text-align: justify;
-        }
-        
-        @media print {
-            body {
-                margin: 0;
-                padding: 0;
-            }
-        }
-    </style>
-</head>
-<body>
-    <h1>REGULAMENTO - {{ campeonato.nome }}</h1>
-    
-    {% if campeonato.data_competicao %}
-    <p><strong>Data do Evento:</strong> {{ campeonato.data_competicao|date:"d/m/Y" }}</p>
+{% extends 'atletas/pdf_base.html' %}
+
+{% block pdf_title %}Regulamento - {{ campeonato.nome }}{% endblock %}
+
+{% block pdf_heading %}REGULAMENTO - {{ campeonato.nome }}{% endblock %}
+
+{% block pdf_content %}
+<h1>REGULAMENTO - {{ campeonato.nome }}</h1>
+
+{% if campeonato.data_competicao %}
+<p class="text-center"><strong>Data do Evento:</strong> {{ campeonato.data_competicao|date:"d/m/Y" }}</p>
+{% endif %}
+
+<hr>
+
+<div class="regulamento-content">
+    {% if paragrafos %}
+        {% for paragrafo in paragrafos %}
+            {% if paragrafo.is_titulo %}
+                <h2 class="regulamento-titulo">{{ paragrafo.texto }}</h2>
+            {% else %}
+                <p class="regulamento-paragrafo">{{ paragrafo.texto|linebreaksbr }}</p>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <div style="white-space: pre-wrap;">{{ regulamento|linebreaksbr }}</div>
     {% endif %}
-    
-    <hr style="margin: 20pt 0; border: 1px solid #000;">
-    
-    <div style="white-space: pre-wrap; font-family: Arial, sans-serif;">{{ regulamento }}</div>
-</body>
-</html>
+</div>
+{% endblock %}
+
+{% block pdf_footer %}
+<p>SHIAI SISTEM - Regulamento do Campeonato</p>
+<p>Gerado em {% now "d/m/Y H:i" %}</p>
+{% endblock %}
 
 
 

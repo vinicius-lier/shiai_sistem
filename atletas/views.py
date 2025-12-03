@@ -3398,9 +3398,8 @@ def academia_detalhe_chave(request, campeonato_id, chave_id):
     return render(request, 'atletas/academia/detalhe_chave.html', context)
 
 @academia_required
-@academia_required
 def academia_baixar_regulamento(request, campeonato_id):
-    """Baixa o regulamento do campeonato em formato PDF"""
+    """Baixa o regulamento do campeonato em formato PDF usando xhtml2pdf"""
     campeonato = get_object_or_404(Campeonato, id=campeonato_id)
     
     if not campeonato.regulamento:
@@ -3408,114 +3407,62 @@ def academia_baixar_regulamento(request, campeonato_id):
         return redirect('academia_evento', campeonato_id=campeonato_id)
     
     try:
-        from reportlab.lib.pagesizes import A4
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import mm
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
-        from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
-        from io import BytesIO
+        from .utils_pdf import renderizar_template_para_pdf
         import re
         
-        # Criar buffer para o PDF
-        buffer = BytesIO()
-        
-        # Criar documento PDF
-        doc = SimpleDocTemplate(buffer, pagesize=A4, 
-                               rightMargin=20*mm, leftMargin=20*mm,
-                               topMargin=20*mm, bottomMargin=20*mm)
-        
-        # Estilos
-        styles = getSampleStyleSheet()
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=16,
-            textColor='#000000',
-            spaceAfter=12,
-            alignment=TA_CENTER,
-            fontName='Helvetica-Bold'
-        )
-        
-        heading_style = ParagraphStyle(
-            'CustomHeading',
-            parent=styles['Heading2'],
-            fontSize=14,
-            textColor='#000000',
-            spaceAfter=8,
-            spaceBefore=12,
-            fontName='Helvetica-Bold'
-        )
-        
-        normal_style = ParagraphStyle(
-            'CustomNormal',
-            parent=styles['Normal'],
-            fontSize=11,
-            textColor='#000000',
-            spaceAfter=6,
-            alignment=TA_JUSTIFY,
-            leading=14
-        )
-        
-        # Conteúdo do PDF
-        story = []
-        
-        # Título
-        story.append(Paragraph(f"REGULAMENTO - {campeonato.nome}", title_style))
-        story.append(Spacer(1, 12))
-        
-        # Data do campeonato
-        if campeonato.data_competicao:
-            story.append(Paragraph(f"<b>Data do Evento:</b> {campeonato.data_competicao.strftime('%d/%m/%Y')}", normal_style))
-            story.append(Spacer(1, 6))
-        
-        # Linha separadora
-        story.append(Spacer(1, 12))
-        
-        # Processar texto do regulamento
+        # Processar texto do regulamento para identificar títulos e parágrafos
         texto_regulamento = campeonato.regulamento
+        paragrafos = []
         
         # Dividir em parágrafos (linhas vazias indicam novo parágrafo)
-        paragrafos = texto_regulamento.split('\n\n')
+        blocos = texto_regulamento.split('\n\n')
         
-        for paragrafo in paragrafos:
-            paragrafo = paragrafo.strip()
-            if not paragrafo:
-                story.append(Spacer(1, 6))
+        for bloco in blocos:
+            bloco = bloco.strip()
+            if not bloco:
                 continue
             
             # Verificar se é um título (linha curta, sem pontuação final, ou começa com número)
-            linhas = paragrafo.split('\n')
-            if len(linhas) == 1 and (len(paragrafo) < 80 or re.match(r'^\d+[\.\)]', paragrafo.strip())):
-                # Provavelmente é um título
-                story.append(Paragraph(paragrafo, heading_style))
-            else:
-                # É um parágrafo normal
-                # Substituir quebras de linha por <br/>
-                paragrafo_html = paragrafo.replace('\n', '<br/>')
-                story.append(Paragraph(paragrafo_html, normal_style))
+            linhas = bloco.split('\n')
+            is_titulo = False
             
-            story.append(Spacer(1, 6))
+            if len(linhas) == 1:
+                linha = linhas[0].strip()
+                # Título se: linha curta (< 80 chars) ou começa com número seguido de ponto/parentese
+                if len(linha) < 80 or re.match(r'^\d+[\.\)]\s', linha):
+                    is_titulo = True
+            
+            paragrafos.append({
+                'texto': bloco,
+                'is_titulo': is_titulo
+            })
         
-        # Construir PDF
-        doc.build(story)
+        # Preparar contexto para o template
+        context = {
+            'campeonato': campeonato,
+            'regulamento': campeonato.regulamento,
+            'paragrafos': paragrafos,
+        }
         
-        # Obter conteúdo do buffer
-        pdf_content = buffer.getvalue()
-        buffer.close()
-        
-        # Criar resposta HTTP
-        response = HttpResponse(pdf_content, content_type='application/pdf')
+        # Gerar nome do arquivo
         filename = f"regulamento_{campeonato.nome.replace(' ', '_')}.pdf"
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
-        return response
+        # Gerar PDF usando xhtml2pdf
+        return renderizar_template_para_pdf(
+            template_path='atletas/academia/regulamento_pdf.html',
+            context=context,
+            filename=filename,
+            content_disposition='attachment'
+        )
         
-    except ImportError:
-        # Se reportlab não estiver instalado, retornar como HTML para impressão
+    except ImportError as e:
+        # Se xhtml2pdf não estiver instalado, retornar como HTML para impressão
+        messages.warning(request, 'Biblioteca de PDF não disponível. Retornando HTML para impressão.')
         from django.template.loader import render_to_string
         html_content = render_to_string('atletas/academia/regulamento_pdf.html', {
             'campeonato': campeonato,
-            'regulamento': campeonato.regulamento
+            'regulamento': campeonato.regulamento,
+            'paragrafos': []
         })
         response = HttpResponse(html_content, content_type='text/html')
         response['Content-Disposition'] = f'inline; filename="regulamento_{campeonato.nome}.html"'

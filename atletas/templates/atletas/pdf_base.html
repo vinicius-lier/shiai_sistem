@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block pdf_title %}Documento{% endblock %}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+            @frame footer {
+                -pdf-frame-content: footerContent;
+                bottom: 1cm;
+                margin-left: 2cm;
+                margin-right: 2cm;
+                height: 1cm;
+            }
+        }
+        
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #000;
+            background: #fff;
+            margin: 0;
+            padding: 0;
+        }
+        
+        h1 {
+            font-size: 18pt;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20pt;
+            margin-top: 0;
+            color: #000;
+            page-break-after: avoid;
+        }
+        
+        h2 {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 16pt;
+            margin-bottom: 8pt;
+            color: #000;
+            page-break-after: avoid;
+        }
+        
+        h3 {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 12pt;
+            margin-bottom: 6pt;
+            color: #000;
+            page-break-after: avoid;
+        }
+        
+        p {
+            margin-bottom: 8pt;
+            text-align: justify;
+            orphans: 3;
+            widows: 3;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-left {
+            text-align: left;
+        }
+        
+        strong, b {
+            font-weight: bold;
+        }
+        
+        em, i {
+            font-style: italic;
+        }
+        
+        hr {
+            margin: 20pt 0;
+            border: none;
+            border-top: 1px solid #000;
+            page-break-after: avoid;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12pt 0;
+            page-break-inside: avoid;
+        }
+        
+        table th,
+        table td {
+            border: 1px solid #000;
+            padding: 6pt;
+            text-align: left;
+        }
+        
+        table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        .no-break {
+            page-break-inside: avoid;
+        }
+        
+        .footer {
+            font-size: 9pt;
+            color: #666;
+            text-align: center;
+        }
+        
+        /* Estilos específicos para regulamento */
+        .regulamento-content {
+            white-space: pre-wrap;
+            font-family: Arial, sans-serif;
+        }
+        
+        .regulamento-paragrafo {
+            margin-bottom: 10pt;
+            text-align: justify;
+        }
+        
+        .regulamento-titulo {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 16pt;
+            margin-bottom: 8pt;
+            color: #000;
+        }
+    </style>
+    {% block pdf_extra_style %}{% endblock %}
+</head>
+<body>
+    {% block pdf_content %}
+    <h1>{% block pdf_heading %}Documento{% endblock %}</h1>
+    {% endblock %}
+    
+    <div id="footerContent" class="footer">
+        {% block pdf_footer %}
+        <p>Gerado em {% now "d/m/Y H:i" %}</p>
+        {% endblock %}
+    </div>
+</body>
+</html>
+

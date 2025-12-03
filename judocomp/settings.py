@@ -114,7 +114,7 @@ if os.environ.get("RENDER"):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': "/opt/render/project/src/media/db.sqlite3",
+            'NAME': "/var/data/db.sqlite3",
         }
     }
 else:

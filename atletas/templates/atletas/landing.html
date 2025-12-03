@@ -1,0 +1,652 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Shiai System – Gestão completa de campeonatos de Judô</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Sistema completo para organização de campeonatos de Judô: inscrições, pesagem, chaves, súmulas, ranking e relatórios – tudo em um só lugar." />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #111827;   /* quase preto (judogi) */
+      --accent: #fbbf24;    /* amarelo (faixa) */
+      --accent-dark: #d97706;
+      --bg-soft: #f3f4f6;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #111827;
+      background-color: #ffffff;
+    }
+    .navbar-brand span {
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+    .btn-primary-custom {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      border: none;
+      color: #111827;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    }
+    .btn-primary-custom:hover {
+      background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+      color: #111827;
+      transform: translateY(-1px);
+    }
+    .btn-outline-custom {
+      border-color: #e5e7eb;
+      color: #111827;
+    }
+    .btn-outline-custom:hover {
+      border-color: var(--accent);
+      color: #111827;
+      background-color: #fffbeb;
+    }
+    .btn-access-system {
+      background: linear-gradient(135deg, #111827, #1f2937);
+      border: none;
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(17,24,39,0.25);
+    }
+    .btn-access-system:hover {
+      background: linear-gradient(135deg, #1f2937, #111827);
+      color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 12px 35px rgba(17,24,39,0.35);
+    }
+    .hero {
+      background: radial-gradient(circle at top left, #1f2937 0, #020617 40%, #020617 100%);
+      color: #f9fafb;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-badge {
+      background: rgba(15,23,42,0.9);
+      border-radius: 999px;
+      border: 1px solid rgba(249,250,251,0.12);
+      padding: 6px 14px;
+      font-size: 0.78rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .hero-badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(251,191,36,0.3);
+    }
+    .hero h1 {
+      font-size: clamp(2.3rem, 4vw, 3rem);
+      font-weight: 800;
+      line-height: 1.1;
+    }
+    .hero-highlight {
+      color: var(--accent);
+    }
+    .hero-img-card {
+      border-radius: 24px;
+      overflow: hidden;
+      background: #020617;
+      border: 1px solid rgba(148,163,184,0.4);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+    }
+    .section-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #6b7280;
+      font-weight: 600;
+    }
+    .feature-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      background: #111827;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+    }
+    .pricing-card {
+      border-radius: 20px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 18px 45px rgba(15,23,42,0.08);
+    }
+    .pricing-card.featured {
+      border: 2px solid var(--accent);
+      transform: translateY(-6px);
+    }
+    .badge-popular {
+      background-color: #fef3c7;
+      color: #92400e;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      padding: 2px 10px;
+      font-weight: 600;
+    }
+    .competitors-card {
+      border-radius: 20px;
+      background: linear-gradient(145deg, #0b1120, #020617);
+      color: #e5e7eb;
+      border: 1px solid rgba(148,163,184,0.4);
+    }
+    .faq-item {
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+    }
+    .floating-whatsapp {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      z-index: 999;
+    }
+    .floating-whatsapp a {
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #22c55e;
+      color: #ffffff;
+      box-shadow: 0 15px 35px rgba(22,163,74,0.55);
+      font-size: 1.7rem;
+      text-decoration: none;
+    }
+    .floating-whatsapp a:hover {
+      background: #16a34a;
+      transform: translateY(-1px);
+    }
+    footer {
+      border-top: 1px solid #e5e7eb;
+      background-color: #f9fafb;
+    }
+    .access-banner {
+      background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+      color: #ffffff;
+      padding: 1.5rem 0;
+      border-bottom: 3px solid var(--accent);
+    }
+    .access-banner-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .access-banner-text {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .access-banner-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(251,191,36,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BANNER DE ACESSO AO SISTEMA -->
+  <div class="access-banner">
+    <div class="container">
+      <div class="access-banner-content">
+        <div class="access-banner-text">
+          <div class="access-banner-icon">🔐</div>
+          <div>
+            <strong>Já possui acesso ao sistema?</strong>
+            <span class="d-block small opacity-75">Acesse sua conta e gerencie seus campeonatos</span>
+          </div>
+        </div>
+        <div>
+          <a href="{% url 'selecionar_tipo_login' %}" class="btn btn-access-system btn-lg">
+            Acessar Sistema →
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
+    <div class="container py-2">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#top">
+        <img src="{% static 'atletas/images/logo_black.png' %}" alt="Shiai System" width="38" height="38" class="rounded-circle border border-1 border-dark-subtle object-fit-cover">
+        <span>SHIAI SYSTEM</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 me-lg-3">
+          <li class="nav-item"><a class="nav-link" href="#como-funciona">Como funciona</a></li>
+          <li class="nav-item"><a class="nav-link" href="#planos">Planos</a></li>
+          <li class="nav-item"><a class="nav-link" href="#por-que">Por que é diferente</a></li>
+          <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
+        </ul>
+        <a href="{% url 'selecionar_tipo_login' %}" class="btn btn-sm btn-access-system me-2">Acessar Sistema</a>
+        <a href="https://wa.me/5524999582625?text=Olá%2C%20tenho%20interesse%20no%20Shiai%20System%20para%20meus%20campeonatos%20de%20Judô."
+           class="btn btn-sm btn-primary-custom">
+          Falar com especialista
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="top" class="hero py-5 py-lg-5">
+    <div class="container">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-6">
+          <div class="hero-badge mb-3">
+            <span class="hero-badge-dot"></span>
+            <span>Feito por quem vive o tatame, para quem organiza no dia a dia</span>
+          </div>
+          <h1 class="mb-3">
+            Organize campeonatos de Judô<br>
+            com <span class="hero-highlight">controle total</span> do início ao fim.
+          </h1>
+          <p class="lead mb-4 text-secondary">
+            Do cadastro do atleta à pesagem, chaves, súmulas, ranking e certificados:
+            o Shiai System centraliza tudo em uma plataforma pensada para a realidade
+            dos organizadores e professores de Judô no Brasil.
+          </p>
+          <div class="d-flex flex-wrap gap-3 mb-3">
+            <a href="#planos" class="btn btn-primary-custom btn-lg">
+              Ver planos e começar
+            </a>
+            <a href="https://wa.me/5524999582625?text=Quero%20ver%20uma%20demonstração%20do%20Shiai%20System."
+               class="btn btn-outline-custom btn-lg">
+              Agendar demonstração por WhatsApp
+            </a>
+          </div>
+          <div class="d-flex flex-wrap gap-4 mt-3">
+            <div class="d-flex align-items-center gap-2">
+              <div class="feature-icon">
+                🥋
+              </div>
+              <div>
+                <div class="fw-semibold">Focado 100% em Judô</div>
+                <small class="text-secondary">Categoria, idade, peso e regras ajustadas à realidade dos campeonatos.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="hero-img-card p-3 p-md-4">
+            {% if 'landing/judo-hero-1.jpg' %}
+            <img src="{% static 'atletas/images/landing/judo-hero-1.jpg' %}"
+                 alt="Judocas em competição"
+                 class="img-fluid rounded-4 mb-3"
+                 onerror="this.style.display='none';">
+            {% endif %}
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="mb-1">Visão do evento em tempo real</h6>
+                <small class="text-secondary">Inscrições, categorias e chaves sempre organizadas – sem planilha caótica.</small>
+              </div>
+              <div class="text-end">
+                <div class="badge bg-success-subtle text-success-emphasis mb-1">
+                  + agilidade no dia do shiai
+                </div>
+                <div class="small text-secondary">Menos papel, menos erro, mais segurança.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>      
+    </div>
+  </section>
+
+  <!-- COMO FUNCIONA -->
+  <section id="como-funciona" class="py-5 bg-light">
+    <div class="container">
+      <div class="text-center mb-5">
+        <div class="section-label mb-2">Como funciona</div>
+        <h2 class="fw-bold mb-3">Um fluxo simples para um dia de competição sem caos</h2>
+        <p class="text-secondary">
+          O Shiai System foi pensado para o organizador que tem pouco tempo, muitos atletas
+          e não pode se dar ao luxo de errar na chave ou na súmula.
+        </p>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="p-4 h-100 bg-white rounded-4 shadow-sm">
+            <div class="feature-icon mb-3">①</div>
+            <h5 class="fw-semibold">Configure o evento</h5>
+            <p class="text-secondary small mb-3">
+              Defina categorias, faixas etárias, pesos, áreas de combate e número de lutas.
+              O sistema já traz a lógica de Judô pronta, você apenas ajusta o que for específico.
+            </p>
+            <ul class="text-secondary small ps-3 mb-0">
+              <li>Categorias geradas automaticamente por idade/peso</li>
+              <li>Controle de área e sequência de lutas</li>
+              <li>Multi-organização: vários eventos na mesma conta</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-4 h-100 bg-white rounded-4 shadow-sm">
+            <div class="feature-icon mb-3">②</div>
+            <h5 class="fw-semibold">Inscrições & pesagem organizadas</h5>
+            <p class="text-secondary small mb-3">
+              Cadastre atletas com rapidez, inclusive inscrições de última hora.
+              Controle pesagem de forma clara, sem papel espalhado pelo ginásio.
+            </p>
+            <ul class="text-secondary small ps-3 mb-0">
+              <li>Cadastro rápido ou completo de atletas</li>
+              <li>Lista de pesagem com conferência de peso</li>
+              <li>Relatórios para professores conferirem seus alunos</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-4 h-100 bg-white rounded-4 shadow-sm">
+            <div class="feature-icon mb-3">③</div>
+            <h5 class="fw-semibold">Chaves, súmulas e ranking</h5>
+            <p class="text-secondary small mb-3">
+              Gere chaves, resultados, medalhistas e ranking de forma automática.
+              Tenha tudo pronto para imprimir ou usar em tela.
+            </p>
+            <ul class="text-secondary small ps-3 mb-0">
+              <li>Chaves com rodízio e melhor de 3, quando aplicável</li>
+              <li>Súmulas claras para mesa e árbitros</li>
+              <li>Ranking por atleta, academia e evento</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLANOS -->
+  <section id="planos" class="py-5">
+    <div class="container">
+      <div class="text-center mb-5">
+        <div class="section-label mb-2">Planos de contratação</div>
+        <h2 class="fw-bold mb-3">Planos simples, alinhados à realidade dos eventos</h2>
+        <p class="text-secondary">
+          Você paga pelo tamanho do evento – não por recursos escondidos. 
+          Sem surpresa, sem planos confusos.
+        </p>
+      </div>
+
+      <div class="row g-4 align-items-stretch">
+        <!-- Plano até 250 atletas -->
+        <div class="col-md-4">
+          <div class="pricing-card h-100 p-4 d-flex flex-column">
+            <h5 class="fw-semibold mb-1">Evento até 250 atletas</h5>
+            <p class="text-secondary small mb-3">
+              Ideal para copas regionais, festivais e eventos de porte médio.
+            </p>
+            <div class="mb-3">
+              <span class="h3 fw-bold">R$ 450</span>
+              <span class="text-secondary small">por evento / 30 dias de uso</span>
+            </div>
+            <ul class="text-secondary small ps-3 mb-4">
+              <li>Todos os recursos do sistema liberados para esse evento</li>
+              <li>Cadastro de academias, atletas, pesagem e chaves</li>
+              <li>Relatórios pós-evento para organizador e professores</li>
+            </ul>
+            <div class="mt-auto">
+              <a href="https://wa.me/5524999582625?text=Tenho%20interesse%20no%20plano%20para%20eventos%20até%20250%20atletas."
+                 class="btn btn-primary-custom w-100">
+                Quero esse plano
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plano acima de 250 atletas -->
+        <div class="col-md-4">
+          <div class="pricing-card featured h-100 p-4 d-flex flex-column position-relative">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h5 class="fw-semibold mb-1">Evento acima de 250 atletas</h5>
+              <span class="badge-popular">Mais escolhido</span>
+            </div>
+            <p class="text-secondary small mb-3">
+              Pensado para etapas maiores, circuitos e campeonatos com grande volume.
+            </p>
+            <div class="mb-3">
+              <span class="h3 fw-bold">R$ 700</span>
+              <span class="text-secondary small">por evento / 30 dias de uso</span>
+            </div>
+            <ul class="text-secondary small ps-3 mb-4">
+              <li>Todos os recursos liberados, sem limite de inscrições</li>
+              <li>Melhor custo-benefício para grandes campeonatos</li>
+              <li>Apoio direto via WhatsApp antes e durante o evento</li>
+            </ul>
+            <div class="mt-auto">
+              <a href="https://wa.me/5524999582625?text=Tenho%20interesse%20no%20plano%20para%20eventos%20acima%20de%20250%20atletas."
+                 class="btn btn-primary-custom w-100">
+                Falar sobre este plano
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plano anual -->
+        <div class="col-md-4">
+          <div class="pricing-card h-100 p-4 d-flex flex-column">
+            <h5 class="fw-semibold mb-1">Plano anual para organizadores</h5>
+            <p class="text-secondary small mb-3">
+              Para ligas, federações ou núcleos que realizam vários eventos ao longo do ano.
+            </p>
+            <div class="mb-3">
+              <span class="h3 fw-bold">R$ 2.250</span>
+              <span class="text-secondary small">equivalente a 5 eventos de até 250 atletas</span>
+            </div>
+            <ul class="text-secondary small ps-3 mb-4">
+              <li>Até 5 eventos incluídos no período de 12 meses</li>
+              <li>Ideal para quem organiza calendário anual</li>
+              <li>Condição especial para renovação</li>
+            </ul>
+            <div class="mt-auto">
+              <a href="https://wa.me/5524999582625?text=Quero%20conversar%20sobre%20o%20plano%20anual%20do%20Shiai%20System."
+                 class="btn btn-outline-custom w-100">
+                Conversar sobre condições
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-center text-secondary small mt-4">
+        Precisa de um formato diferente (circuito, parceria ou mais eventos)? 
+        <a href="https://wa.me/5524999582625?text=Preciso%20de%20um%20formato%20personalizado%20de%20parceria%20com%20o%20Shiai%20System.">Fale conosco</a> e montamos uma proposta sob medida.
+      </p>
+    </div>
+  </section>
+
+  <!-- POR QUE É DIFERENTE DOS CONCORRENTES -->
+  <section id="por-que" class="py-5">
+    <div class="container">
+      <div class="row g-4 align-items-center">
+        <div class="col-lg-6">
+          <div class="competitors-card p-4 p-md-5 h-100">
+            <div class="section-label mb-2 text-warning">Comparando com o mercado</div>
+            <h2 class="fw-bold mb-3">Não é "mais um sistema de chave". É uma solução pensada para quem vive o Judô.</h2>
+            <p class="small mb-3">
+              Muitos sistemas disponíveis hoje foram criados para "esportes em geral". 
+              Eles até fazem chave, mas:
+            </p>
+            <ul class="small mb-3">
+              <li>São engessados, pouco adaptados à realidade do Judô brasileiro;</li>
+              <li>Forçam o organizador a depender de planilhas paralelas e improvisos;</li>
+              <li>Limitam o acesso do professor, que só vê os dados no dia do evento – quando vê;</li>
+              <li>Cobram valores fixos que não consideram o tamanho real do seu campeonato.</li>
+            </ul>
+            <p class="small mb-0">
+              O Shiai System nasceu do tatame, ouvindo professores, árbitros e organizadores, 
+              para simplificar o que é complexo sem perder o controle sobre o evento.
+            </p>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                <h6 class="fw-semibold mb-1">Multi-organização e visão para professores</h6>
+                <p class="small text-secondary mb-0">
+                  Um mesmo sistema pode atender diferentes organizadores e academias, 
+                  mantendo os dados organizados por evento. Professores podem acompanhar 
+                  seus atletas, históricos e rankings, mesmo depois do campeonato acabar.
+                </p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                <h6 class="fw-semibold mb-1">Pós-evento que continua útil</h6>
+                <p class="small text-secondary mb-0">
+                  Os dados ficam disponíveis para conferência, estatísticas e planejamento 
+                  dos próximos eventos. Não é um sistema que "morre" quando a competição termina.
+                </p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                <h6 class="fw-semibold mb-1">Suporte direto pelo WhatsApp</h6>
+                <p class="small text-secondary mb-0">
+                  Nada de abrir chamado frio. Você fala direto com quem criou o sistema,
+                  que entende tanto de código quanto de Judô.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>      
+    </div>
+  </section>
+
+  <!-- IMAGENS / VITRINE JUDÔ -->
+  <section class="py-5 bg-light">
+    <div class="container">
+      <div class="text-center mb-4">
+        <div class="section-label mb-2">Judô em destaque</div>
+        <h2 class="fw-bold mb-3">Feito para quem ama o Judô em todas as faixas</h2>
+        <p class="text-secondary">
+          Use o Shiai System para dar mais profissionalismo ao seu evento e mais orgulho 
+          para atletas, famílias e professores.
+        </p>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <img src="{% static 'atletas/images/landing/judo-kids.jpg' %}" alt="Festival de Judô infantil"
+               class="img-fluid rounded-4 shadow-sm"
+               onerror="this.style.display='none';">
+        </div>
+        <div class="col-md-4">
+          <img src="{% static 'atletas/images/landing/judo-competition.jpg' %}" alt="Combate de Judô"
+               class="img-fluid rounded-4 shadow-sm"
+               onerror="this.style.display='none';">
+        </div>
+        <div class="col-md-4">
+          <img src="{% static 'atletas/images/landing/judo-medals.jpg' %}" alt="Judocas no pódio"
+               class="img-fluid rounded-4 shadow-sm"
+               onerror="this.style.display='none';">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="py-5">
+    <div class="container">
+      <div class="text-center mb-4">
+        <div class="section-label mb-2">FAQ</div>
+        <h2 class="fw-bold mb-3">Perguntas frequentes</h2>
+        <p class="text-secondary">
+          Se ainda ficou alguma dúvida, você pode falar direto pelo WhatsApp.
+        </p>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="faq-item p-3 p-md-4">
+            <h6 class="fw-semibold mb-2">O sistema funciona só para Judô?</h6>
+            <p class="small text-secondary mb-0">
+              O foco principal é o Judô. Toda a lógica de idade, categoria, peso e formato de 
+              disputa foi pensada para a realidade de campeonatos de Judô no Brasil.
+            </p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="faq-item p-3 p-md-4">
+            <h6 class="fw-semibold mb-2">Preciso instalar algo no computador?</h6>
+            <p class="small text-secondary mb-0">
+              Não. O Shiai System funciona via navegador. Você pode usar em notebooks
+              e, em versões específicas, em telas menores para apoio durante o evento.
+            </p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="faq-item p-3 p-md-4">
+            <h6 class="fw-semibold mb-2">Professores conseguem acessar os dados dos atletas?</h6>
+            <p class="small text-secondary mb-0">
+              Sim. O sistema permite que organizadores e professores consultem dados de inscrições, 
+              resultados e rankings, de forma organizada e segura.
+            </p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="faq-item p-3 p-md-4">
+            <h6 class="fw-semibold mb-2">O pagamento é por evento mesmo?</h6>
+            <p class="small text-secondary mb-0">
+              Sim. Você escolhe o plano de acordo com o tamanho do campeonato
+              ou fecha o plano anual se tiver calendário definido. Sem fidelização escondida.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <p class="text-secondary mb-2">Quer tirar uma dúvida específica sobre o seu evento?</p>
+        <a href="https://wa.me/5524999582625?text=Tenho%20algumas%20dúvidas%20sobre%20o%20Shiai%20System%20para%20meus%20campeonatos."
+           class="btn btn-primary-custom">
+          Falar agora pelo WhatsApp
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="py-3">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+      <div class="small text-secondary">
+        © {% now "Y" %} Shiai System – Gestão de Campeonatos de Judô.
+      </div>
+      <div class="small text-secondary">
+        Suporte WhatsApp: <a href="https://wa.me/5524999582625" class="text-decoration-none">+55 (24) 99958-2625</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- BOTÃO FLOAT WHATSAPP -->
+  <div class="floating-whatsapp">
+    <a href="https://wa.me/5524999582625?text=Olá%2C%20vim%20do%20site%20do%20Shiai%20System%20e%20quero%20saber%20mais."
+       aria-label="Fale conosco pelo WhatsApp">
+      💬
+    </a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

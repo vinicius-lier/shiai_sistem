@@ -45,6 +45,10 @@ from .views_ocorrencias import (
 
 # ========== LOGIN E AUTENTICAÇÃO ==========
 
+def landing_page(request):
+    """Landing page do sistema"""
+    return render(request, 'atletas/landing.html')
+
 def selecionar_tipo_login(request):
     """Página inicial - seleção de tipo de login"""
     return render(request, 'atletas/academia/selecionar_login.html')

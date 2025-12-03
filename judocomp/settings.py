@@ -186,10 +186,24 @@ USE_THOUSAND_SEPARATOR = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# STATIC_ROOT: Onde os arquivos estáticos serão coletados
+# No Render, o caminho padrão já é correto (BASE_DIR / 'staticfiles')
+# O Render automaticamente mapeia para /opt/render/project/src/staticfiles
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
+
+# STATICFILES_DIRS: Onde o Django procura arquivos estáticos antes de coletar
+# Apenas incluir se a pasta existir e tiver conteúdo útil
+# Os arquivos do app 'atletas' estão em atletas/static/ (descobertos automaticamente)
+STATICFILES_DIRS = []
+if (BASE_DIR / 'static').exists():
+    # Verificar se há arquivos (ignorando .gitkeep e pastas vazias)
+    has_files = any(
+        f.is_file() and not f.name.startswith('.')
+        for f in (BASE_DIR / 'static').rglob('*')
+    )
+    if has_files:
+        STATICFILES_DIRS.append(BASE_DIR / 'static')
 
 # WhiteNoise para servir arquivos estáticos em produção
 # Usar CompressedStaticFilesStorage (mais simples e robusto)
@@ -249,6 +263,11 @@ LOGGING = {
     },
 }
 
-# Adicionar tipos MIME
+# Adicionar tipos MIME para garantir que arquivos estáticos sejam servidos corretamente
 mimetypes.add_type("text/css", ".css", True)
 mimetypes.add_type("application/javascript", ".js", True)
+mimetypes.add_type("image/png", ".png", True)
+mimetypes.add_type("image/jpeg", ".jpg", True)
+mimetypes.add_type("image/jpeg", ".jpeg", True)
+mimetypes.add_type("image/svg+xml", ".svg", True)
+mimetypes.add_type("image/x-icon", ".ico", True)

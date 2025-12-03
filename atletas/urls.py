@@ -2,8 +2,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Página inicial - redireciona para login se não autenticado
-    path('', views.selecionar_tipo_login, name='root'),
+    # Landing page
+    path('', views.landing_page, name='landing'),
+    # Seleção de tipo de login
+    path('login/', views.selecionar_tipo_login, name='selecionar_tipo_login'),
     
     # Dashboard operacional
     path('dashboard/', views.index, name='index'),
@@ -77,9 +79,6 @@ urlpatterns = [
     path('campeonatos/<int:campeonato_id>/ativar/', views.definir_campeonato_ativo, name='definir_campeonato_ativo'),
     path('campeonatos/<int:campeonato_id>/academias/', views.gerenciar_academias_campeonato, name='gerenciar_academias_campeonato'),
     path('campeonatos/<int:campeonato_id>/senhas/', views.gerenciar_senhas_campeonato, name='gerenciar_senhas_campeonato'),
-    
-    # Módulo de Login de Academia
-    path('login/', views.selecionar_tipo_login, name='selecionar_tipo_login'),
     path('login/operacional/', views.login_operacional, name='login_operacional'),
     path('logout/', views.logout_geral, name='logout_geral'),
     path('academia/login/', views.academia_login, name='academia_login'),

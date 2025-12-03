@@ -781,6 +781,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    {% block navbar %}
     <!-- Navbar Responsiva -->
     <nav class="navbar navbar-expand-lg navbar-shiai">
         <div class="container-fluid" style="max-width: 100%; padding: 0 var(--spacing-4);">
@@ -809,7 +810,9 @@
             </ul>
         </div>
     </nav>
+    {% endblock %}
 
+    {% block sidebar %}
     <!-- Dark Overlay -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -875,6 +878,7 @@
             </ul>
         </nav>
     </aside>
+    {% endblock %}
 
     {% if messages %}
         <div style="position: fixed; top: var(--spacing-4); left: var(--spacing-4); right: var(--spacing-4); z-index: 1050; max-width: 600px; margin: 0 auto;">

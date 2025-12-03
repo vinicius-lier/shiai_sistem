@@ -1,4 +1,5 @@
 {% load static %}
+{% load tenant_tags %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -1597,7 +1598,7 @@
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}" href="{% url 'administracao_relatorios' %}">Relatórios</a></li>
                                 {% if user.is_authenticated %}
-                                    {% if user.perfil_operacional and user.perfil_operacional.pode_criar_usuarios %}
+                                    {% if user|pode_gerenciar_usuarios %}
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}" href="{% url 'gerenciar_usuarios_operacionais' %}">Usuários Operacionais</a></li>
                                     {% endif %}
@@ -1790,7 +1791,7 @@
                                 <a href="{% url 'administracao_relatorios' %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}">Relatórios</a>
                             </li>
                             {% if user.is_authenticated %}
-                                {% if user.perfil_operacional and user.perfil_operacional.pode_criar_usuarios %}
+                                {% if user|pode_gerenciar_usuarios %}
                                 <li><div class="sidebar-submenu-divider"></div></li>
                                 <li class="nav-item">
                                     <a href="{% url 'gerenciar_usuarios_operacionais' %}" class="nav-link {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}">Usuários Operacionais</a>

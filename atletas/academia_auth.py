@@ -108,23 +108,40 @@ def pode_resetar_required(view_func):
 
 
 def pode_criar_usuarios_required(view_func):
-    """Decorator para verificar se o usuário pode criar outros usuários"""
+    """Decorator para verificar se o usuário pode criar outros usuários
+    Permite acesso para:
+    - Superusers (is_superuser = True)
+    - Usuários com organizador (user.profile.organizador)
+    - Usuários com perfil_operacional.pode_criar_usuarios = True
+    """
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             messages.error(request, 'Você precisa estar autenticado.')
             return redirect('login_operacional')
         
+        # Superusers sempre têm acesso
+        if request.user.is_superuser:
+            return view_func(request, *args, **kwargs)
+        
+        # Usuários com organizador têm acesso
+        try:
+            if hasattr(request.user, 'profile') and request.user.profile.organizador:
+                return view_func(request, *args, **kwargs)
+        except Exception:
+            pass
+        
+        # Usuários com perfil operacional e permissão específica
         try:
             perfil = request.user.perfil_operacional
-            if not perfil.pode_criar_usuarios:
-                messages.error(request, 'Você não tem permissão para criar usuários operacionais.')
-                return redirect('index')
+            if perfil.pode_criar_usuarios:
+                return view_func(request, *args, **kwargs)
         except UsuarioOperacional.DoesNotExist:
-            messages.error(request, 'Você não tem permissão para criar usuários operacionais.')
-            return redirect('index')
+            pass
         
-        return view_func(request, *args, **kwargs)
+        # Se chegou aqui, não tem permissão
+        messages.error(request, 'Você não tem permissão para criar usuários operacionais.')
+        return redirect('index')
     
     return _wrapped_view
 

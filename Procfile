@@ -1,1 +1,1 @@
-web: gunicorn judocomp.wsgi
+web: gunicorn judocomp.wsgi --config gunicorn.conf.py

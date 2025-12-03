@@ -50,90 +50,117 @@ def selecionar_tipo_login(request):
 
 def login_operacional(request):
     """Login operacional - SEMPRE exige usuário e senha do Django (sem cache, sem login automático)"""
-    # Se está logado como academia, redirecionar
-    if request.session.get('academia_id'):
-        return redirect('academia_painel')
+    import logging
+    logger = logging.getLogger('atletas')
     
-    # Se já está autenticado, verificar perfil e redirecionar
-    # IMPORTANTE: Mesmo autenticado, se a sessão expirar, será redirecionado aqui novamente
-    if request.user.is_authenticated:
-        try:
-            perfil = request.user.perfil_operacional
-            
-            # Verificar se está ativo
-            if not perfil.ativo:
-                django_logout(request)
-                messages.error(request, 'Seu acesso operacional foi desativado.')
-                return render(request, 'atletas/login_operacional.html')
-            
-            # Verificar expiração (apenas para usuários temporários)
-            # Usuários com data_expiracao=None são vitalícios e nunca expiram
-            if perfil.esta_expirado:
-                django_logout(request)
-                messages.error(request, f'Seu acesso operacional expirou em {perfil.data_expiracao.strftime("%d/%m/%Y")}.')
-                return render(request, 'atletas/login_operacional.html')
-            
-            # Usuário válido e autenticado - redirecionar para dashboard
-            return redirect('index')
-        except UsuarioOperacional.DoesNotExist:
-            # Usuário não tem perfil operacional - permitir criar ao fazer login
-            pass
-    
-    if request.method == 'POST':
-        username = request.POST.get('username', '').strip()
-        password = request.POST.get('password', '').strip()
+    try:
+        # Se está logado como academia, redirecionar
+        if request.session.get('academia_id'):
+            return redirect('academia_painel')
         
-        if not username or not password:
-            messages.error(request, 'Por favor, preencha usuário e senha.')
-            return render(request, 'atletas/login_operacional.html')
-        
-        # Autenticar usuário (sem cache, sem login automático)
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
-            # Verificar perfil operacional e status
+        # Se já está autenticado, verificar perfil e redirecionar
+        # IMPORTANTE: Mesmo autenticado, se a sessão expirar, será redirecionado aqui novamente
+        if request.user.is_authenticated:
             try:
-                perfil = user.perfil_operacional
+                perfil = request.user.perfil_operacional
                 
                 # Verificar se está ativo
                 if not perfil.ativo:
+                    django_logout(request)
                     messages.error(request, 'Seu acesso operacional foi desativado.')
                     return render(request, 'atletas/login_operacional.html')
                 
                 # Verificar expiração (apenas para usuários temporários)
                 # Usuários com data_expiracao=None são vitalícios e nunca expiram
                 if perfil.esta_expirado:
+                    django_logout(request)
                     messages.error(request, f'Seu acesso operacional expirou em {perfil.data_expiracao.strftime("%d/%m/%Y")}.')
                     return render(request, 'atletas/login_operacional.html')
                 
+                # Usuário válido e autenticado - redirecionar para dashboard
+                return redirect('index')
             except UsuarioOperacional.DoesNotExist:
-                # Usuário não tem perfil operacional - criar um padrão (30 dias, temporário)
-                from datetime import timedelta
-                perfil = UsuarioOperacional.objects.create(
-                    user=user,
-                    pode_resetar_campeonato=False,
-                    pode_criar_usuarios=False,
-                    data_expiracao=timezone.now() + timedelta(days=30),  # Temporário por padrão
-                    ativo=True
-                )
-                messages.info(request, 'Perfil operacional criado. Acesso válido por 30 dias.')
+                # Usuário não tem perfil operacional - permitir criar ao fazer login
+                pass
+            except Exception as e:
+                logger.error(f'Erro ao verificar perfil operacional: {str(e)}', exc_info=True)
+                messages.error(request, 'Erro ao verificar perfil. Tente novamente.')
+                return render(request, 'atletas/login_operacional.html')
+        
+        if request.method == 'POST':
+            # Verificar CSRF token
+            if not request.POST.get('csrfmiddlewaretoken'):
+                logger.error('CSRF token ausente no POST')
+                messages.error(request, 'Erro de segurança. Recarregue a página e tente novamente.')
+                return render(request, 'atletas/login_operacional.html')
             
-            # Fazer login (sem cache, sem login automático)
-            # A sessão expira conforme configuração do Django (SESSION_COOKIE_AGE)
-            django_login(request, user)
+            username = request.POST.get('username', '').strip()
+            password = request.POST.get('password', '').strip()
             
-            # Limpar qualquer flag de validação de senha operacional (não usamos mais)
-            if 'senha_operacional_validada' in request.session:
-                del request.session['senha_operacional_validada']
+            if not username or not password:
+                messages.error(request, 'Por favor, preencha usuário e senha.')
+                return render(request, 'atletas/login_operacional.html')
             
-            messages.success(request, f'Bem-vindo, {user.username}!')
-            return redirect('index')
-        else:
-            messages.error(request, 'Usuário ou senha incorretos.')
-            return render(request, 'atletas/login_operacional.html')
-    
-    # GET: Sempre mostrar tela de login (nunca permitir acesso direto)
-    return render(request, 'atletas/login_operacional.html')
+            try:
+                # Autenticar usuário (sem cache, sem login automático)
+                user = authenticate(request, username=username, password=password)
+                
+                if user is not None:
+                    # Verificar perfil operacional e status
+                    try:
+                        perfil = user.perfil_operacional
+                        
+                        # Verificar se está ativo
+                        if not perfil.ativo:
+                            messages.error(request, 'Seu acesso operacional foi desativado.')
+                            return render(request, 'atletas/login_operacional.html')
+                        
+                        # Verificar expiração (apenas para usuários temporários)
+                        # Usuários com data_expiracao=None são vitalícios e nunca expiram
+                        if perfil.esta_expirado:
+                            messages.error(request, f'Seu acesso operacional expirou em {perfil.data_expiracao.strftime("%d/%m/%Y")}.')
+                            return render(request, 'atletas/login_operacional.html')
+                        
+                    except UsuarioOperacional.DoesNotExist:
+                        # Usuário não tem perfil operacional - criar um padrão (30 dias, temporário)
+                        from datetime import timedelta
+                        perfil = UsuarioOperacional.objects.create(
+                            user=user,
+                            pode_resetar_campeonato=False,
+                            pode_criar_usuarios=False,
+                            data_expiracao=timezone.now() + timedelta(days=30),  # Temporário por padrão
+                            ativo=True
+                        )
+                        messages.info(request, 'Perfil operacional criado. Acesso válido por 30 dias.')
+                    except Exception as e:
+                        logger.error(f'Erro ao criar/verificar perfil: {str(e)}', exc_info=True)
+                        messages.error(request, 'Erro ao processar perfil. Tente novamente.')
+                        return render(request, 'atletas/login_operacional.html')
+                    
+                    # Fazer login (sem cache, sem login automático)
+                    # A sessão expira conforme configuração do Django (SESSION_COOKIE_AGE)
+                    django_login(request, user)
+                    
+                    # Limpar qualquer flag de validação de senha operacional (não usamos mais)
+                    if 'senha_operacional_validada' in request.session:
+                        del request.session['senha_operacional_validada']
+                    
+                    messages.success(request, f'Bem-vindo, {user.username}!')
+                    return redirect('index')
+                else:
+                    messages.error(request, 'Usuário ou senha incorretos.')
+                    return render(request, 'atletas/login_operacional.html')
+            except Exception as e:
+                logger.error(f'Erro ao autenticar usuário: {str(e)}', exc_info=True)
+                messages.error(request, 'Erro ao processar login. Tente novamente.')
+                return render(request, 'atletas/login_operacional.html')
+        
+        # GET: Sempre mostrar tela de login (nunca permitir acesso direto)
+        return render(request, 'atletas/login_operacional.html')
+    except Exception as e:
+        logger.error(f'Erro geral em login_operacional: {str(e)}', exc_info=True)
+        messages.error(request, 'Erro inesperado. Tente novamente.')
+        return render(request, 'atletas/login_operacional.html')
 
 def logout_geral(request):
     """Realiza o logout tanto da sessão de academia quanto da sessão operacional - SEM cache, SEM login automático"""

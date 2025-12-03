@@ -4608,8 +4608,27 @@ def gerenciar_usuarios_operacionais(request):
             logger.error(f'Erro ao gerenciar usuário operacional: {str(e)}', exc_info=True)
             messages.error(request, f'Erro ao processar solicitação: {str(e)}')
     
-    # GET: Listar todos os usuários operacionais
-    usuarios_operacionais = UsuarioOperacional.objects.select_related('user').all().order_by('-user__date_joined')
+    # GET: Listar todos os usuários operacionais (exceto o usuário atual)
+    usuarios_operacionais = UsuarioOperacional.objects.select_related('user').exclude(
+        user=request.user
+    ).order_by('-user__date_joined')
+    
+    # Garantir que o usuário atual tenha perfil operacional vitalício
+    try:
+        perfil_atual = request.user.perfil_operacional
+        # Se não for vitalício, tornar vitalício
+        if perfil_atual.data_expiracao is not None:
+            perfil_atual.data_expiracao = None
+            perfil_atual.save()
+    except UsuarioOperacional.DoesNotExist:
+        # Criar perfil operacional vitalício para o usuário atual
+        UsuarioOperacional.objects.create(
+            user=request.user,
+            pode_resetar_campeonato=True,
+            pode_criar_usuarios=True,
+            data_expiracao=None,  # Vitalício
+            ativo=True
+        )
     
     return render(request, 'atletas/administracao/gerenciar_usuarios.html', {
         'usuarios_operacionais': usuarios_operacionais

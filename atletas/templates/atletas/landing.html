@@ -20,9 +20,21 @@
       color: #111827;
       background-color: #ffffff;
     }
+    .navbar-brand {
+      color: #111827 !important;
+      text-decoration: none;
+    }
     .navbar-brand span {
       font-weight: 700;
       letter-spacing: 0.06em;
+      color: #111827 !important;
+      font-size: 1.1rem;
+    }
+    .navbar-brand:hover {
+      color: #111827 !important;
+    }
+    .navbar-brand:hover span {
+      color: #111827 !important;
     }
     .btn-primary-custom {
       background: linear-gradient(135deg, var(--accent), var(--accent-dark));
@@ -37,13 +49,26 @@
       transform: translateY(-1px);
     }
     .btn-outline-custom {
-      border-color: #e5e7eb;
-      color: #111827;
+      border: 2px solid #e5e7eb;
+      background-color: transparent;
+      color: #111827 !important;
+      font-weight: 600;
     }
     .btn-outline-custom:hover {
       border-color: var(--accent);
-      color: #111827;
+      color: #111827 !important;
       background-color: #fffbeb;
+    }
+    /* Ajuste para botão outline no hero (fundo escuro) */
+    .hero .btn-outline-custom {
+      border-color: rgba(255, 255, 255, 0.3);
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #ffffff !important;
+    }
+    .hero .btn-outline-custom:hover {
+      border-color: var(--accent);
+      background-color: rgba(251, 191, 36, 0.2);
+      color: #ffffff !important;
     }
     .btn-access-system {
       background: linear-gradient(135deg, #111827, #1f2937);
@@ -224,9 +249,9 @@
   <!-- NAVBAR -->
   <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
     <div class="container py-2">
-      <a class="navbar-brand d-flex align-items-center gap-2" href="#top">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#top" style="text-decoration: none;">
         <img src="{% static 'atletas/images/logo_black.png' %}" alt="Shiai System" width="38" height="38" class="rounded-circle border border-1 border-dark-subtle object-fit-cover">
-        <span>SHIAI SYSTEM</span>
+        <span style="color: #111827; font-weight: 700; letter-spacing: 0.06em; font-size: 1.1rem;">SHIAI SYSTEM</span>
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
         <span class="navbar-toggler-icon"></span>

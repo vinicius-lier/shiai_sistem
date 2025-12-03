@@ -534,12 +534,13 @@ def cadastrar_academia(request):
             # Vincular automaticamente ao campeonato ativo (se houver) e gerar senha
             campeonato_ativo = Campeonato.objects.filter(ativo=True).first()
             if campeonato_ativo:
-                # Vincular ao campeonato
-                AcademiaCampeonato.objects.get_or_create(
-                    academia=academia,
-                    campeonato=campeonato_ativo,
-                    defaults={'permitido': True}
-                )
+                # Vincular ao campeonato (verificar se já existe antes)
+                if not AcademiaCampeonato.objects.filter(academia=academia, campeonato=campeonato_ativo).exists():
+                    AcademiaCampeonato.objects.create(
+                        academia=academia,
+                        campeonato=campeonato_ativo,
+                        permitido=True
+                    )
                 
                 # Gerar senha temporária para o campeonato
                 import random
@@ -607,6 +608,52 @@ def detalhe_academia(request, academia_id):
     }
     
     return render(request, 'atletas/detalhe_academia.html', context)
+
+@operacional_required
+def deletar_academia(request, academia_id):
+    """Deletar academia"""
+    academia = get_object_or_404(Academia, id=academia_id)
+    
+    if request.method == 'POST':
+        try:
+            nome_academia = academia.nome
+            
+            # Verificar se há atletas vinculados
+            total_atletas = Atleta.objects.filter(academia=academia).count()
+            if total_atletas > 0:
+                messages.error(request, f'Não é possível excluir a academia "{nome_academia}" pois ela possui {total_atletas} atleta(s) vinculado(s). Remova os atletas primeiro.')
+                return redirect('detalhe_academia', academia_id=academia_id)
+            
+            # Verificar se há inscrições em campeonatos
+            total_inscricoes = Inscricao.objects.filter(atleta__academia=academia).count()
+            if total_inscricoes > 0:
+                messages.error(request, f'Não é possível excluir a academia "{nome_academia}" pois ela possui {total_inscricoes} inscrição(ões) em campeonatos.')
+                return redirect('detalhe_academia', academia_id=academia_id)
+            
+            # Deletar vínculos com campeonatos
+            AcademiaCampeonato.objects.filter(academia=academia).delete()
+            AcademiaCampeonatoSenha.objects.filter(academia=academia).delete()
+            
+            # Deletar a academia
+            academia.delete()
+            
+            messages.success(request, f'Academia "{nome_academia}" excluída com sucesso!')
+            return redirect('lista_academias')
+        except Exception as e:
+            messages.error(request, f'Erro ao excluir academia: {str(e)}')
+            return redirect('detalhe_academia', academia_id=academia_id)
+    
+    # GET: Mostrar confirmação
+    total_atletas = Atleta.objects.filter(academia=academia).count()
+    total_inscricoes = Inscricao.objects.filter(atleta__academia=academia).count()
+    
+    context = {
+        'academia': academia,
+        'total_atletas': total_atletas,
+        'total_inscricoes': total_inscricoes,
+    }
+    
+    return render(request, 'atletas/deletar_academia.html', context)
 
 @operacional_required
 def editar_academia(request, academia_id):
@@ -2741,15 +2788,16 @@ def gerenciar_academias_campeonato(request, campeonato_id):
             if academia_id:
                 try:
                     academia = get_object_or_404(Academia, id=academia_id)
-                    vinculo, created = AcademiaCampeonato.objects.get_or_create(
-                        academia=academia,
-                        campeonato=campeonato,
-                        defaults={'permitido': True}
-                    )
-                    if created:
-                        messages.success(request, f'Academia "{academia.nome}" adicionada ao campeonato.')
+                    # Verificar se já existe vínculo
+                    if AcademiaCampeonato.objects.filter(academia=academia, campeonato=campeonato).exists():
+                        messages.warning(request, f'Academia "{academia.nome}" já está vinculada a este campeonato.')
                     else:
-                        messages.info(request, f'Academia "{academia.nome}" já está vinculada ao campeonato.')
+                        AcademiaCampeonato.objects.create(
+                            academia=academia,
+                            campeonato=campeonato,
+                            permitido=True
+                        )
+                        messages.success(request, f'Academia "{academia.nome}" adicionada ao campeonato.')
                 except Exception as e:
                     messages.error(request, f'Erro ao adicionar academia: {str(e)}')
         

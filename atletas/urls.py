@@ -13,6 +13,7 @@ urlpatterns = [
     path('academias/cadastrar/', views.cadastrar_academia, name='cadastrar_academia'),
     path('academias/<int:academia_id>/', views.detalhe_academia, name='detalhe_academia'),
     path('academias/<int:academia_id>/editar/', views.editar_academia, name='editar_academia'),
+    path('academias/<int:academia_id>/deletar/', views.deletar_academia, name='deletar_academia'),
     
     # Categorias
     path('categorias/', views.lista_categorias, name='lista_categorias'),

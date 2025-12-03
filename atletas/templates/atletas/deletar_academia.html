@@ -1,0 +1,77 @@
+{% extends 'atletas/base.html' %}
+
+{% block title %}Excluir Academia - {{ academia.nome }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: var(--spacing-8) auto; padding: 0 var(--spacing-4);">
+    <div class="card" style="border-color: var(--color-danger);">
+        <div class="card-header" style="background: var(--color-danger-light); border-bottom-color: var(--color-danger);">
+            <h2 class="card-title" style="color: var(--color-danger);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle; margin-right: var(--spacing-2);">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Excluir Academia
+            </h2>
+        </div>
+        <div class="card-body" style="padding: var(--spacing-6);">
+            <div style="text-align: center; margin-bottom: var(--spacing-6);">
+                <h3 style="margin: 0 0 var(--spacing-2) 0; color: var(--color-gray-900);">{{ academia.nome }}</h3>
+                <p style="color: var(--color-gray-600); margin: 0;">{{ academia.cidade }}, {{ academia.estado }}</p>
+            </div>
+            
+            {% if total_atletas > 0 or total_inscricoes > 0 %}
+            <div class="card" style="background: var(--color-warning-light); border-color: var(--color-warning); margin-bottom: var(--spacing-6);">
+                <div class="card-body" style="padding: var(--spacing-4);">
+                    <p style="margin: 0; color: var(--color-gray-800); font-weight: 500;">
+                        <strong>⚠️ Não é possível excluir esta academia:</strong>
+                    </p>
+                    <ul style="margin: var(--spacing-2) 0 0 0; padding-left: var(--spacing-6); color: var(--color-gray-700);">
+                        {% if total_atletas > 0 %}
+                        <li>{{ total_atletas }} atleta(s) vinculado(s)</li>
+                        {% endif %}
+                        {% if total_inscricoes > 0 %}
+                        <li>{{ total_inscricoes }} inscrição(ões) em campeonatos</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="{% url 'detalhe_academia' academia.id %}" class="btn btn-secondary">
+                    Voltar
+                </a>
+            </div>
+            {% else %}
+            <div class="card" style="background: var(--color-danger-light); border-color: var(--color-danger); margin-bottom: var(--spacing-6);">
+                <div class="card-body" style="padding: var(--spacing-4);">
+                    <p style="margin: 0; color: var(--color-gray-800); font-weight: 500;">
+                        <strong>⚠️ Atenção:</strong> Esta ação não pode ser desfeita!
+                    </p>
+                    <p style="margin: var(--spacing-2) 0 0 0; color: var(--color-gray-700); font-size: var(--font-size-sm);">
+                        Todos os vínculos com campeonatos e senhas serão removidos permanentemente.
+                    </p>
+                </div>
+            </div>
+            
+            <form method="post" style="margin: 0;">
+                {% csrf_token %}
+                <div style="display: flex; gap: var(--spacing-3); justify-content: center;">
+                    <a href="{% url 'detalhe_academia' academia.id %}" class="btn btn-secondary" style="flex: 1;">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn" style="flex: 1; background: var(--color-danger); color: white; border-color: var(--color-danger);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: var(--spacing-2);">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Confirmar Exclusão
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -24,8 +24,10 @@ urlpatterns = [
     path('', include('atletas.urls')),
 ]
 
-# Servir arquivos estáticos e media em desenvolvimento
+# Servir MEDIA sempre (inclusive produção Render)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Manter staticfiles patterns SOMENTE se DEBUG=True
 if settings.DEBUG:
     from django.contrib.staticfiles.urls import staticfiles_urlpatterns
     urlpatterns += staticfiles_urlpatterns()
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

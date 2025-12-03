@@ -1,3 +1,5 @@
+{% load static %}
+
 <div class="kpi-card" data-kpi="{{ kpi_id|default:'kpi' }}" style="cursor: pointer;" onclick="{% if drilldown_url %}window.location.href='{{ drilldown_url }}'{% endif %}">
     <div class="kpi-card-content">
         <div class="kpi-card-icon" style="background: {{ icon_bg|default:'var(--color-primary-light)' }}; color: {{ icon_color|default:'var(--color-primary)' }};">

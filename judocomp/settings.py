@@ -195,7 +195,6 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # STATICFILES_DIRS: Onde o Django procura arquivos estáticos antes de coletar
-# Os arquivos do app 'atletas' estão em atletas/static/ (descobertos automaticamente)
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]

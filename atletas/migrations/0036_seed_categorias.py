@@ -28,6 +28,7 @@ def seed_categorias(apps, schema_editor):
     ]
 
     for classe in classes:
+        classe_id = classe.id  # Usar ID diretamente para evitar problemas com ForeignKey em migrations
         for sexo in ["M", "F"]:
             for nome, minimo, maximo in pesos:
                 if maximo is not None:
@@ -35,10 +36,10 @@ def seed_categorias(apps, schema_editor):
                 else:
                     label = f"{classe.nome} - {sexo} - {nome} (+{minimo}kg)"
 
-                # Verificar se já existe
+                # Verificar se já existe usando classe_id
                 try:
                     categoria = Categoria.objects.get(
-                        classe=classe,
+                        classe_id=classe_id,
                         sexo=sexo,
                         categoria_nome=nome
                     )
@@ -48,9 +49,9 @@ def seed_categorias(apps, schema_editor):
                     categoria.label = label
                     categoria.save()
                 except Categoria.DoesNotExist:
-                    # Criar explicitamente com todos os campos
+                    # Criar explicitamente usando classe_id ao invés do objeto classe
                     Categoria.objects.create(
-                        classe=classe,
+                        classe_id=classe_id,
                         sexo=sexo,
                         categoria_nome=nome,
                         limite_min=Decimal(str(minimo)),

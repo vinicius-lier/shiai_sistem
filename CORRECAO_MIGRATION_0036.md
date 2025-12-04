@@ -34,9 +34,11 @@ Categoria.objects.get_or_create(
 ### Código Depois (Corrigido):
 
 ```python
+classe_id = classe.id  # Usar ID diretamente para evitar problemas com ForeignKey em migrations
+
 try:
     categoria = Categoria.objects.get(
-        classe=classe,
+        classe_id=classe_id,  # Usar classe_id ao invés de classe
         sexo=sexo,
         categoria_nome=nome
     )
@@ -46,9 +48,9 @@ try:
     categoria.label = label
     categoria.save()
 except Categoria.DoesNotExist:
-    # Criar explicitamente com todos os campos
+    # Criar explicitamente usando classe_id
     Categoria.objects.create(
-        classe=classe,
+        classe_id=classe_id,  # Usar classe_id ao invés de classe
         sexo=sexo,
         categoria_nome=nome,
         limite_min=Decimal(str(minimo)),
@@ -96,6 +98,8 @@ Após aplicar a correção, verifique:
 ## 📝 Notas Técnicas
 
 - O problema ocorria especificamente com ForeignKeys em migrations usando `apps.get_model()`
+- **Solução final**: Usar `classe_id` (ID do ForeignKey) ao invés do objeto `classe` diretamente
+- Em migrations históricas, é mais seguro usar IDs diretamente para ForeignKeys
 - A abordagem explícita (`get()` + `create()`) é mais robusta e previsível
 - A migration também inclui verificação para garantir que existem classes antes de criar categorias
 

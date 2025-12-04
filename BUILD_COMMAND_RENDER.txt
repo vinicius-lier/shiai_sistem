@@ -1,23 +1,8 @@
-# ⚠️ BUILD COMMAND PARA O RENDER - COPIE E COLE NO PAINEL DO RENDER ⚠️
-# 
-# Acesse: https://dashboard.render.com → Seu serviço → Settings → Build & Deploy
-# Cole o comando abaixo no campo "Build Command"
-#
-# ============================================================================
-# COMANDO COMPLETO (COPIE TUDO):
-# ============================================================================
+# Build Command para configurar no Render
+# Copie e cole este comando no campo "Build Command" do Render
 
-mkdir -p /var/data && chmod 755 /var/data && touch /var/data/db.sqlite3 && chmod 644 /var/data/db.sqlite3 && pip install -r requirements.txt && python manage.py migrate --noinput --run-syncdb --skip-checks && python manage.py collectstatic --noinput --clear --skip-checks
+# ⚠️ IMPORTANTE: /var/data NÃO está disponível durante o build (read-only file system)
+# O banco será criado automaticamente quando o Django iniciar no runtime
+# Use --skip-checks para evitar que o Django tente acessar o banco durante o build
 
-# ============================================================================
-# OU USE O BUILD.SH (ALTERNATIVA):
-# ============================================================================
-
-chmod +x build.sh && ./build.sh
-
-# ============================================================================
-# ⚠️ CRÍTICO: 
-# - O arquivo /var/data/db.sqlite3 DEVE ser criado ANTES de qualquer comando Django
-# - O Django executa verificações automáticas que tentam acessar o banco
-# - Use --skip-checks para evitar verificação de banco durante migrate e collectstatic
-# ============================================================================
+pip install -r requirements.txt && python manage.py migrate --noinput --skip-checks && python manage.py collectstatic --noinput --clear --skip-checks

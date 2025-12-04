@@ -1,8 +1,6 @@
-
 {% extends 'atletas/base.html' %}
 {% load static %}
 
-<<<<<<< HEAD
 {% block title %}Cadastrar Categoria - Sistema de Gestão de Competições de Judô{% endblock %}
 
 {% block content %}
@@ -16,9 +14,9 @@
         <h3 class="card-title">Informações da Categoria</h3>
     </div>
     <div class="card-body">
-<form method="post">
-    {% csrf_token %}
-    
+        <form method="post">
+            {% csrf_token %}
+            
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
                 <div class="form-group">
                     <label class="form-label" for="classe">
@@ -35,26 +33,10 @@
                         <span style="color: var(--color-danger);">*</span>
                     </label>
                     <select id="sexo" name="sexo" class="form-select" required>
-=======
-{% block title %}Cadastrar Categoria{% endblock %}
-
-{% block content %}
-<h1>Cadastrar Categoria</h1>
-
-<form method="post">
-    {% csrf_token %}
-    
-    <label for="classe">Classe:</label>
-    <input type="text" id="classe" name="classe" placeholder="Ex: SUB 9, SUB 11, SUB 13..." required>
-    
-    <label for="sexo">Sexo:</label>
-    <select id="sexo" name="sexo" required>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
-        <option value="">Selecione</option>
-        <option value="M">Masculino</option>
-        <option value="F">Feminino</option>
-    </select>
-<<<<<<< HEAD
+                        <option value="">Selecione</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Feminino</option>
+                    </select>
                 </div>
                 
                 <div class="form-group">
@@ -99,28 +81,7 @@
                     Cadastrar Categoria
                 </button>
             </div>
-</form>
+        </form>
     </div>
 </div>
 {% endblock %}
-=======
-    
-    <label for="categoria_nome">Nome da Categoria:</label>
-    <input type="text" id="categoria_nome" name="categoria_nome" placeholder="Ex: Meio Leve, Leve, Médio..." required>
-    
-    <label for="limite_min">Limite Mínimo (kg):</label>
-    <input type="number" id="limite_min" name="limite_min" step="0.1" min="0" required>
-    
-    <label for="limite_max">Limite Máximo (kg):</label>
-    <input type="number" id="limite_max" name="limite_max" step="0.1" min="0" required>
-    
-    <label for="label">Label Completo:</label>
-    <input type="text" id="label" name="label" placeholder="Ex: SUB 11 - Meio Leve" required>
-    
-    <button type="submit">Cadastrar Categoria</button>
-</form>
-
-<a href="{% url 'lista_categorias' %}" class="btn">Voltar para Lista</a>
-{% endblock %}
-
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17

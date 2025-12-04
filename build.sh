@@ -10,6 +10,14 @@ echo "🚀 Iniciando build do projeto..."
 echo "📦 Instalando dependências Python..."
 pip install -r requirements.txt
 
+# Garantir que a pasta do banco existe (importante para Render)
+echo "📁 Garantindo que a pasta do banco de dados existe..."
+if [ -n "$RENDER" ]; then
+    mkdir -p /var/data
+    chmod -R 755 /var/data
+    echo "✅ Pasta /var/data criada"
+fi
+
 # Aplicar migrations (forçar aplicação de todas)
 echo "🗄️  Aplicando migrations do banco de dados..."
 python manage.py migrate --noinput --run-syncdb

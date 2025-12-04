@@ -6,13 +6,16 @@ set -e  # Parar em caso de erro
 
 echo "🚀 Iniciando build do projeto..."
 
-# CRÍTICO: Criar pasta /var/data ANTES de qualquer comando Django
+# CRÍTICO: Criar pasta /var/data e arquivo do banco ANTES de qualquer comando Django
 # O Django executa verificações automáticas que tentam acessar o banco
-echo "📁 Criando pasta /var/data (CRÍTICO - deve ser primeiro)..."
+echo "📁 Criando pasta /var/data e arquivo do banco (CRÍTICO - deve ser primeiro)..."
 if [ -n "$RENDER" ]; then
     mkdir -p /var/data
     chmod -R 755 /var/data
-    echo "✅ Pasta /var/data criada"
+    # Criar arquivo do banco vazio para evitar erro durante verificações do Django
+    touch /var/data/db.sqlite3
+    chmod 644 /var/data/db.sqlite3
+    echo "✅ Pasta /var/data e arquivo do banco criados"
 else
     # Em desenvolvimento local, garantir que a pasta existe
     mkdir -p media

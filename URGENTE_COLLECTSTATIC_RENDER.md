@@ -23,10 +23,10 @@ Os logs mostram:
 **Configure para:**
 
 ```bash
-mkdir -p /var/data && chmod -R 755 /var/data && pip install -r requirements.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear
+mkdir -p /var/data && chmod -R 755 /var/data && touch /var/data/db.sqlite3 && chmod 644 /var/data/db.sqlite3 && pip install -r requirements.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear
 ```
 
-⚠️ **CRÍTICO:** A pasta `/var/data` DEVE ser criada PRIMEIRO, antes de qualquer comando Django, pois o Django executa verificações automáticas que tentam acessar o banco.
+⚠️ **CRÍTICO:** A pasta `/var/data` e o arquivo do banco DEEM ser criados PRIMEIRO, antes de qualquer comando Django, pois o Django executa verificações automáticas que tentam acessar o banco.
 
 **OU use o build.sh:**
 

@@ -124,7 +124,7 @@ if DATABASE_URL:
         )
     }
 else:
-    # Desenvolvimento local: usar SQLite
+    # Desenvolvimento local: usar SQLite como padrão
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',

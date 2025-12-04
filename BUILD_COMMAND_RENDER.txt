@@ -1,6 +1,8 @@
 # Build Command para configurar no Render
 # Copie e cole este comando no campo "Build Command" do Render
 
-# Criar pasta /var/data e arquivo do banco ANTES de qualquer comando Django
-mkdir -p /var/data && chmod -R 755 /var/data && touch /var/data/db.sqlite3 && chmod 644 /var/data/db.sqlite3 && pip install -r requirements.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear
+# Opção 1: Usar o build.sh (RECOMENDADO)
+chmod +x build.sh && ./build.sh
 
+# Opção 2: Comando direto (alternativa)
+mkdir -p /var/data && chmod -R 755 /var/data && touch /var/data/db.sqlite3 && chmod 644 /var/data/db.sqlite3 && pip install -r requirements.txt && python manage.py migrate --noinput --run-syncdb --skip-checks && python manage.py collectstatic --noinput --clear --skip-checks

@@ -22,6 +22,15 @@ python manage.py showmigrations | grep "\[ \]" || echo "✅ Todas as migrations 
 echo "📁 Coletando arquivos estáticos..."
 python manage.py collectstatic --noinput --clear
 
+# Verificar se os logos foram coletados
+echo "🔍 Verificando se logos foram coletados..."
+if [ -f "staticfiles/img/logo_white.png" ] && [ -f "staticfiles/img/logo_black.png" ]; then
+    echo "✅ Logos coletados com sucesso"
+else
+    echo "⚠️  Aviso: Logos não encontrados em staticfiles/img/"
+    ls -la staticfiles/img/ 2>/dev/null || echo "Pasta staticfiles/img/ não existe"
+fi
+
 # Garantir que a pasta media existe (importante para Render)
 echo "📁 Garantindo que a pasta MEDIA existe..."
 if [ -n "$RENDER" ]; then

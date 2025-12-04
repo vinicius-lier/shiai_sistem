@@ -205,6 +205,10 @@ STATICFILES_DIRS = [
 # CompressedManifestStaticFilesStorage pode causar problemas com manifest.json
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
+# Configuração adicional do WhiteNoise para garantir que arquivos sejam servidos
+WHITENOISE_ROOT = None  # Não usar root customizado
+WHITENOISE_USE_FINDERS = False  # Não usar finders (arquivos já coletados em STATIC_ROOT)
+
 # Media files (uploads) – corrigido para Render
 MEDIA_URL = '/media/'
 

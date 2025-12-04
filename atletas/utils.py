@@ -459,7 +459,7 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
         print(f"❌ ERRO: Campeonato não fornecido")
         raise ValueError("Campeonato é obrigatório para gerar chaves")
     
-    # Buscar inscrições aprovadas do campeonato COM PESO CONFIRMADO
+    # Buscar inscrições aprovadas ou confirmadas do campeonato COM PESO CONFIRMADO
     # Filtrar por classe_escolhida, sexo do atleta, e categoria (escolhida ou ajustada)
     # Apenas atletas com peso registrado podem entrar na chave
     print(f"\n🔍 Buscando inscrições...")
@@ -467,7 +467,7 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
         campeonato=campeonato,
         classe_escolhida=classe,
         atleta__sexo=sexo,
-        status_inscricao='aprovado',
+        status_inscricao__in=['aprovado', 'confirmado'],  # Aceita ambos os status
         peso__isnull=False  # Peso deve estar registrado
     ).exclude(
         classe_escolhida='Festival'  # Festival não entra em chaves
@@ -624,8 +624,31 @@ def agrupar_atletas_por_academia(atletas_list):
     return resultado
 
 
+def alternar_lado_kimono(round_num, luta_num):
+    """
+    Alterna os lados do kimono (branco/azul) automaticamente.
+    
+    Regras:
+    - Round 1, luta ímpar: A = Branco, B = Azul
+    - Round 1, luta par: A = Azul, B = Branco (alterna)
+    - Rounds seguintes: alterna baseado na posição na chave
+    
+    Args:
+        round_num: Número do round (1, 2, 3...)
+        luta_num: Número da luta no round (0, 1, 2...)
+    
+    Returns:
+        tuple: (lado_atleta_a, lado_atleta_b)
+    """
+    # Alternância simples: luta ímpar = A branco, luta par = A azul
+    if luta_num % 2 == 0:
+        return ('BRANCO', 'AZUL')
+    else:
+        return ('AZUL', 'BRANCO')
+
+
 def gerar_melhor_de_3(chave, atletas_list):
-    """Gera chave tipo Melhor de 3"""
+    """Gera chave tipo Melhor de 3 com alternância de lados"""
     print(f"   🔧 gerar_melhor_de_3: {len(atletas_list)} atleta(s)")
     
     if len(atletas_list) < 2:
@@ -639,19 +662,24 @@ def gerar_melhor_de_3(chave, atletas_list):
         "lutas_detalhes": {}
     }
     
-    # Criar 3 lutas
+    # Criar 3 lutas com alternância de lados
     print(f"   🔧 Criando 3 lutas entre {atletas_list[0].nome} e {atletas_list[1].nome}")
     for i in range(3):
         try:
+            # Alternar lados: 1ª luta = A branco, 2ª = A azul, 3ª = A branco
+            lado_a, lado_b = alternar_lado_kimono(1, i)
+            
             luta = Luta.objects.create(
                 chave=chave,
                 atleta_a=atletas_list[0],
                 atleta_b=atletas_list[1],
                 round=1,
-                proxima_luta=None
+                proxima_luta=None,
+                lado_atleta_a=lado_a,
+                lado_atleta_b=lado_b
             )
             estrutura["lutas"].append(luta.id)
-            print(f"      ✅ Luta {i+1} criada (ID: {luta.id})")
+            print(f"      ✅ Luta {i+1} criada (ID: {luta.id}) - A: {lado_a}, B: {lado_b}")
         except Exception as e:
             print(f"      ❌ ERRO ao criar luta {i+1}: {str(e)}")
             import traceback
@@ -678,18 +706,25 @@ def gerar_round_robin(chave, atletas_list):
     total_combinacoes = (num_atletas * (num_atletas - 1)) // 2
     print(f"   🔧 Criando {total_combinacoes} combinações de lutas")
     
+    luta_num = 0
     for i in range(num_atletas):
         for j in range(i + 1, num_atletas):
             try:
+                # Alternar lados do kimono
+                lado_a, lado_b = alternar_lado_kimono(1, luta_num)
+                
                 luta = Luta.objects.create(
                     chave=chave,
                     atleta_a=atletas_list[i],
                     atleta_b=atletas_list[j],
                     round=1,
-                    proxima_luta=None
+                    proxima_luta=None,
+                    lado_atleta_a=lado_a,
+                    lado_atleta_b=lado_b
                 )
                 lutas_ids.append(luta.id)
-                print(f"      ✅ Luta criada: {atletas_list[i].nome} vs {atletas_list[j].nome} (ID: {luta.id})")
+                print(f"      ✅ Luta criada: {atletas_list[i].nome} vs {atletas_list[j].nome} (ID: {luta.id}) - A: {lado_a}, B: {lado_b}")
+                luta_num += 1
             except Exception as e:
                 print(f"      ❌ ERRO ao criar luta {atletas_list[i].nome} vs {atletas_list[j].nome}: {str(e)}")
                 import traceback
@@ -751,18 +786,24 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
         atleta_b = atletas_com_bye[i + 1] if i + 1 < len(atletas_organizados) else None
         
         try:
+            # Alternar lados do kimono
+            luta_num = i // 2
+            lado_a, lado_b = alternar_lado_kimono(round_num, luta_num)
+            
             # Criar luta mesmo que um dos atletas seja None (BYE)
             luta = Luta.objects.create(
                 chave=chave,
                 atleta_a=atleta_a,
                 atleta_b=atleta_b,
                 round=round_num,
-                proxima_luta=None
+                proxima_luta=None,
+                lado_atleta_a=lado_a,
+                lado_atleta_b=lado_b
             )
             lutas_round1.append(luta.id)
             nome_a = atleta_a.nome if atleta_a else "BYE"
             nome_b = atleta_b.nome if atleta_b else "BYE"
-            print(f"      ✅ Luta Round {round_num} criada: {nome_a} vs {nome_b} (ID: {luta.id})")
+            print(f"      ✅ Luta Round {round_num} criada: {nome_a} vs {nome_b} (ID: {luta.id}) - A: {lado_a}, B: {lado_b}")
         except Exception as e:
             print(f"      ❌ ERRO ao criar luta Round {round_num}: {str(e)}")
             import traceback
@@ -943,12 +984,18 @@ def gerar_eliminatoria_simples(chave, atletas_list, tamanho_chave=8):
         atleta_a = atletas_com_bye[i] if i < len(atletas_organizados) else None
         atleta_b = atletas_com_bye[i + 1] if i + 1 < len(atletas_organizados) else None
         
+        # Alternar lados do kimono
+        luta_num = i // 2
+        lado_a, lado_b = alternar_lado_kimono(round_num, luta_num)
+        
         luta = Luta.objects.create(
             chave=chave,
             atleta_a=atleta_a,
             atleta_b=atleta_b,
             round=round_num,
-            proxima_luta=None
+            proxima_luta=None,
+            lado_atleta_a=lado_a,
+            lado_atleta_b=lado_b
         )
         lutas_round.append(luta.id)
     
@@ -1075,14 +1122,17 @@ def gerar_chave_escolhida(chave, atletas_list, modelo_chave):
                 "lutas": [],
                 "lutas_detalhes": {}
             }
-            # Criar 3 lutas
+            # Criar 3 lutas com alternância de lados
             for i in range(3):
+                lado_a, lado_b = alternar_lado_kimono(1, i)
                 luta = Luta.objects.create(
                     chave=chave,
                     atleta_a=atletas_para_luta[0],
                     atleta_b=atletas_para_luta[1],
                     round=1,
-                    proxima_luta=None
+                    proxima_luta=None,
+                    lado_atleta_a=lado_a,
+                    lado_atleta_b=lado_b
                 )
                 estrutura["lutas"].append(luta.id)
             return estrutura
@@ -1105,12 +1155,15 @@ def gerar_chave_escolhida(chave, atletas_list, modelo_chave):
                 "lutas_detalhes": {}
             }
             for i in range(3):
+                lado_a, lado_b = alternar_lado_kimono(1, i)
                 luta = Luta.objects.create(
                     chave=chave,
                     atleta_a=atletas_list[0],
                     atleta_b=atletas_list[1],
                     round=1,
-                    proxima_luta=None
+                    proxima_luta=None,
+                    lado_atleta_a=lado_a,
+                    lado_atleta_b=lado_b
                 )
                 estrutura["lutas"].append(luta.id)
             return estrutura
@@ -1123,27 +1176,36 @@ def gerar_chave_escolhida(chave, atletas_list, modelo_chave):
                 "lutas": [],
                 "lutas_detalhes": {}
             }
-            # Triangular: 3 lutas (A vs B, A vs C, B vs C)
+            # Triangular: 3 lutas (A vs B, A vs C, B vs C) com alternância de lados
+            lado_a1, lado_b1 = alternar_lado_kimono(1, 0)
             luta1 = Luta.objects.create(
                 chave=chave,
                 atleta_a=atletas_para_luta[0],
                 atleta_b=atletas_para_luta[1],
                 round=1,
-                proxima_luta=None
+                proxima_luta=None,
+                lado_atleta_a=lado_a1,
+                lado_atleta_b=lado_b1
             )
+            lado_a2, lado_b2 = alternar_lado_kimono(1, 1)
             luta2 = Luta.objects.create(
                 chave=chave,
                 atleta_a=atletas_para_luta[0],
                 atleta_b=atletas_para_luta[2],
                 round=1,
-                proxima_luta=None
+                proxima_luta=None,
+                lado_atleta_a=lado_a2,
+                lado_atleta_b=lado_b2
             )
+            lado_a3, lado_b3 = alternar_lado_kimono(1, 2)
             luta3 = Luta.objects.create(
                 chave=chave,
                 atleta_a=atletas_para_luta[1],
                 atleta_b=atletas_para_luta[2],
                 round=1,
-                proxima_luta=None
+                proxima_luta=None,
+                lado_atleta_a=lado_a3,
+                lado_atleta_b=lado_b3
             )
             estrutura["lutas"].extend([luta1.id, luta2.id, luta3.id])
             return estrutura
@@ -1238,12 +1300,18 @@ def gerar_chave_olimpica_manual(chave, atletas_list, tamanho_chave):
         
         # Se um dos atletas existe, criar luta
         if atleta_a or atleta_b:
+            # Alternar lados do kimono
+            luta_num = i // 2
+            lado_a, lado_b = alternar_lado_kimono(round_num, luta_num)
+            
             luta = Luta.objects.create(
                 chave=chave,
                 atleta_a=atleta_a,
                 atleta_b=atleta_b,
                 round=round_num,
-                proxima_luta=None  # Será definido depois
+                proxima_luta=None,  # Será definido depois
+                lado_atleta_a=lado_a,
+                lado_atleta_b=lado_b
             )
             lutas_round.append(luta.id)
     

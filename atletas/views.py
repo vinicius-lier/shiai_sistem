@@ -1053,11 +1053,11 @@ def pesagem(request):
     ).values_list('academia_id', flat=True))
     
     # Buscar inscrições do evento selecionado
-    # Apenas inscrições com pagamento confirmado (aprovado) podem ser pesadas
+    # Inscrições confirmadas ou aprovadas podem ser pesadas
     # E apenas de academias com conferência CONFIRMADA
     inscricoes = Inscricao.objects.filter(
         campeonato=campeonato_selecionado,
-        status_inscricao='aprovado'
+        status_inscricao__in=['aprovado', 'confirmado']  # Aceita ambos os status
     ).select_related('atleta', 'atleta__academia')
     
     # Filtrar apenas academias com conferência CONFIRMADA

@@ -25,9 +25,13 @@ python manage.py collectstatic --noinput --clear
 # Garantir que a pasta media existe (importante para Render)
 echo "📁 Garantindo que a pasta MEDIA existe..."
 if [ -n "$RENDER" ]; then
-    mkdir -p /var/data/media
-    chmod 755 /var/data/media
-    echo "✅ Pasta /var/data/media criada"
+    mkdir -p /var/data/media/fotos/academias
+    mkdir -p /var/data/media/fotos/atletas
+    mkdir -p /var/data/media/fotos/temp
+    mkdir -p /var/data/media/documentos/temp
+    mkdir -p /var/data/media/comprovantes
+    chmod -R 755 /var/data/media
+    echo "✅ Pasta /var/data/media e subpastas criadas"
 else
     python manage.py ensure_media || true
 fi

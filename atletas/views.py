@@ -4,6 +4,7 @@ from atletas.views_ajuda import ajuda_manual, ajuda_manual_web, ajuda_documentac
 # Importar todas as views principais de um arquivo separado
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
@@ -2531,8 +2532,21 @@ def lista_campeonatos(request):
     # Verificar se há credenciais na sessão (após criar campeonato)
     credenciais_campeonato = request.session.pop('credenciais_campeonato', None)
     
+    # Gerar URL completo de login
+    try:
+        dominio = request.get_host()
+        # Remover porta se estiver em desenvolvimento
+        if ':' in dominio:
+            dominio = dominio.split(':')[0]
+        # Usar https em produção, http em desenvolvimento
+        protocolo = 'https' if not request.get_host().startswith('localhost') and not request.get_host().startswith('127.0.0.1') else 'http'
+        login_url = f"{protocolo}://{dominio}{reverse('academia_login')}"
+    except:
+        login_url = request.build_absolute_uri(reverse('academia_login'))
+    
     context = {
         'campeonatos': campeonatos,
+        'login_url': login_url,
     }
     
     if credenciais_campeonato:
@@ -2949,12 +2963,25 @@ def gerenciar_senhas_campeonato(request, campeonato_id):
             except AcademiaCampeonatoSenha.DoesNotExist:
                 pass
     
+    # Gerar URL completo de login
+    try:
+        dominio = request.get_host()
+        # Remover porta se estiver em desenvolvimento
+        if ':' in dominio:
+            dominio = dominio.split(':')[0]
+        # Usar https em produção, http em desenvolvimento
+        protocolo = 'https' if not request.get_host().startswith('localhost') and not request.get_host().startswith('127.0.0.1') else 'http'
+        login_url = f"{protocolo}://{dominio}{reverse('academia_login')}"
+    except:
+        login_url = request.build_absolute_uri(reverse('academia_login'))
+    
     context = {
         'campeonato': campeonato,
         'academias_com_senhas': academias_com_senhas,
         'data_competicao': campeonato.data_competicao.strftime('%d/%m/%Y') if campeonato.data_competicao else 'Não definida',
         'valor_federado': f"R$ {campeonato.valor_inscricao_federado:.2f}" if campeonato.valor_inscricao_federado else 'Não definido',
         'valor_nao_federado': f"R$ {campeonato.valor_inscricao_nao_federado:.2f}" if campeonato.valor_inscricao_nao_federado else 'Não definido',
+        'login_url': login_url,
     }
     
     return render(request, 'atletas/administracao/gerenciar_senhas_campeonato.html', context)

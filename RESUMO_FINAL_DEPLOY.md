@@ -79,8 +79,8 @@ python manage.py popular_categorias_regulamento
 
 ### Verificar Arquivos Estáticos:
 ```bash
-ls -la staticfiles/img/logo_*.png
-```
+
+
 
 ### Verificar Categorias:
 ```bash

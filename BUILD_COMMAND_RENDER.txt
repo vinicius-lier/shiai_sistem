@@ -1,8 +1,16 @@
 # Build Command para configurar no Render
 # Copie e cole este comando no campo "Build Command" do Render
 
+# ⚠️ CRÍTICO: O arquivo do banco DEVE ser criado ANTES de qualquer comando Python/Django
+# O Django executa verificações automáticas que tentam acessar o banco durante o import
+
 # Opção 1: Usar o build.sh (RECOMENDADO)
 chmod +x build.sh && ./build.sh
 
-# Opção 2: Comando direto (alternativa)
-mkdir -p /var/data && chmod -R 755 /var/data && touch /var/data/db.sqlite3 && chmod 644 /var/data/db.sqlite3 && pip install -r requirements.txt && python manage.py migrate --noinput --run-syncdb --skip-checks && python manage.py collectstatic --noinput --clear --skip-checks
+# Opção 2: Comando direto (alternativa - se build.sh não funcionar)
+mkdir -p /var/data && chmod 755 /var/data && touch /var/data/db.sqlite3 && chmod 644 /var/data/db.sqlite3 && pip install -r requirements.txt && python manage.py migrate --noinput --run-syncdb --skip-checks && python manage.py collectstatic --noinput --clear --skip-checks
+
+# ⚠️ IMPORTANTE: 
+# - A pasta /var/data e o arquivo db.sqlite3 DEVEM ser criados PRIMEIRO
+# - Use --skip-checks em todos os comandos Django para evitar verificação de banco
+# - Se o erro persistir, verifique se o Build Command está configurado corretamente no Render

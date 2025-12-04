@@ -7,10 +7,10 @@
 
 echo "🚀 Iniciando build do projeto..."
 
-# CRÍTICO: Criar pasta /var/data e arquivo do banco ANTES de qualquer comando Django
+# CRÍTICO: Criar pasta /var/data e arquivo do banco ANTES de qualquer comando Python/Django
 # O Django executa verificações automáticas que tentam acessar o banco
-# Isso DEVE ser feito ANTES de qualquer import do Django
-echo "📁 Criando pasta /var/data e arquivo do banco (CRÍTICO - deve ser primeiro)..."
+# Isso DEVE ser feito ANTES de qualquer import do Django, incluindo durante pip install
+echo "📁 PASSO 1: Criando pasta /var/data e arquivo do banco (CRÍTICO - deve ser PRIMEIRO)..."
 if [ -n "$RENDER" ]; then
     # Criar diretório com permissões corretas
     mkdir -p /var/data
@@ -18,26 +18,42 @@ if [ -n "$RENDER" ]; then
     
     # Criar arquivo do banco vazio ANTES de qualquer comando Python/Django
     # SQLite precisa que o arquivo exista para poder abri-lo
+    # IMPORTANTE: Criar o arquivo mesmo que já exista para garantir permissões
     touch /var/data/db.sqlite3
     chmod 644 /var/data/db.sqlite3
     
     # Verificar se foi criado
     if [ -f "/var/data/db.sqlite3" ]; then
-        echo "✅ Arquivo /var/data/db.sqlite3 criado com sucesso"
+        echo "✅ Arquivo /var/data/db.sqlite3 criado/verificado com sucesso"
         ls -lh /var/data/db.sqlite3
+        echo "   Permissões do diretório /var/data:"
+        ls -ld /var/data
     else
         echo "❌ ERRO: Não foi possível criar /var/data/db.sqlite3"
-        exit 1
+        echo "   Tentando criar diretório novamente..."
+        mkdir -p /var/data
+        touch /var/data/db.sqlite3
+        chmod 644 /var/data/db.sqlite3
+        if [ ! -f "/var/data/db.sqlite3" ]; then
+            echo "❌ ERRO CRÍTICO: Não foi possível criar o arquivo do banco!"
+            exit 1
+        fi
     fi
     
-    echo "✅ Pasta /var/data e arquivo do banco criados"
+    echo "✅ Pasta /var/data e arquivo do banco criados/verificados"
 else
     # Em desenvolvimento local, garantir que a pasta existe
     mkdir -p media
 fi
 
 # Instalar dependências
-echo "📦 Instalando dependências Python..."
+echo "📦 PASSO 2: Instalando dependências Python..."
+# Garantir que o arquivo do banco ainda existe após qualquer operação
+if [ -n "$RENDER" ] && [ ! -f "/var/data/db.sqlite3" ]; then
+    echo "⚠️  Arquivo do banco não encontrado após criação, recriando..."
+    touch /var/data/db.sqlite3
+    chmod 644 /var/data/db.sqlite3
+fi
 pip install -r requirements.txt
 
 # Aplicar migrations (forçar aplicação de todas)

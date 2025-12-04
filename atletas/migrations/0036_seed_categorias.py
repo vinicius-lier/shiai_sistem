@@ -6,67 +6,9 @@ from decimal import Decimal
 
 def seed_categorias(apps, schema_editor):
     """Seed inicial das categorias de peso para todas as classes e sexos"""
-    Classe = apps.get_model("atletas", "Classe")
-    Categoria = apps.get_model("atletas", "Categoria")
-
-    # Verificar se existem classes
-    classes = Classe.objects.all()
-    if not classes.exists():
-        print("⚠️  Aviso: Nenhuma classe encontrada. Execute a migration 0035_seed_classes primeiro.")
-        return
-
-    pesos = [
-        ("Super Ligeiro", 0, 31),
-        ("Ligeiro", 31, 34),
-        ("Meio Leve", 34, 38),
-        ("Leve", 38, 42),
-        ("Meio Médio", 42, 47),
-        ("Médio", 47, 52),
-        ("Meio Pesado", 52, 57),
-        ("Pesado", 57, 63),
-        ("Super Pesado", 63, None),
-    ]
-
-    for classe in classes:
-        # Garantir que a classe tem um ID válido
-        classe_id = classe.id
-        if not classe_id:
-            print(f"⚠️  Aviso: Classe {classe.nome} não tem ID válido, pulando...")
-            continue
-            
-        for sexo in ["M", "F"]:
-            for nome, minimo, maximo in pesos:
-                if maximo is not None:
-                    label = f"{classe.nome} - {sexo} - {nome} (-{maximo}kg)"
-                else:
-                    label = f"{classe.nome} - {sexo} - {nome} (+{minimo}kg)"
-
-                # Verificar se já existe usando classe_id
-                if not Categoria.objects.filter(
-                    classe_id=classe_id,
-                    sexo=sexo,
-                    categoria_nome=nome
-                ).exists():
-                    # Criar usando classe_id diretamente no create
-                    Categoria.objects.create(
-                        classe_id=classe_id,  # CRÍTICO: usar classe_id, não classe
-                        sexo=sexo,
-                        categoria_nome=nome,
-                        limite_min=Decimal(str(minimo)),
-                        limite_max=Decimal(str(maximo)) if maximo is not None else None,
-                        label=label
-                    )
-                else:
-                    # Atualizar se já existe
-                    categoria = Categoria.objects.get(
-                        classe_id=classe_id,
-                        sexo=sexo,
-                        categoria_nome=nome
-                    )
-                    categoria.limite_min = Decimal(str(minimo))
-                    categoria.limite_max = Decimal(str(maximo)) if maximo is not None else None
-                    categoria.label = label
-                    categoria.save()
+    # DESABILITADO: Categorias serão criadas manualmente via comando popular_categorias_regulamento
+    # Evita erros durante o deploy
+    pass
 
 
 def reverse_seed_categorias(apps, schema_editor):

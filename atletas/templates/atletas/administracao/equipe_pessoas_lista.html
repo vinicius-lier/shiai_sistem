@@ -413,8 +413,12 @@ function fecharModal() {
     }
 })();
 
-// Preencher telefone e PIX automaticamente ao selecionar atleta
-(function() {
+// Inicializar formulário quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    // Garantir que o estado inicial está correto
+    toggleTipoPessoa();
+    
+    // Preencher telefone e PIX automaticamente ao selecionar atleta
     const atletaSelect = document.getElementById('atleta_id');
     if (atletaSelect) {
         atletaSelect.addEventListener('change', function() {
@@ -431,7 +435,7 @@ function fecharModal() {
             }
         });
     }
-})();
+});
 </script>
 {% endblock %}
 

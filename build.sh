@@ -25,10 +25,14 @@ python manage.py collectstatic --noinput --clear
 # Verificar se os logos foram coletados
 echo "🔍 Verificando se logos foram coletados..."
 if [ -f "staticfiles/img/logo_white.png" ] && [ -f "staticfiles/img/logo_black.png" ]; then
-    echo "✅ Logos coletados com sucesso"
+    echo "✅ Logos coletados com sucesso em staticfiles/img/"
+    ls -lh staticfiles/img/logo_*.png
 else
     echo "⚠️  Aviso: Logos não encontrados em staticfiles/img/"
-    ls -la staticfiles/img/ 2>/dev/null || echo "Pasta staticfiles/img/ não existe"
+    echo "📁 Conteúdo de staticfiles/:"
+    ls -la staticfiles/ 2>/dev/null | head -10
+    echo "📁 Procurando logos em staticfiles:"
+    find staticfiles -name "logo_*.png" 2>/dev/null || echo "Nenhum logo encontrado"
 fi
 
 # Garantir que a pasta media existe (importante para Render)

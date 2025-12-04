@@ -197,7 +197,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # STATICFILES_DIRS: Onde o Django procura arquivos estáticos antes de coletar
 STATICFILES_DIRS = [
-    BASE_DIR / 'atletas' / 'static',
+    BASE_DIR / 'static',
 ]
 
 # WhiteNoise para servir arquivos estáticos em produção

@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 import mimetypes
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -110,32 +111,20 @@ WSGI_APPLICATION = 'judocomp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-import dj_database_url
+# Usar PostgreSQL via DATABASE_URL (produção) ou SQLite local (desenvolvimento)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-if os.environ.get("RENDER"):
-    # Ambiente de PRODUÇÃO (Render) - usar PostgreSQL se DATABASE_URL estiver configurado
-    # Caso contrário, usar SQLite no disco persistente
-    database_url = os.environ.get('DATABASE_URL')
-    
-    if database_url:
-        # Usar PostgreSQL se DATABASE_URL estiver configurado
-        DATABASES = {
-            'default': dj_database_url.config(
-                default=database_url,
-                conn_max_age=600,
-                conn_health_checks=True,
-            )
-        }
-    else:
-        # Fallback para SQLite no disco persistente
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': '/var/data/db.sqlite3',
-            }
-        }
+if DATABASE_URL:
+    # Produção: usar PostgreSQL se DATABASE_URL estiver configurado
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
 else:
-    # Ambiente LOCAL (normal) - usar SQLite
+    # Desenvolvimento local: usar SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',

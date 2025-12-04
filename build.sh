@@ -22,5 +22,15 @@ python manage.py showmigrations | grep "\[ \]" || echo "✅ Todas as migrations 
 echo "📁 Coletando arquivos estáticos..."
 python manage.py collectstatic --noinput --clear
 
+# Garantir que a pasta media existe (importante para Render)
+echo "📁 Garantindo que a pasta MEDIA existe..."
+if [ -n "$RENDER" ]; then
+    mkdir -p /var/data/media
+    chmod 755 /var/data/media
+    echo "✅ Pasta /var/data/media criada"
+else
+    python manage.py ensure_media || true
+fi
+
 echo "✅ Build concluído com sucesso!"
 

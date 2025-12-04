@@ -1,114 +1,37 @@
 #!/bin/bash
-# Script de build para Render
+# Script de build para Render com PostgreSQL
 # Este script é executado automaticamente pelo Render antes de iniciar o servidor
 
-# NÃO usar set -e aqui porque queremos continuar mesmo se alguns comandos falharem
-# set -e
+set -e  # Parar em caso de erro crítico
 
-echo "🚀 Iniciando build do projeto..."
-
-# CRÍTICO: Criar pasta /var/data e arquivo do banco ANTES de qualquer comando Python/Django
-# O Django executa verificações automáticas que tentam acessar o banco
-# Isso DEVE ser feito ANTES de qualquer import do Django, incluindo durante pip install
-echo "📁 PASSO 1: Criando pasta /var/data e arquivo do banco (CRÍTICO - deve ser PRIMEIRO)..."
-if [ -n "$RENDER" ]; then
-    # Criar diretório com permissões corretas
-    mkdir -p /var/data
-    chmod 755 /var/data
-    
-    # Criar arquivo do banco vazio ANTES de qualquer comando Python/Django
-    # SQLite precisa que o arquivo exista para poder abri-lo
-    # IMPORTANTE: Criar o arquivo mesmo que já exista para garantir permissões
-    touch /var/data/db.sqlite3
-    chmod 644 /var/data/db.sqlite3
-    
-    # Verificar se foi criado
-    if [ -f "/var/data/db.sqlite3" ]; then
-        echo "✅ Arquivo /var/data/db.sqlite3 criado/verificado com sucesso (método bash)"
-        ls -lh /var/data/db.sqlite3
-        echo "   Permissões do diretório /var/data:"
-        ls -ld /var/data
-    else
-        echo "⚠️  Método bash falhou, tentando método Python..."
-        # Método 2: Usar Python (se disponível)
-        python3 prepare_db.py 2>/dev/null || {
-            echo "❌ ERRO: Não foi possível criar /var/data/db.sqlite3"
-            echo "   Tentando criar diretório novamente..."
-            mkdir -p /var/data
-            touch /var/data/db.sqlite3
-            chmod 644 /var/data/db.sqlite3
-            if [ ! -f "/var/data/db.sqlite3" ]; then
-                echo "❌ ERRO CRÍTICO: Não foi possível criar o arquivo do banco!"
-                exit 1
-            fi
-        }
-    fi
-    
-    echo "✅ Pasta /var/data e arquivo do banco criados/verificados"
-else
-    # Em desenvolvimento local, garantir que a pasta existe
-    mkdir -p media
-fi
+echo "🚀 Iniciando build do projeto Django para Render..."
 
 # Instalar dependências
-echo "📦 PASSO 2: Instalando dependências Python..."
-# Garantir que o arquivo do banco ainda existe após qualquer operação
-if [ -n "$RENDER" ] && [ ! -f "/var/data/db.sqlite3" ]; then
-    echo "⚠️  Arquivo do banco não encontrado após criação, recriando..."
-    touch /var/data/db.sqlite3
-    chmod 644 /var/data/db.sqlite3
-fi
+echo "📦 Instalando dependências Python..."
 pip install -r requirements.txt
 
-# Aplicar migrations (forçar aplicação de todas)
+# Aplicar migrations (PostgreSQL será usado se DATABASE_URL estiver configurado)
 echo "🗄️  Aplicando migrations do banco de dados..."
-# Garantir que o arquivo do banco existe antes de migrar
-if [ -n "$RENDER" ]; then
-    if [ ! -f "/var/data/db.sqlite3" ]; then
-        echo "⚠️  Arquivo do banco não encontrado, criando novamente..."
-        touch /var/data/db.sqlite3
-        chmod 644 /var/data/db.sqlite3
-    fi
-    # Verificar permissões
-    chmod 755 /var/data 2>/dev/null || true
-    chmod 644 /var/data/db.sqlite3 2>/dev/null || true
-    echo "📋 Verificando arquivo do banco:"
-    ls -la /var/data/db.sqlite3 || echo "⚠️  Arquivo do banco não encontrado"
-fi
-# Usar --skip-checks para evitar verificação de banco durante migrate
-echo "🔄 Executando migrate com --skip-checks..."
-python manage.py migrate --noinput --run-syncdb --skip-checks 2>&1 || {
+# Usar --skip-checks para evitar verificação de banco durante build
+python manage.py migrate --noinput --skip-checks || {
     echo "⚠️  Migrate com --skip-checks falhou, tentando sem --skip-checks..."
-    python manage.py migrate --noinput --run-syncdb 2>&1 || {
-        echo "❌ ERRO: migrate falhou completamente"
+    python manage.py migrate --noinput || {
+        echo "❌ ERRO: migrate falhou"
         exit 1
     }
 }
 
-# Verificar migrations pendentes
-echo "🔍 Verificando migrations pendentes..."
-python manage.py showmigrations --skip-checks 2>&1 | grep "\[ \]" || echo "✅ Todas as migrations aplicadas"
-
 # Coletar arquivos estáticos
 echo "📁 Coletando arquivos estáticos..."
-echo "   Verificando arquivos originais em static/img/:"
-ls -la static/img/ 2>/dev/null | head -5 || echo "   ⚠️  Pasta static/img/ não encontrada"
-
-# Executar collectstatic com verificação de erro
-echo "📁 Executando collectstatic com --skip-checks..."
-if python manage.py collectstatic --noinput --clear --skip-checks 2>&1; then
+if python manage.py collectstatic --noinput --clear --skip-checks; then
     echo "✅ collectstatic executado com sucesso"
 else
     echo "⚠️  collectstatic com --skip-checks falhou, tentando sem --skip-checks..."
-    if python manage.py collectstatic --noinput --clear 2>&1; then
-        echo "✅ collectstatic executado com sucesso (sem --skip-checks)"
+    if python manage.py collectstatic --noinput --clear; then
+        echo "✅ collectstatic executado com sucesso"
     else
         echo "❌ ERRO ao executar collectstatic!"
-        echo "   Tentando novamente sem --clear..."
-        python manage.py collectstatic --noinput 2>&1 || {
-            echo "❌ ERRO CRÍTICO: collectstatic falhou!"
-            exit 1
-        }
+        exit 1
     fi
 fi
 
@@ -121,17 +44,9 @@ fi
 # Verificar se os logos foram coletados
 echo "🔍 Verificando se logos foram coletados..."
 if [ -f "staticfiles/img/logo_white.png" ] && [ -f "staticfiles/img/logo_black.png" ]; then
-    echo "✅ Logos coletados com sucesso em staticfiles/img/"
-    ls -lh staticfiles/img/logo_*.png
-    echo "   Total de arquivos em staticfiles/img/:"
-    find staticfiles/img -type f | wc -l
+    echo "✅ Logos coletados com sucesso"
 else
     echo "⚠️  Aviso: Logos não encontrados em staticfiles/img/"
-    echo "📁 Conteúdo de staticfiles/:"
-    ls -la staticfiles/ 2>/dev/null | head -10
-    echo "📁 Procurando logos em staticfiles:"
-    find staticfiles -name "logo_*.png" 2>/dev/null || echo "Nenhum logo encontrado"
-    echo "⚠️  Continuando build mesmo sem logos (pode ser problema de configuração)"
 fi
 
 # Garantir que a pasta media existe (importante para Render)
@@ -144,9 +59,6 @@ if [ -n "$RENDER" ]; then
     mkdir -p /var/data/media/comprovantes
     chmod -R 755 /var/data/media
     echo "✅ Pasta /var/data/media e subpastas criadas"
-else
-    python manage.py ensure_media || true
 fi
 
 echo "✅ Build concluído com sucesso!"
-

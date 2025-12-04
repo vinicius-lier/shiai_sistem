@@ -46,7 +46,12 @@ Python 3
 
 **Build Command:**
 ```bash
-pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput
+chmod +x build.sh && ./build.sh
+```
+
+**OU** (se preferir não usar o script):
+```bash
+pip install -r requirements.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear
 ```
 
 **Start Command:**

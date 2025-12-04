@@ -28,7 +28,12 @@ def seed_categorias(apps, schema_editor):
     ]
 
     for classe in classes:
-        classe_id = classe.id  # Usar ID diretamente para evitar problemas com ForeignKey em migrations
+        # Garantir que a classe tem um ID válido
+        classe_id = classe.id
+        if not classe_id:
+            print(f"⚠️  Aviso: Classe {classe.nome} não tem ID válido, pulando...")
+            continue
+            
         for sexo in ["M", "F"]:
             for nome, minimo, maximo in pesos:
                 if maximo is not None:
@@ -37,27 +42,31 @@ def seed_categorias(apps, schema_editor):
                     label = f"{classe.nome} - {sexo} - {nome} (+{minimo}kg)"
 
                 # Verificar se já existe usando classe_id
-                try:
-                    categoria = Categoria.objects.get(
-                        classe_id=classe_id,
-                        sexo=sexo,
-                        categoria_nome=nome
-                    )
-                    # Atualizar se já existe
-                    categoria.limite_min = Decimal(str(minimo))
-                    categoria.limite_max = Decimal(str(maximo)) if maximo is not None else None
-                    categoria.label = label
-                    categoria.save()
-                except Categoria.DoesNotExist:
-                    # Criar explicitamente usando classe_id ao invés do objeto classe
+                if not Categoria.objects.filter(
+                    classe_id=classe_id,
+                    sexo=sexo,
+                    categoria_nome=nome
+                ).exists():
+                    # Criar usando classe_id diretamente no create
                     Categoria.objects.create(
-                        classe_id=classe_id,
+                        classe_id=classe_id,  # CRÍTICO: usar classe_id, não classe
                         sexo=sexo,
                         categoria_nome=nome,
                         limite_min=Decimal(str(minimo)),
                         limite_max=Decimal(str(maximo)) if maximo is not None else None,
                         label=label
                     )
+                else:
+                    # Atualizar se já existe
+                    categoria = Categoria.objects.get(
+                        classe_id=classe_id,
+                        sexo=sexo,
+                        categoria_nome=nome
+                    )
+                    categoria.limite_min = Decimal(str(minimo))
+                    categoria.limite_max = Decimal(str(maximo)) if maximo is not None else None
+                    categoria.label = label
+                    categoria.save()
 
 
 def reverse_seed_categorias(apps, schema_editor):

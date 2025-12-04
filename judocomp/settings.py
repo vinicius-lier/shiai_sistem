@@ -110,16 +110,32 @@ WSGI_APPLICATION = 'judocomp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+import dj_database_url
+
 if os.environ.get("RENDER"):
-    # Ambiente de PRODUÇÃO (Render) usa disco persistente
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': '/var/data/db.sqlite3',
+    # Ambiente de PRODUÇÃO (Render) - usar PostgreSQL se DATABASE_URL estiver configurado
+    # Caso contrário, usar SQLite no disco persistente
+    database_url = os.environ.get('DATABASE_URL')
+    
+    if database_url:
+        # Usar PostgreSQL se DATABASE_URL estiver configurado
+        DATABASES = {
+            'default': dj_database_url.config(
+                default=database_url,
+                conn_max_age=600,
+                conn_health_checks=True,
+            )
         }
-    }
+    else:
+        # Fallback para SQLite no disco persistente
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': '/var/data/db.sqlite3',
+            }
+        }
 else:
-    # Ambiente LOCAL (normal)
+    # Ambiente LOCAL (normal) - usar SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',

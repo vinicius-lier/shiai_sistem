@@ -2,7 +2,7 @@
 # Copie e cole este comando no campo "Build Command" do Render
 
 # ⚠️ IMPORTANTE: /var/data NÃO está disponível durante o build (read-only file system)
-# O banco será criado automaticamente quando o Django iniciar no runtime
+# Com PostgreSQL, o banco será criado automaticamente quando o Django iniciar no runtime
 # Use --skip-checks para evitar que o Django tente acessar o banco durante o build
 
 pip install -r requirements.txt && python manage.py migrate --noinput --skip-checks && python manage.py collectstatic --noinput --clear --skip-checks

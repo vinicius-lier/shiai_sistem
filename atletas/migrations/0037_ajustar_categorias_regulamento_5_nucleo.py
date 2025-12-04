@@ -28,5 +28,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(ajustar_categorias_regulamento_5_nucleo, reverse_ajustar_categorias),
+        # migrations.RunPython(ajustar_categorias_regulamento_5_nucleo, reverse_ajustar_categorias),  # DESABILITADO
     ]

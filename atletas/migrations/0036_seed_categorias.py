@@ -24,5 +24,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(seed_categorias, reverse_seed_categorias),
+        # migrations.RunPython(seed_categorias, reverse_seed_categorias),  # DESABILITADO
     ]

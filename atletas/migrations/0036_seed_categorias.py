@@ -6,8 +6,8 @@ from decimal import Decimal
 
 def seed_categorias(apps, schema_editor):
     """Seed inicial das categorias de peso para todas as classes e sexos"""
-    # DESABILITADO: Categorias serão criadas manualmente via comando popular_categorias_regulamento
-    # Evita erros durante o deploy
+    # DESABILITADO: Categorias serão criadas manualmente via interface web (cadastrar_categoria)
+    # Permite controle total sobre quais categorias são criadas
     pass
 
 

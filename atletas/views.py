@@ -733,8 +733,82 @@ def lista_categorias(request):
     
     return render(request, 'atletas/lista_categorias.html', context)
 
+@operacional_required
 def cadastrar_categoria(request):
-    return render(request, 'atletas/cadastrar_categoria.html')
+    """Cadastrar nova categoria manualmente"""
+    if request.method == 'POST':
+        try:
+            from decimal import Decimal
+            from .models import Classe, Categoria
+            
+            classe_nome = request.POST.get('classe', '').strip()
+            sexo = request.POST.get('sexo', '').strip()
+            categoria_nome = request.POST.get('categoria_nome', '').strip()
+            limite_min_str = request.POST.get('limite_min', '').strip()
+            limite_max_str = request.POST.get('limite_max', '').strip()
+            label = request.POST.get('label', '').strip()
+            
+            # Validações
+            if not classe_nome or not sexo or not categoria_nome or not limite_min_str:
+                messages.error(request, 'Preencha todos os campos obrigatórios.')
+            elif sexo not in ['M', 'F']:
+                messages.error(request, 'Sexo deve ser Masculino (M) ou Feminino (F).')
+            else:
+                try:
+                    limite_min = Decimal(limite_min_str)
+                    limite_max = Decimal(limite_max_str) if limite_max_str else None
+                    
+                    # Buscar ou criar a classe
+                    classe, _ = Classe.objects.get_or_create(
+                        nome=classe_nome,
+                        defaults={
+                            'idade_min': 0,
+                            'idade_max': 99
+                        }
+                    )
+                    
+                    # Gerar label se não fornecido
+                    if not label:
+                        sexo_display = "Masculino" if sexo == "M" else "Feminino"
+                        if limite_max:
+                            label = f"{classe_nome} - {sexo_display} - {categoria_nome} ({limite_min}-{limite_max}kg)"
+                        else:
+                            label = f"{classe_nome} - {sexo_display} - {categoria_nome} (+{limite_min}kg)"
+                    
+                    # Verificar se categoria já existe
+                    categoria_existente = Categoria.objects.filter(
+                        classe=classe,
+                        sexo=sexo,
+                        categoria_nome=categoria_nome,
+                        limite_min=limite_min,
+                        limite_max=limite_max
+                    ).first()
+                    
+                    if categoria_existente:
+                        messages.warning(request, f'Categoria já existe: {categoria_existente.label}')
+                    else:
+                        # Criar nova categoria
+                        categoria = Categoria.objects.create(
+                            classe=classe,
+                            sexo=sexo,
+                            categoria_nome=categoria_nome,
+                            limite_min=limite_min,
+                            limite_max=limite_max,
+                            label=label
+                        )
+                        messages.success(request, f'Categoria "{categoria.label}" cadastrada com sucesso!')
+                        return redirect('lista_categorias')
+                        
+                except ValueError:
+                    messages.error(request, 'Valores de peso inválidos. Use números válidos.')
+                except Exception as e:
+                    messages.error(request, f'Erro ao cadastrar categoria: {str(e)}')
+        except Exception as e:
+            messages.error(request, f'Erro ao processar formulário: {str(e)}')
+    
+    # GET: Buscar classes existentes para sugestões
+    classes = Classe.objects.all().order_by('idade_min')
+    return render(request, 'atletas/cadastrar_categoria.html', {'classes': classes})
 
 def lista_atletas(request):
     """Lista todos os atletas cadastrados com relacionamentos otimizados"""

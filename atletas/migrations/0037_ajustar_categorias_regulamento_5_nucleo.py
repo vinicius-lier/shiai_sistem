@@ -10,8 +10,8 @@ def ajustar_categorias_regulamento_5_nucleo(apps, schema_editor):
     Ajusta as categorias conforme o Regulamento do 5º Núcleo Regional de Judô - 2025
     Baseado nas tabelas oficiais de classes e categorias masculinas e femininas
     """
-    # DESABILITADO: Categorias serão criadas manualmente via comando popular_categorias_regulamento
-    # Evita erros durante o deploy
+    # DESABILITADO: Categorias serão criadas manualmente via interface web (cadastrar_categoria)
+    # Permite controle total sobre quais categorias são criadas
     pass
 
 

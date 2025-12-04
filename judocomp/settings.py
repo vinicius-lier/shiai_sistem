@@ -111,11 +111,12 @@ WSGI_APPLICATION = 'judocomp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Usar PostgreSQL via DATABASE_URL (produção) ou SQLite local (desenvolvimento)
+# PostgreSQL em produção (Render) via DATABASE_URL
+# SQLite apenas em desenvolvimento local quando DATABASE_URL não estiver configurado
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL:
-    # Produção: usar PostgreSQL se DATABASE_URL estiver configurado
+    # Produção (Render): usar PostgreSQL
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -124,7 +125,7 @@ if DATABASE_URL:
         )
     }
 else:
-    # Desenvolvimento local: usar SQLite como padrão
+    # Desenvolvimento local: usar SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',

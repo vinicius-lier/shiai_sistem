@@ -24,20 +24,24 @@ if [ -n "$RENDER" ]; then
     
     # Verificar se foi criado
     if [ -f "/var/data/db.sqlite3" ]; then
-        echo "✅ Arquivo /var/data/db.sqlite3 criado/verificado com sucesso"
+        echo "✅ Arquivo /var/data/db.sqlite3 criado/verificado com sucesso (método bash)"
         ls -lh /var/data/db.sqlite3
         echo "   Permissões do diretório /var/data:"
         ls -ld /var/data
     else
-        echo "❌ ERRO: Não foi possível criar /var/data/db.sqlite3"
-        echo "   Tentando criar diretório novamente..."
-        mkdir -p /var/data
-        touch /var/data/db.sqlite3
-        chmod 644 /var/data/db.sqlite3
-        if [ ! -f "/var/data/db.sqlite3" ]; then
-            echo "❌ ERRO CRÍTICO: Não foi possível criar o arquivo do banco!"
-            exit 1
-        fi
+        echo "⚠️  Método bash falhou, tentando método Python..."
+        # Método 2: Usar Python (se disponível)
+        python3 prepare_db.py 2>/dev/null || {
+            echo "❌ ERRO: Não foi possível criar /var/data/db.sqlite3"
+            echo "   Tentando criar diretório novamente..."
+            mkdir -p /var/data
+            touch /var/data/db.sqlite3
+            chmod 644 /var/data/db.sqlite3
+            if [ ! -f "/var/data/db.sqlite3" ]; then
+                echo "❌ ERRO CRÍTICO: Não foi possível criar o arquivo do banco!"
+                exit 1
+            fi
+        }
     fi
     
     echo "✅ Pasta /var/data e arquivo do banco criados/verificados"

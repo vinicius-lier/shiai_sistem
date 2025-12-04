@@ -21,8 +21,10 @@ Os logs do Render mostram:
 
 3. **OU use este comando direto:**
    ```bash
-   pip install -r requirements.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear
+   mkdir -p /var/data && chmod -R 755 /var/data && pip install -r requirements.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear
    ```
+
+⚠️ **CRÍTICO:** A pasta `/var/data` DEVE ser criada PRIMEIRO, antes de qualquer comando Django!
 
 4. **Salve e faça um novo deploy**
 

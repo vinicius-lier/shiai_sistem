@@ -242,23 +242,45 @@ class Atleta(models.Model):
         return bool(self.documento_oficial)
     
     def get_classe_atual(self):
-        """Calcula a classe atual baseada na data de nascimento"""
+        """Calcula a classe atual baseada na data de nascimento
+        
+        Retorna o nome exato da classe como está no banco de dados.
+        Usa normalização flexível para encontrar a classe correta mesmo se houver
+        variações de nomenclatura (espaço vs hífen).
+        """
         try:
-            from .utils import calcular_classe
+            from .utils import calcular_classe, buscar_classe_no_banco
             ano = self.get_ano_nasc()
             if ano:
-                classe = calcular_classe(ano)
-                if classe:
-                    return classe
+                classe_calculada = calcular_classe(ano)
+                if classe_calculada:
+                    # Buscar classe no banco para obter nome exato
+                    classe_obj = buscar_classe_no_banco(classe_calculada)
+                    if classe_obj:
+                        return classe_obj.nome
+                    # Se não encontrou no banco, retornar o calculado
+                    return classe_calculada
             # Fallback para classe_inicial ou padrão
             if self.classe_inicial:
+                # Tentar buscar no banco também
+                from .utils import buscar_classe_no_banco
+                classe_obj = buscar_classe_no_banco(self.classe_inicial)
+                if classe_obj:
+                    return classe_obj.nome
                 return self.classe_inicial
-            return "SÊNIOR"  # Padrão se não houver dados
+            return "SÊNIOR/VET"  # Padrão se não houver dados
         except Exception as e:
             # Em caso de erro, retornar classe_inicial ou padrão
             if self.classe_inicial:
+                try:
+                    from .utils import buscar_classe_no_banco
+                    classe_obj = buscar_classe_no_banco(self.classe_inicial)
+                    if classe_obj:
+                        return classe_obj.nome
+                except:
+                    pass
                 return self.classe_inicial
-            return "SÊNIOR"  # Padrão se não houver dados
+            return "SÊNIOR/VET"  # Padrão se não houver dados
 
     def __str__(self):
         return f"{self.nome} ({self.academia.nome})"

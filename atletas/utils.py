@@ -1,72 +1,191 @@
 from datetime import date
 from django.db.models import Q
-from .models import Atleta, Categoria, Chave, Luta, Academia, Campeonato, AcademiaPontuacao, Inscricao
+from .models import Atleta, Categoria, Chave, Luta, Academia, Campeonato, AcademiaPontuacao, Inscricao, Classe
 import random
+import re
+
+
+def normalizar_nome_classe(nome_classe):
+    """
+    Normaliza o nome da classe para comparação, removendo espaços, hífens e convertendo para maiúsculas.
+    
+    Exemplos:
+    - "SUB 9" -> "SUB9"
+    - "SUB-9" -> "SUB9"
+    - "SUB  9" -> "SUB9"
+    - "Festival" -> "FESTIVAL"
+    - "SÊNIOR" -> "SENIOR"
+    - "VETERANOS" -> "VETERANOS"
+    
+    Args:
+        nome_classe: Nome da classe (ex: "SUB 9", "SUB-9", "SUB 18")
+    
+    Returns:
+        String normalizada para comparação
+    """
+    if not nome_classe:
+        return ""
+    
+    # Converter para maiúsculas e remover espaços extras
+    nome = str(nome_classe).upper().strip()
+    
+    # Remover espaços e hífens de "SUB X" ou "SUB-X" -> "SUBX"
+    nome = re.sub(r'SUB\s*[- ]?\s*(\d+)', r'SUB\1', nome)
+    
+    # Normalizar variações comuns
+    nome = nome.replace("SÊNIOR", "SENIOR")
+    nome = nome.replace("VETERANO", "VETERANOS")
+    
+    return nome
+
+
+def buscar_classe_no_banco(nome_classe):
+    """
+    Busca uma classe no banco de dados usando normalização flexível.
+    
+    Tenta encontrar a classe exata primeiro, depois tenta com normalização.
+    
+    Args:
+        nome_classe: Nome da classe a buscar (ex: "SUB 9", "SUB-9")
+    
+    Returns:
+        Objeto Classe se encontrado, None caso contrário
+    """
+    if not nome_classe:
+        return None
+    
+    # Tentar busca exata primeiro
+    classe = Classe.objects.filter(nome__iexact=nome_classe).first()
+    if classe:
+        return classe
+    
+    # Normalizar para busca flexível
+    nome_normalizado = normalizar_nome_classe(nome_classe)
+    
+    # Buscar todas as classes e comparar normalizadas
+    todas_classes = Classe.objects.all()
+    for classe_obj in todas_classes:
+        if normalizar_nome_classe(classe_obj.nome) == nome_normalizado:
+            return classe_obj
+    
+    return None
 
 
 def calcular_classe(ano_nasc):
     """Calcula a classe do atleta baseado no ano de nascimento
     
-    Regras:
-    - Festival: até 6 anos
-    - SUB 9: 7-8 anos
-    - SUB 11: 9-10 anos
-    - SUB 13: 11-12 anos
-    - SUB 15: 13-14 anos
-    - SUB 18: 15-17 anos
-    - SUB 21: 18-20 anos
-    - VETERANOS: 30 anos ou mais (ex: nascido em 1987 ou antes, considerando 2024)
-    - SÊNIOR: 21-29 anos
+    Retorna nomes padronizados que correspondem ao banco de dados:
+    - Festival (0-6 anos)
+    - SUB-9 (7-8 anos)
+    - SUB-11 (9-10 anos)
+    - SUB-13 (11-12 anos)
+    - SUB-15 (13-14 anos)
+    - SUB-18 (15-17 anos)
+    - SUB-21 (18-20 anos)
+    - SÊNIOR/VET (21-29 anos)
+    - VETERANOS (30+ anos)
+    
+    IMPORTANTE: Os nomes retornados devem corresponder aos nomes no banco de dados.
+    Se o banco usar "SUB 9" (com espaço), retorna "SUB 9".
+    Se o banco usar "SUB-9" (com hífen), retorna "SUB-9".
+    
+    Para garantir compatibilidade, esta função retorna nomes com hífen (padrão mais comum).
+    A função buscar_classe_no_banco() faz a normalização para encontrar a classe correta.
     """
     hoje = date.today()
     idade = hoje.year - ano_nasc
     
     if idade <= 6:
-        return "Festival"
+        return "FESTIVAL"
     elif idade <= 8:
-        return "SUB 9"
+        return "SUB-9"
     elif idade <= 10:
-        return "SUB 11"
+        return "SUB-11"
     elif idade <= 12:
-        return "SUB 13"
+        return "SUB-13"
     elif idade <= 14:
-        return "SUB 15"
+        return "SUB-15"
     elif idade <= 17:
-        return "SUB 18"
+        return "SUB-18"
     elif idade <= 20:
-        return "SUB 21"
+        return "SUB-21"
     elif idade >= 30:
         return "VETERANOS"
     else:
-        return "SÊNIOR"
+        return "SÊNIOR/VET"
 
 
 def categorias_permitidas(classe_atleta, categorias_existentes=None):
     """Retorna as classes de categorias que um atleta pode escolher baseado na sua classe
     
     Regras de elegibilidade:
-    - VETERANOS: podem escolher VETERANOS ou SÊNIOR
-    - SUB 18: podem escolher SUB 18, SUB 21 (se existir) ou SÊNIOR
-    - Demais classes: apenas sua própria classe
+    - FESTIVAL: somente FESTIVAL
+    - SUB-9, SUB-11, SUB-13, SUB-15: somente sua própria classe
+    - SUB-18: pode escolher SUB-18, SUB-21, SÊNIOR/VET
+    - SUB-21: pode escolher SUB-21 ou SÊNIOR/VET
+    - SÊNIOR/VET: pode escolher apenas SÊNIOR/VET
+    - VETERANOS: pode escolher VETERANOS ou SÊNIOR/VET
     
     Args:
-        classe_atleta: Classe do atleta (ex: "VETERANOS", "SUB 18", "SÊNIOR")
+        classe_atleta: Classe do atleta (ex: "VETERANOS", "SUB-18", "SÊNIOR/VET", "SUB 18", "SUB-13")
         categorias_existentes: Lista opcional de classes que existem no evento (filtra resultados)
     
     Returns:
-        Lista de classes permitidas para inscrição
+        Lista de classes permitidas para inscrição (nomes reais do banco de dados)
     """
-    # Normalizar nome da classe
-    classe_normalizada = classe_atleta.upper().strip()
+    # Normalizar nome da classe para comparação
+    classe_normalizada = normalizar_nome_classe(classe_atleta)
     
-    # Regras especiais
-    if classe_normalizada == "VETERANOS":
-        classes_permitidas = ["VETERANOS", "SÊNIOR"]
-    elif classe_normalizada == "SUB 18" or classe_normalizada == "SUB18":
-        classes_permitidas = ["SUB 18", "SUB 21", "SÊNIOR"]
+    # Buscar classe no banco para obter o nome exato
+    classe_obj = buscar_classe_no_banco(classe_atleta)
+    nome_classe_exato = classe_obj.nome if classe_obj else classe_atleta
+    
+    # Determinar classes permitidas baseado na classe normalizada
+    classes_permitidas_nomes = []
+    
+    if classe_normalizada == "FESTIVAL":
+        # Festival: somente Festival
+        classes_permitidas_nomes = ["FESTIVAL"]
+    elif classe_normalizada in ["SUB9", "SUB-9", "SUB 9"]:
+        # SUB-9: somente sua própria classe
+        classes_permitidas_nomes = [nome_classe_exato]
+    elif classe_normalizada in ["SUB11", "SUB-11", "SUB 11"]:
+        # SUB-11: somente sua própria classe
+        classes_permitidas_nomes = [nome_classe_exato]
+    elif classe_normalizada in ["SUB13", "SUB-13", "SUB 13"]:
+        # SUB-13: somente sua própria classe
+        classes_permitidas_nomes = [nome_classe_exato]
+    elif classe_normalizada in ["SUB15", "SUB-15", "SUB 15"]:
+        # SUB-15: somente sua própria classe
+        classes_permitidas_nomes = [nome_classe_exato]
+    elif classe_normalizada in ["SUB18", "SUB-18", "SUB 18"]:
+        # SUB-18: pode escolher SUB-18, SUB-21, SÊNIOR/VET
+        classes_permitidas_nomes = [nome_classe_exato]
+        # Adicionar SUB-21 e SÊNIOR/VET se existirem
+        sub21 = buscar_classe_no_banco("SUB-21")
+        if sub21:
+            classes_permitidas_nomes.append(sub21.nome)
+        senior = buscar_classe_no_banco("SÊNIOR/VET")
+        if senior:
+            classes_permitidas_nomes.append(senior.nome)
+    elif classe_normalizada in ["SUB21", "SUB-21", "SUB 21"]:
+        # SUB-21: pode escolher SUB-21 ou SÊNIOR/VET
+        classes_permitidas_nomes = [nome_classe_exato]
+        senior = buscar_classe_no_banco("SÊNIOR/VET")
+        if senior:
+            classes_permitidas_nomes.append(senior.nome)
+    elif classe_normalizada in ["SENIOR", "SÊNIOR", "SENIOR/VET", "SÊNIOR/VET"]:
+        # SÊNIOR/VET: pode escolher apenas SÊNIOR/VET
+        classes_permitidas_nomes = [nome_classe_exato]
+    elif classe_normalizada in ["VETERANOS", "VETERANO"]:
+        # VETERANOS: pode escolher VETERANOS ou SÊNIOR/VET
+        classes_permitidas_nomes = [nome_classe_exato]
+        senior = buscar_classe_no_banco("SÊNIOR/VET")
+        if senior:
+            classes_permitidas_nomes.append(senior.nome)
     else:
         # Regra padrão: apenas sua própria classe
-        classes_permitidas = [classe_atleta]
+        classes_permitidas_nomes = [nome_classe_exato]
     
     # Filtrar apenas classes que existem no evento (se fornecido)
     if categorias_existentes is not None:
@@ -74,18 +193,20 @@ def categorias_permitidas(classe_atleta, categorias_existentes=None):
         if isinstance(categorias_existentes, str):
             categorias_existentes = [categorias_existentes]
         
-        # Normalizar lista de classes existentes
-        classes_existentes_normalizadas = [c.upper().strip() for c in categorias_existentes]
+        # Normalizar lista de classes existentes para comparação
+        classes_existentes_normalizadas = {normalizar_nome_classe(c): c for c in categorias_existentes}
         
         # Filtrar classes permitidas que existem no evento
         classes_permitidas_filtradas = []
-        for classe in classes_permitidas:
-            if classe.upper().strip() in classes_existentes_normalizadas:
-                classes_permitidas_filtradas.append(classe)
+        for classe_permitida in classes_permitidas_nomes:
+            classe_permitida_normalizada = normalizar_nome_classe(classe_permitida)
+            if classe_permitida_normalizada in classes_existentes_normalizadas:
+                # Usar o nome exato do banco
+                classes_permitidas_filtradas.append(classes_existentes_normalizadas[classe_permitida_normalizada])
         
         return classes_permitidas_filtradas
     
-    return classes_permitidas
+    return classes_permitidas_nomes
 
 
 def validar_elegibilidade_categoria(classe_atleta, categoria_desejada, categorias_existentes=None):
@@ -149,41 +270,33 @@ def get_categorias_elegiveis(classe_atleta, sexo):
     baseado nas regras de elegibilidade.
     
     Args:
-        classe_atleta: Classe do atleta (ex: "VETERANOS", "SUB 18")
+        classe_atleta: Classe do atleta (ex: "VETERANOS", "SUB-18", "SUB 18")
         sexo: Sexo do atleta ("M" ou "F")
     
     Returns:
         QuerySet de categorias elegíveis
     """
-    # Obter classes permitidas para esta classe de atleta
+    # Obter classes permitidas para esta classe de atleta (retorna nomes reais do banco)
     classes_permitidas = categorias_permitidas(classe_atleta)
     
-    # Buscar todas as categorias dessas classes para o sexo do atleta
-    # Obter classes que realmente existem no banco
-    classes_existentes = list(Categoria.objects.filter(
-        sexo=sexo
-    ).values_list('classe', flat=True).distinct())
-    
-    # Normalizar para comparação
-    classes_permitidas_normalizadas = [c.upper().strip() for c in classes_permitidas]
-    classes_existentes_normalizadas = [c.upper().strip() for c in classes_existentes]
-    
-    # Filtrar apenas classes permitidas que existem no banco
-    classes_finais = []
-    for classe_permitida in classes_permitidas:
-        classe_permitida_normalizada = classe_permitida.upper().strip()
-        if classe_permitida_normalizada in classes_existentes_normalizadas:
-            # Encontrar a classe exata no banco (para manter capitalização correta)
-            for classe_existente in classes_existentes:
-                if classe_existente.upper().strip() == classe_permitida_normalizada:
-                    classes_finais.append(classe_existente)
-                    break
-    
-    # Retornar categorias dessas classes
-    if not classes_finais:
+    if not classes_permitidas:
         return Categoria.objects.none()
     
-    return Categoria.objects.filter(classe__in=classes_finais, sexo=sexo).order_by('classe', 'limite_min')
+    # Buscar objetos Classe no banco usando normalização flexível
+    classes_objs = []
+    for classe_nome in classes_permitidas:
+        classe_obj = buscar_classe_no_banco(classe_nome)
+        if classe_obj:
+            classes_objs.append(classe_obj)
+    
+    if not classes_objs:
+        return Categoria.objects.none()
+    
+    # Retornar categorias dessas classes
+    return Categoria.objects.filter(
+        classe__in=classes_objs,
+        sexo=sexo
+    ).order_by('classe__idade_min', 'limite_min')
 
 
 def ajustar_categoria_por_peso(atleta, peso_oficial):

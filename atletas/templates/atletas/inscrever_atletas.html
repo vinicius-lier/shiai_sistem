@@ -311,32 +311,85 @@ function fecharModalInscricao() {
     sexoAtleta = '';
 }
 
+// Função para normalizar nome de classe (igual ao Python)
+function normalizarNomeClasse(nomeClasse) {
+    if (!nomeClasse) return "";
+    
+    // Converter para maiúsculas e remover espaços extras
+    let nome = nomeClasse.toUpperCase().trim();
+    
+    // Remover espaços e hífens de "SUB X" ou "SUB-X" -> "SUBX"
+    nome = nome.replace(/SUB\s*[- ]?\s*(\d+)/g, 'SUB$1');
+    
+    // Normalizar variações comuns
+    nome = nome.replace("SÊNIOR", "SENIOR");
+    nome = nome.replace("VETERANO", "VETERANOS");
+    
+    return nome;
+}
+
 function categoriasPermitidas(classeAtleta) {
-    const classeNormalizada = classeAtleta.toUpperCase().trim();
+    // Normalizar classe do atleta para comparação
+    const classeNormalizada = normalizarNomeClasse(classeAtleta);
     
-    // Obter classes que existem nas categorias disponíveis
-    const classesExistentes = [...new Set(categorias.map(c => c.classe.toUpperCase().trim()))];
+    // Obter classes que existem nas categorias disponíveis (com nomes originais)
+    const classesExistentesMap = new Map();
+    categorias.forEach(cat => {
+        const classeNormal = normalizarNomeClasse(cat.classe);
+        if (!classesExistentesMap.has(classeNormal)) {
+            classesExistentesMap.set(classeNormal, cat.classe); // Guarda o valor original
+        }
+    });
+    const classesExistentesNormalizadas = Array.from(classesExistentesMap.keys());
     
-    // Regras de elegibilidade
-    let classesPermitidas = [];
+    // Determinar classes permitidas baseado na classe normalizada
+    let classesPermitidasNormalizadas = [];
     
-    if (classeNormalizada === 'VETERANOS' || classeNormalizada === 'VETERANO') {
-        classesPermitidas = ['VETERANOS', 'SÊNIOR'];
-    } else if (classeNormalizada === 'SUB 18' || classeNormalizada === 'SUB18') {
-        classesPermitidas = ['SUB 18', 'SUB 21', 'SÊNIOR'];
-    } else if (classeNormalizada === 'FESTIVAL') {
-        // Festival: apenas sua própria classe
-        classesPermitidas = ['Festival'];
+    if (classeNormalizada === "FESTIVAL") {
+        // Festival: somente Festival
+        classesPermitidasNormalizadas = ["FESTIVAL"];
+    } else if (classeNormalizada === "SUB9") {
+        // SUB-9: somente sua própria classe
+        classesPermitidasNormalizadas = [classeNormalizada];
+    } else if (classeNormalizada === "SUB11") {
+        // SUB-11: somente sua própria classe
+        classesPermitidasNormalizadas = [classeNormalizada];
+    } else if (classeNormalizada === "SUB13") {
+        // SUB-13: somente sua própria classe
+        classesPermitidasNormalizadas = [classeNormalizada];
+    } else if (classeNormalizada === "SUB15") {
+        // SUB-15: somente sua própria classe
+        classesPermitidasNormalizadas = [classeNormalizada];
+    } else if (classeNormalizada === "SUB18") {
+        // SUB-18: pode escolher SUB-18, SUB-21, SÊNIOR/VET
+        classesPermitidasNormalizadas = ["SUB18", "SUB21", "SENIOR"];
+    } else if (classeNormalizada === "SUB21") {
+        // SUB-21: pode escolher SUB-21 ou SÊNIOR/VET
+        classesPermitidasNormalizadas = ["SUB21", "SENIOR"];
+    } else if (classeNormalizada === "SENIOR" || classeNormalizada.includes("SENIOR")) {
+        // SÊNIOR/VET: pode escolher apenas SÊNIOR/VET
+        classesPermitidasNormalizadas = ["SENIOR"];
+    } else if (classeNormalizada === "VETERANOS" || classeNormalizada === "VETERANO") {
+        // VETERANOS: pode escolher VETERANOS ou SÊNIOR/VET
+        classesPermitidasNormalizadas = ["VETERANOS", "SENIOR"];
     } else {
         // Regra padrão: apenas sua própria classe
-        classesPermitidas = [classeAtleta];
+        classesPermitidasNormalizadas = [classeNormalizada];
     }
     
-    // Filtrar apenas classes que existem nas categorias
-    return classesPermitidas.filter(cl => {
-        const clNormalizada = cl.toUpperCase().trim();
-        return classesExistentes.some(ex => ex === clNormalizada);
+    // Filtrar apenas classes que existem nas categorias e retornar nomes originais
+    const classesFinais = [];
+    classesPermitidasNormalizadas.forEach(classePermitidaNormalizada => {
+        if (classesExistentesNormalizadas.includes(classePermitidaNormalizada)) {
+            // Encontrar o nome original da classe
+            const nomeOriginal = classesExistentesMap.get(classePermitidaNormalizada);
+            if (nomeOriginal && !classesFinais.includes(nomeOriginal)) {
+                classesFinais.push(nomeOriginal);
+            }
+        }
     });
+    
+    return classesFinais;
 }
 
 // Atualizar categorias quando classe for selecionada
@@ -355,10 +408,10 @@ if (classeSelectEl) {
             return;
         }
         
-        // Filtrar categorias pela classe selecionada e sexo
+        // Filtrar categorias pela classe selecionada e sexo (usando normalização)
+        const classeSelecionadaNormalizada = normalizarNomeClasse(classeSelecionada);
         const categoriasFiltradas = categorias.filter(cat => {
-            const catClasseNormalizada = cat.classe.toUpperCase().trim();
-            const classeSelecionadaNormalizada = classeSelecionada.toUpperCase().trim();
+            const catClasseNormalizada = normalizarNomeClasse(cat.classe);
             return catClasseNormalizada === classeSelecionadaNormalizada && 
                    cat.sexo === sexoAtleta;
         });

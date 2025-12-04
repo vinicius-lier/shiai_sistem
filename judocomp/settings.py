@@ -75,6 +75,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Servir arquivos estáticos em produção
+    'atletas.middleware.create_media_directory',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',  # Middleware de localização (deve vir após SessionMiddleware)
     'django.middleware.common.CommonMiddleware',
@@ -204,9 +205,13 @@ STATICFILES_DIRS = [
 # CompressedManifestStaticFilesStorage pode causar problemas com manifest.json
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
-# Media files (uploads)
+# Media files (uploads) – corrigido para Render
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+
+if os.environ.get("RENDER"):
+    MEDIA_ROOT = '/var/data/media'
+else:
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -1,0 +1,6 @@
+# Build Command para configurar no Render
+# Copie e cole este comando no campo "Build Command" do Render
+
+# Criar pasta /var/data ANTES de qualquer comando Django
+mkdir -p /var/data && chmod -R 755 /var/data && pip install -r requirements.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear
+

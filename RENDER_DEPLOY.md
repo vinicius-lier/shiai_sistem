@@ -51,8 +51,10 @@ chmod +x build.sh && ./build.sh
 
 **OU** (se preferir não usar o script):
 ```bash
-pip install -r requirements.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear
+mkdir -p /var/data && chmod -R 755 /var/data && pip install -r requirements.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear
 ```
+
+⚠️ **IMPORTANTE:** A pasta `/var/data` DEVE ser criada ANTES de qualquer comando Django, pois o Django executa verificações automáticas que tentam acessar o banco.
 
 **Start Command:**
 ```bash

@@ -6,17 +6,21 @@ set -e  # Parar em caso de erro
 
 echo "🚀 Iniciando build do projeto..."
 
-# Instalar dependências
-echo "📦 Instalando dependências Python..."
-pip install -r requirements.txt
-
-# Garantir que a pasta do banco existe (importante para Render)
-echo "📁 Garantindo que a pasta do banco de dados existe..."
+# CRÍTICO: Criar pasta /var/data ANTES de qualquer comando Django
+# O Django executa verificações automáticas que tentam acessar o banco
+echo "📁 Criando pasta /var/data (CRÍTICO - deve ser primeiro)..."
 if [ -n "$RENDER" ]; then
     mkdir -p /var/data
     chmod -R 755 /var/data
     echo "✅ Pasta /var/data criada"
+else
+    # Em desenvolvimento local, garantir que a pasta existe
+    mkdir -p media
 fi
+
+# Instalar dependências
+echo "📦 Instalando dependências Python..."
+pip install -r requirements.txt
 
 # Aplicar migrations (forçar aplicação de todas)
 echo "🗄️  Aplicando migrations do banco de dados..."

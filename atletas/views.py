@@ -2752,6 +2752,77 @@ def editar_campeonato(request, campeonato_id):
     })
 
 @operacional_required
+def deletar_campeonato(request, campeonato_id):
+    """Deletar campeonato"""
+    campeonato = get_object_or_404(Campeonato, id=campeonato_id)
+    
+    if request.method == 'POST':
+        try:
+            nome_campeonato = campeonato.nome
+            
+            # Verificar se há inscrições
+            total_inscricoes = Inscricao.objects.filter(campeonato=campeonato).count()
+            if total_inscricoes > 0:
+                messages.error(request, f'Não é possível excluir o campeonato "{nome_campeonato}" pois ele possui {total_inscricoes} inscrição(ões). Remova as inscrições primeiro.')
+                return redirect('lista_campeonatos')
+            
+            # Verificar se há chaves
+            total_chaves = Chave.objects.filter(campeonato=campeonato).count()
+            if total_chaves > 0:
+                messages.error(request, f'Não é possível excluir o campeonato "{nome_campeonato}" pois ele possui {total_chaves} chave(s) gerada(s). Remova as chaves primeiro.')
+                return redirect('lista_campeonatos')
+            
+            # Verificar se está ativo
+            if campeonato.ativo:
+                messages.error(request, f'Não é possível excluir o campeonato "{nome_campeonato}" pois ele está ativo. Desative-o primeiro.')
+                return redirect('lista_campeonatos')
+            
+            # Verificar outros relacionamentos importantes
+            from .models import AcademiaPontuacao, Despesa, InsumoEstrutura, EquipeTecnicaCampeonato, Pagamento, ConferenciaPagamento, PesagemHistorico
+            total_pontuacoes = AcademiaPontuacao.objects.filter(campeonato=campeonato).count()
+            total_despesas = Despesa.objects.filter(campeonato=campeonato).count()
+            total_pagamentos = Pagamento.objects.filter(campeonato=campeonato).count()
+            
+            if total_pontuacoes > 0 or total_despesas > 0 or total_pagamentos > 0:
+                mensagem = f'Não é possível excluir o campeonato "{nome_campeonato}" pois ele possui dados financeiros ou de pontuação vinculados.'
+                if total_pontuacoes > 0:
+                    mensagem += f' ({total_pontuacoes} pontuação(ões) de academias)'
+                if total_despesas > 0:
+                    mensagem += f' ({total_despesas} despesa(s))'
+                if total_pagamentos > 0:
+                    mensagem += f' ({total_pagamentos} pagamento(s))'
+                messages.error(request, mensagem)
+                return redirect('lista_campeonatos')
+            
+            # Deletar vínculos relacionados (em cascata ou manualmente)
+            AcademiaCampeonato.objects.filter(campeonato=campeonato).delete()
+            AcademiaCampeonatoSenha.objects.filter(campeonato=campeonato).delete()
+            # Nota: Outros modelos com ForeignKey CASCADE serão deletados automaticamente
+            
+            # Deletar o campeonato
+            campeonato.delete()
+            
+            messages.success(request, f'Campeonato "{nome_campeonato}" excluído com sucesso!')
+            return redirect('lista_campeonatos')
+        except Exception as e:
+            messages.error(request, f'Erro ao excluir campeonato: {str(e)}')
+            return redirect('lista_campeonatos')
+    
+    # GET: Mostrar informações
+    total_inscricoes = Inscricao.objects.filter(campeonato=campeonato).count()
+    total_chaves = Chave.objects.filter(campeonato=campeonato).count()
+    total_academias = AcademiaCampeonato.objects.filter(campeonato=campeonato).count()
+    
+    context = {
+        'campeonato': campeonato,
+        'total_inscricoes': total_inscricoes,
+        'total_chaves': total_chaves,
+        'total_academias': total_academias,
+    }
+    
+    return render(request, 'atletas/deletar_campeonato.html', context)
+
+@operacional_required
 def definir_campeonato_ativo(request, campeonato_id):
     """Ativar um campeonato (desativa os outros automaticamente)"""
     campeonato = get_object_or_404(Campeonato, id=campeonato_id)

@@ -26,7 +26,10 @@ urlpatterns = [
 ]
 
 # Servir MEDIA sempre (inclusive produção Render)
-if settings.DEBUG or os.environ.get("RENDER"):
+# Usar view dedicada para maior controle e compatibilidade
+# A view servir_media em atletas/urls.py já cobre isso
+# Mantemos static() como fallback para desenvolvimento
+if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Manter staticfiles patterns SOMENTE se DEBUG=True

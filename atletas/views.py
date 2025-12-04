@@ -6,7 +6,9 @@ from atletas.views_ajuda import ajuda_manual, ajuda_manual_web, ajuda_documentac
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse, Http404
+from django.conf import settings
+import os
 from django.views.decorators.http import require_http_methods
 from django.db.models import Q, Sum, Count, F
 from django.utils import timezone
@@ -5151,3 +5153,32 @@ def rejeitar_pagamento(request, pagamento_id):
     """
     messages.info(request, 'O módulo de Validação de Pagamentos foi unificado com a Conferência de Pagamentos.')
     return redirect('conferencia_pagamentos_lista')
+
+
+def servir_media(request, path):
+    """
+    View dedicada para servir arquivos de media (fotos de perfil, documentos, etc)
+    Funciona tanto em desenvolvimento quanto em produção no Render
+    """
+    from django.conf import settings
+    import mimetypes
+    
+    # Construir caminho completo do arquivo
+    file_path = os.path.join(settings.MEDIA_ROOT, path)
+    
+    # Verificar se o arquivo existe
+    if not os.path.exists(file_path) or not os.path.isfile(file_path):
+        raise Http404("Arquivo não encontrado")
+    
+    # Detectar tipo MIME
+    content_type, _ = mimetypes.guess_type(file_path)
+    if not content_type:
+        content_type = 'application/octet-stream'
+    
+    # Servir o arquivo
+    try:
+        response = FileResponse(open(file_path, 'rb'), content_type=content_type)
+        response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_path)}"'
+        return response
+    except Exception as e:
+        raise Http404(f"Erro ao servir arquivo: {str(e)}")

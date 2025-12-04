@@ -142,4 +142,7 @@ urlpatterns = [
     path('administracao/ocorrencias/criar/', views.ocorrencias_criar, name='ocorrencias_criar'),
     path('administracao/ocorrencias/<int:ocorrencia_id>/', views.ocorrencias_detalhe, name='ocorrencias_detalhe'),
     path('administracao/ocorrencias/historico/', views.ocorrencias_historico, name='ocorrencias_historico'),
+    
+    # Servir arquivos de media (fotos de perfil, documentos, etc)
+    path('media/<path:path>', views.servir_media, name='servir_media'),
 ]

@@ -25,6 +25,16 @@ def parse_peso(peso_str):
     return None, None
 
 def run():
+    # Mapeamento de classes com idade_min e idade_max
+    classes_map = {
+        "SUB-9": ("SUB 9", 7, 8),
+        "SUB-11": ("SUB 11", 9, 10),
+        "SUB-13": ("SUB 13", 11, 12),
+        "SUB-15": ("SUB 15", 13, 14),
+        "SUB-18": ("SUB 18", 15, 17),
+        "SÊNIOR/VET": ("SÊNIOR", 21, 29),  # Usar SÊNIOR para SÊNIOR/VET
+    }
+    
     categorias_data = [
         # MASCULINO – SUB-9
         ("SUB-9", "M", "Até 23 kg"),
@@ -155,9 +165,18 @@ def run():
     ]
 
     objs = []
-    for classe_nome, sexo, peso_str in categorias_data:
-        # Buscar ou criar a classe
-        classe, _ = Classe.objects.get_or_create(nome=classe_nome)
+    for classe_key, sexo, peso_str in categorias_data:
+        # Mapear nome da classe (SUB-9 -> SUB 9, etc.)
+        classe_nome, idade_min, idade_max = classes_map[classe_key]
+        
+        # Buscar ou criar a classe com idade_min e idade_max
+        classe, _ = Classe.objects.get_or_create(
+            nome=classe_nome,
+            defaults={
+                'idade_min': idade_min,
+                'idade_max': idade_max
+            }
+        )
         
         # Parse do peso
         limite_min, limite_max = parse_peso(peso_str)

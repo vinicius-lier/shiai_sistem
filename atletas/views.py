@@ -738,10 +738,13 @@ def lista_categorias(request):
 @operacional_required
 def cadastrar_categoria(request):
     """Cadastrar nova categoria manualmente"""
+    # Garantir que Classe e Categoria estão disponíveis (já importados no topo do arquivo)
+    # Buscar classes existentes para sugestões (usado tanto em GET quanto POST)
+    classes = Classe.objects.all().order_by('idade_min')
+    
     if request.method == 'POST':
         try:
-            from decimal import Decimal
-            from .models import Classe, Categoria
+            from decimal import Decimal, InvalidOperation
             
             classe_nome = request.POST.get('classe', '').strip()
             sexo = request.POST.get('sexo', '').strip()
@@ -761,7 +764,7 @@ def cadastrar_categoria(request):
                     limite_max = Decimal(limite_max_str) if limite_max_str else None
                     
                     # Buscar ou criar a classe
-                    classe, _ = Classe.objects.get_or_create(
+                    classe_obj, _ = Classe.objects.get_or_create(
                         nome=classe_nome,
                         defaults={
                             'idade_min': 0,
@@ -779,7 +782,7 @@ def cadastrar_categoria(request):
                     
                     # Verificar se categoria já existe
                     categoria_existente = Categoria.objects.filter(
-                        classe=classe,
+                        classe=classe_obj,
                         sexo=sexo,
                         categoria_nome=categoria_nome,
                         limite_min=limite_min,
@@ -791,7 +794,7 @@ def cadastrar_categoria(request):
                     else:
                         # Criar nova categoria
                         categoria = Categoria.objects.create(
-                            classe=classe,
+                            classe=classe_obj,
                             sexo=sexo,
                             categoria_nome=categoria_nome,
                             limite_min=limite_min,
@@ -801,15 +804,14 @@ def cadastrar_categoria(request):
                         messages.success(request, f'Categoria "{categoria.label}" cadastrada com sucesso!')
                         return redirect('lista_categorias')
                         
-                except ValueError:
+                except (ValueError, InvalidOperation):
                     messages.error(request, 'Valores de peso inválidos. Use números válidos.')
                 except Exception as e:
                     messages.error(request, f'Erro ao cadastrar categoria: {str(e)}')
         except Exception as e:
             messages.error(request, f'Erro ao processar formulário: {str(e)}')
     
-    # GET: Buscar classes existentes para sugestões
-    classes = Classe.objects.all().order_by('idade_min')
+    # GET: Retornar formulário com classes disponíveis
     return render(request, 'atletas/cadastrar_categoria.html', {'classes': classes})
 
 def lista_atletas(request):

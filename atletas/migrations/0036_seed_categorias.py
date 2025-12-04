@@ -9,6 +9,12 @@ def seed_categorias(apps, schema_editor):
     Classe = apps.get_model("atletas", "Classe")
     Categoria = apps.get_model("atletas", "Categoria")
 
+    # Verificar se existem classes
+    classes = Classe.objects.all()
+    if not classes.exists():
+        print("⚠️  Aviso: Nenhuma classe encontrada. Execute a migration 0035_seed_classes primeiro.")
+        return
+
     pesos = [
         ("Super Ligeiro", 0, 31),
         ("Ligeiro", 31, 34),
@@ -21,7 +27,7 @@ def seed_categorias(apps, schema_editor):
         ("Super Pesado", 63, None),
     ]
 
-    for classe in Classe.objects.all():
+    for classe in classes:
         for sexo in ["M", "F"]:
             for nome, minimo, maximo in pesos:
                 if maximo is not None:
@@ -29,16 +35,28 @@ def seed_categorias(apps, schema_editor):
                 else:
                     label = f"{classe.nome} - {sexo} - {nome} (+{minimo}kg)"
 
-                Categoria.objects.get_or_create(
-                    classe=classe,
-                    sexo=sexo,
-                    categoria_nome=nome,
-                    defaults={
-                        'limite_min': Decimal(str(minimo)),
-                        'limite_max': Decimal(str(maximo)) if maximo is not None else None,
-                        'label': label
-                    }
-                )
+                # Verificar se já existe
+                try:
+                    categoria = Categoria.objects.get(
+                        classe=classe,
+                        sexo=sexo,
+                        categoria_nome=nome
+                    )
+                    # Atualizar se já existe
+                    categoria.limite_min = Decimal(str(minimo))
+                    categoria.limite_max = Decimal(str(maximo)) if maximo is not None else None
+                    categoria.label = label
+                    categoria.save()
+                except Categoria.DoesNotExist:
+                    # Criar explicitamente com todos os campos
+                    Categoria.objects.create(
+                        classe=classe,
+                        sexo=sexo,
+                        categoria_nome=nome,
+                        limite_min=Decimal(str(minimo)),
+                        limite_max=Decimal(str(maximo)) if maximo is not None else None,
+                        label=label
+                    )
 
 
 def reverse_seed_categorias(apps, schema_editor):

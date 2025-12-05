@@ -18,6 +18,18 @@ import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# STATIC
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# MEDIA
+MEDIA_URL = '/media/'
+
+if os.environ.get('RENDER'):
+    MEDIA_ROOT = '/var/data/media'
+else:
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Carregar variáveis de ambiente
 RESET_ADMIN_PASSWORD = os.environ.get('RESET_ADMIN_PASSWORD')
 
@@ -210,8 +222,17 @@ STATICFILES_DIRS = [
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Media files (uploads)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "/media/"
+
+if os.environ.get("RENDER"):
+    # Caminho correto no Render
+    MEDIA_ROOT = "/opt/render/project/src/media"
+else:
+    MEDIA_ROOT = BASE_DIR / "media"
+
+
+MEDIA_URL = "/media/"
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

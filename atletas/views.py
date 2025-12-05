@@ -740,108 +740,91 @@ def lista_atletas(request):
     atletas = Atleta.objects.select_related('academia').order_by('academia__nome', 'nome')
     return render(request, 'atletas/lista_atletas.html', {'atletas': atletas})
 
-@operacional_required
+
+@academia_required
 def cadastrar_atleta(request):
-    """Cadastrar novo atleta"""
+    """Cadastrar novo atleta (vinculado automaticamente à academia do login)"""
+    
+    academia = request.academia  # vem direto do decorator
+
     if request.method == 'POST':
         try:
             nome = request.POST.get('nome', '').strip()
             data_nascimento = request.POST.get('data_nascimento')
             sexo = request.POST.get('sexo')
-            academia_id = request.POST.get('academia')
             federado = request.POST.get('federado') == 'on'
             faixa = request.POST.get('faixa', '').strip() or None
             numero_zempo = request.POST.get('numero_zempo', '').strip() or None
             
-            if not nome or not data_nascimento or not sexo or not academia_id:
+            if not nome or not data_nascimento or not sexo:
                 messages.error(request, 'Preencha todos os campos obrigatórios.')
-            else:
-                academia = get_object_or_404(Academia, id=academia_id)
-                
-                atleta = Atleta.objects.create(
-                    nome=nome,
-                    data_nascimento=data_nascimento,
-                    sexo=sexo,
-                    academia=academia,
-                    federado=federado,
-                    faixa=faixa,
-                    numero_zempo=numero_zempo,
-                )
-                
-                # Upload de foto
-                if 'foto_perfil' in request.FILES:
-                    atleta.foto_perfil = request.FILES['foto_perfil']
-                
-                # Upload de documento oficial
-                if 'documento_oficial' in request.FILES:
-                    atleta.documento_oficial = request.FILES['documento_oficial']
-                
-                atleta.save()
-                
-                messages.success(request, f'Atleta "{atleta.nome}" cadastrado com sucesso!')
-                return redirect('lista_atletas')
+                return redirect('cadastrar_atleta')
+
+            atleta = Atleta.objects.create(
+                nome=nome,
+                data_nascimento=data_nascimento,
+                sexo=sexo,
+                academia=academia,      # <<< AQUI ESTÁ O SEGREDO
+                federado=federado,
+                faixa=faixa,
+                numero_zempo=numero_zempo,
+            )
+
+            # Upload de foto
+            if 'foto_perfil' in request.FILES:
+                atleta.foto_perfil = request.FILES['foto_perfil']
+
+            # Upload de documento oficial
+            if 'documento_oficial' in request.FILES:
+                atleta.documento_oficial = request.FILES['documento_oficial']
+
+            atleta.save()
+
+            messages.success(request, f'Atleta "{atleta.nome}" cadastrado com sucesso!')
+            return redirect('academia_dashboard')  # ajuste pro seu nome de rota
         except Exception as e:
             messages.error(request, f'Erro ao cadastrar atleta: {str(e)}')
-    
-    # GET: Buscar academias para o select
-    academias = Academia.objects.filter(ativo_login=True).order_by('nome')
-    return render(request, 'atletas/cadastrar_atleta.html', {'academias': academias})
 
-@operacional_required
+    return render(request, 'atletas/cadastrar_atleta.html', {
+        'academia': academia
+    })
+
+@academia_required
 def editar_atleta(request, atleta_id):
-    """Editar atleta existente"""
-    atleta = get_object_or_404(Atleta, id=atleta_id)
-    
+    """Editar atleta existente (somente da própria academia)"""
+
+    academia = request.academia
+    atleta = get_object_or_404(Atleta, id=atleta_id, academia=academia)
+
     if request.method == 'POST':
         try:
             atleta.nome = request.POST.get('nome', '').strip()
             atleta.data_nascimento = request.POST.get('data_nascimento')
             atleta.sexo = request.POST.get('sexo')
-            academia_id = request.POST.get('academia')
             atleta.federado = request.POST.get('federado') == 'on'
             atleta.faixa = request.POST.get('faixa', '').strip() or None
             atleta.numero_zempo = request.POST.get('numero_zempo', '').strip() or None
-            
-            # Campos de equipe técnica
-            atleta.pode_ser_equipe_tecnica = request.POST.get('pode_ser_equipe_tecnica') == 'on'
-            atleta.funcao_equipe_tecnica = request.POST.get('funcao_equipe_tecnica', '').strip() or None
-            atleta.telefone = request.POST.get('telefone', '').strip() or None
-            chave_pix = request.POST.get('chave_pix', '').strip() or None
-            
-            # Validar chave PIX se marcado como equipe técnica
-            if atleta.pode_ser_equipe_tecnica and not chave_pix:
-                messages.error(request, 'Chave PIX é obrigatória para pessoas que podem fazer parte da equipe técnica.')
-                academias = Academia.objects.filter(ativo_login=True).order_by('nome')
-                return render(request, 'atletas/editar_atleta.html', {
-                    'atleta': atleta,
-                    'academias': academias
-                })
-            
-            atleta.chave_pix = chave_pix
-            
-            if academia_id:
-                atleta.academia = get_object_or_404(Academia, id=academia_id)
-            
-            # Upload de foto
+
+            # Foto
             if 'foto_perfil' in request.FILES:
                 atleta.foto_perfil = request.FILES['foto_perfil']
-            
-            # Upload de documento oficial
+
+            # Documento oficial
             if 'documento_oficial' in request.FILES:
                 atleta.documento_oficial = request.FILES['documento_oficial']
-            
+
             atleta.save()
-            messages.success(request, f'Atleta "{atleta.nome}" atualizado com sucesso!')
-            return redirect('lista_atletas')
+
+            messages.success(request, f'Atleta "{atleta.nome}" atualizado!')
+            return redirect('academia_dashboard')
         except Exception as e:
             messages.error(request, f'Erro ao atualizar atleta: {str(e)}')
-    
-    # GET: Buscar academias para o select
-    academias = Academia.objects.filter(ativo_login=True).order_by('nome')
+
     return render(request, 'atletas/editar_atleta.html', {
         'atleta': atleta,
-        'academias': academias
+        'academia': academia
     })
+
 
 def cadastrar_festival(request):
     return render(request, 'atletas/cadastrar_festival.html')

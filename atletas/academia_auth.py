@@ -169,3 +169,27 @@ def pode_criar_usuarios_required(view_func):
     
     return _wrapped_view
 
+from functools import wraps
+from django.shortcuts import redirect
+from .models import AcademiaCampeonatoSenha, Academia
+
+def academia_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+
+        academia_id = request.session.get("academia_id")
+
+        # Se não tem sessão → redireciona
+        if not academia_id:
+            return redirect("academia_login")
+
+        # Carrega a academia na requisição
+        try:
+            request.academia = Academia.objects.get(id=academia_id)
+        except Academia.DoesNotExist:
+            request.session.flush()
+            return redirect("academia_login")
+
+        return view_func(request, *args, **kwargs)
+
+    return wrapper

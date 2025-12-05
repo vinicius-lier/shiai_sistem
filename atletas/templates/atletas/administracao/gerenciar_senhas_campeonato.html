@@ -110,7 +110,7 @@
                                     data-valor-federado="{{ valor_federado }}"
                                     data-valor-nao-federado="{{ valor_nao_federado }}"
                                     data-telefone="{{ item.telefone }}"
-                                    data-login-url="{% url 'academia_login' %}"
+                                    data-login-url="{{ login_url }}"
                                     data-responsavel="{{ item.responsavel|default:'' }}"
                                     data-credencial-id="{{ item.credencial_id }}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">

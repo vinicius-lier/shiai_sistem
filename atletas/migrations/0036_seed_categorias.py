@@ -6,39 +6,9 @@ from decimal import Decimal
 
 def seed_categorias(apps, schema_editor):
     """Seed inicial das categorias de peso para todas as classes e sexos"""
-    Classe = apps.get_model("atletas", "Classe")
-    Categoria = apps.get_model("atletas", "Categoria")
-
-    pesos = [
-        ("Super Ligeiro", 0, 31),
-        ("Ligeiro", 31, 34),
-        ("Meio Leve", 34, 38),
-        ("Leve", 38, 42),
-        ("Meio Médio", 42, 47),
-        ("Médio", 47, 52),
-        ("Meio Pesado", 52, 57),
-        ("Pesado", 57, 63),
-        ("Super Pesado", 63, None),
-    ]
-
-    for classe in Classe.objects.all():
-        for sexo in ["M", "F"]:
-            for nome, minimo, maximo in pesos:
-                if maximo is not None:
-                    label = f"{classe.nome} - {sexo} - {nome} (-{maximo}kg)"
-                else:
-                    label = f"{classe.nome} - {sexo} - {nome} (+{minimo}kg)"
-
-                Categoria.objects.get_or_create(
-                    classe=classe,
-                    sexo=sexo,
-                    categoria_nome=nome,
-                    defaults={
-                        'limite_min': Decimal(str(minimo)),
-                        'limite_max': Decimal(str(maximo)) if maximo is not None else None,
-                        'label': label
-                    }
-                )
+    # DESABILITADO: Categorias serão criadas manualmente via interface web (cadastrar_categoria)
+    # Permite controle total sobre quais categorias são criadas
+    pass
 
 
 def reverse_seed_categorias(apps, schema_editor):
@@ -54,5 +24,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(seed_categorias, reverse_seed_categorias),
+        # migrations.RunPython(seed_categorias, reverse_seed_categorias),  # DESABILITADO
     ]

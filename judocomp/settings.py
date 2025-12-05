@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 import mimetypes
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -75,6 +76,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Servir arquivos estáticos em produção
+    'atletas.middleware.create_media_directory',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',  # Middleware de localização (deve vir após SessionMiddleware)
     'django.middleware.common.CommonMiddleware',
@@ -109,16 +111,21 @@ WSGI_APPLICATION = 'judocomp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-if os.environ.get("RENDER"):
-    # Ambiente de PRODUÇÃO (Render) usa disco persistente
+# PostgreSQL em produção (Render) via DATABASE_URL
+# SQLite apenas em desenvolvimento local quando DATABASE_URL não estiver configurado
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    # Produção (Render): usar PostgreSQL
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join("/var/data", "db.sqlite3"),
-        }
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
 else:
-    # Ambiente LOCAL (normal)
+    # Desenvolvimento local: usar SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -204,9 +211,13 @@ STATICFILES_DIRS = [
 # CompressedManifestStaticFilesStorage pode causar problemas com manifest.json
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
-# Media files (uploads)
+# Media files (uploads) – corrigido para Render
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+
+if os.environ.get("RENDER"):
+    MEDIA_ROOT = '/var/data/media'
+else:
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

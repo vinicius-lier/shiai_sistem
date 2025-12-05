@@ -76,6 +76,7 @@ urlpatterns = [
     path('campeonatos/', views.lista_campeonatos, name='lista_campeonatos'),
     path('campeonatos/cadastrar/', views.cadastrar_campeonato, name='cadastrar_campeonato'),
     path('campeonatos/<int:campeonato_id>/editar/', views.editar_campeonato, name='editar_campeonato'),
+    path('campeonatos/<int:campeonato_id>/deletar/', views.deletar_campeonato, name='deletar_campeonato'),
     path('campeonatos/<int:campeonato_id>/ativar/', views.definir_campeonato_ativo, name='definir_campeonato_ativo'),
     path('campeonatos/<int:campeonato_id>/academias/', views.gerenciar_academias_campeonato, name='gerenciar_academias_campeonato'),
     path('campeonatos/<int:campeonato_id>/senhas/', views.gerenciar_senhas_campeonato, name='gerenciar_senhas_campeonato'),
@@ -141,4 +142,7 @@ urlpatterns = [
     path('administracao/ocorrencias/criar/', views.ocorrencias_criar, name='ocorrencias_criar'),
     path('administracao/ocorrencias/<int:ocorrencia_id>/', views.ocorrencias_detalhe, name='ocorrencias_detalhe'),
     path('administracao/ocorrencias/historico/', views.ocorrencias_historico, name='ocorrencias_historico'),
+    
+    # Servir arquivos de media (fotos de perfil, documentos, etc)
+    path('media/<path:path>', views.servir_media, name='servir_media'),
 ]

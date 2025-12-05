@@ -639,18 +639,40 @@ class CadastroOperacional(models.Model):
 
 
 class UserProfile(models.Model):
-    """Perfil do usuário com organizador (multi-tenant)"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name="Usuário")
-    organizador = models.ForeignKey(Organizador, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios', verbose_name="Organizador", help_text="Organizador ao qual o usuário pertence")
+    """Perfil de usuário multi-tenant completo"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    
+    # Organização (superior)
+    organizador = models.ForeignKey(
+        Organizador,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='usuarios'
+    )
+
+    # NOVO CAMPO – ACADEMIA
+    academia = models.ForeignKey(
+        Academia,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='usuarios_academia'
+    )
 
     class Meta:
         verbose_name = "Perfil de Usuário"
         verbose_name_plural = "Perfis de Usuário"
 
     def __str__(self):
+        texto = [self.user.username]
         if self.organizador:
-            return f"{self.user.username} - {self.organizador.nome}"
-        return f"{self.user.username} - Sem organizador"
+            texto.append(f"Org: {self.organizador.nome}")
+        if self.academia:
+            texto.append(f"Acad: {self.academia.nome}")
+        return " | ".join(texto)
+
+
 
 
 class UsuarioOperacional(models.Model):

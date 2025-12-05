@@ -69,8 +69,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'atletas',
+    'atletas.apps.AtletasConfig',   # ← ESTA É A ALTERAÇÃO QUE FALTAVA
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

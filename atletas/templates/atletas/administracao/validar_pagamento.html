@@ -112,7 +112,7 @@
                     </button>
                 </form>
                 
-                <a href="{% url 'rejeitar_pagamento' pagamento.id %}" class="btn btn-danger" style="width: 100%; justify-content: center; padding: var(--spacing-3); font-size: var(--font-size-base); font-weight: 600;">
+                <a href="{% url 'rejeitar_pagamento' organizacao_slug=request.organizacao.slug pagamento_id=pagamento.id %}" class="btn btn-danger" style="width: 100%; justify-content: center; padding: var(--spacing-3); font-size: var(--font-size-base); font-weight: 600;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -120,7 +120,7 @@
                     ❌ Rejeitar Pagamento
                 </a>
                 
-                <a href="{% url 'validacao_pagamentos' %}" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+                <a href="{% url 'validacao_pagamentos' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary" style="width: 100%; justify-content: center;">
                     ← Voltar para Lista
                 </a>
             </div>

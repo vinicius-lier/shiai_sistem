@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from django.db.models import Q
 from .models import Atleta, Categoria, Chave, Luta, Academia, Campeonato, AcademiaPontuacao, Inscricao
 import random
@@ -346,26 +347,37 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
         print(f"❌ ERRO: Campeonato não fornecido")
         raise ValueError("Campeonato é obrigatório para gerar chaves")
     
-    # Buscar inscrições aprovadas do campeonato COM PESO CONFIRMADO
-    # Filtrar por classe_escolhida, sexo do atleta, e categoria (escolhida ou ajustada)
-    # Apenas atletas com peso registrado podem entrar na chave
+    # Buscar inscrições aprovadas/remanejadas do campeonato COM PESO REAL CONFIRMADO e categoria/classe reais
     print(f"\n🔍 Buscando inscrições...")
-    inscricoes = Inscricao.objects.filter(
+    from django.db.models import Q
+
+    base_qs = Inscricao.objects.filter(
         campeonato=campeonato,
-        classe_escolhida=classe,
-        atleta__sexo=sexo,
-        status_inscricao='aprovado',
-        peso__isnull=False  # Peso deve estar registrado
-    ).exclude(
-        classe_escolhida='Festival'  # Festival não entra em chaves
-    ).exclude(
-        peso=0  # Peso zero não é válido
-    ).filter(
-        Q(categoria_escolhida=categoria_nome) | Q(categoria_ajustada=categoria_nome)
-    ).select_related('atleta', 'atleta__academia')
+        classe_real__nome=classe,
+        atleta__sexo=sexo
+    ).exclude(classe_real__nome__iexact='Festival').select_related(
+        'atleta', 'atleta__academia', 'classe_real', 'categoria_real'
+    )
+
+    total_inscritos = base_qs.count()
+    bloqueados = base_qs.filter(bloqueado_chave=True).count()
+    sem_categoria = base_qs.filter(categoria_real__isnull=True).count()
+    sem_peso = base_qs.filter(Q(peso_real__isnull=True) | Q(peso_real=0)).count()
+
+    inscricoes = base_qs.filter(
+        status_inscricao__in=['aprovado', 'remanejado'],
+        bloqueado_chave=False,
+        categoria_real__isnull=False,
+        peso_real__gt=Decimal('0.0')
+    )
     
     inscricoes_count = inscricoes.count()
-    print(f"   ✅ Encontradas {inscricoes_count} inscrições elegíveis")
+    print(f"   📊 Totais para {classe}/{sexo}/{categoria_nome}:")
+    print(f"      - Inscritos (classe/sexo): {total_inscritos}")
+    print(f"      - Bloqueados: {bloqueados}")
+    print(f"      - Sem categoria_real: {sem_categoria}")
+    print(f"      - Sem peso_real: {sem_peso}")
+    print(f"      - Aptos (status_inscricao aprovado/remanejado, desbloqueados, peso_real>0, categoria_real ok): {inscricoes_count}")
     
     if inscricoes_count == 0:
         print(f"   ⚠️  Nenhuma inscrição encontrada com os critérios:")
@@ -385,6 +397,14 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
         print(f"   📝 Atletas:")
         for idx, atleta in enumerate(atletas_list, 1):
             print(f"      {idx}. {atleta.nome} (ID: {atleta.id}, Academia: {atleta.academia.nome})")
+    else:
+        aviso = (
+            f"Nenhuma inscrição elegível para gerar chave "
+            f"({classe} / {sexo} / {categoria_nome}) no campeonato {campeonato.id}."
+        )
+        print(f"   ⚠️  {aviso}")
+        # Não gerar/atualizar chave vazia
+        raise ValueError(aviso)
     
     # Criar ou atualizar chave vinculada ao campeonato
     print(f"\n🔍 Criando/atualizando chave no banco...")

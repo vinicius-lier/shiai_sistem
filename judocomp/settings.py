@@ -94,6 +94,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'atletas.middleware.MobileRedirectMiddleware',  # Detecção automática mobile/desktop
+    'atletas.middleware.OrganizacaoMiddleware',     # Resolve organização pelo slug na URL
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

@@ -62,6 +62,19 @@
             border-bottom: 2px solid #000;
             padding-bottom: 8mm;
             margin-bottom: 10mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .print-header-logo {
+            height: 50px;
+            width: auto;
+            margin-right: 10mm;
+        }
+        
+        .print-header-content {
+            flex: 1;
         }
 
         .header-line {
@@ -347,15 +360,27 @@
     </style>
 </head>
 <body>
+    {% if messages %}
+    <div class="print-alerts" style="margin-bottom:10px;">
+        {% for message in messages %}
+            <div class="alert {% if 'error' in message.tags or 'warning' in message.tags %}alert-danger{% else %}alert-success{% endif %}"
+                 style="padding:8px 12px;border:1px solid #000;font-size:13px;display:block;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
     <div class="print-container">
         <!-- Cabeçalho -->
         <div class="print-header">
-            <div class="header-line">
-                <span class="header-label">CAMPEONATO:</span>
-                <div class="header-field">
-                    {% if chave.campeonato %}{{ chave.campeonato.nome }}{% endif %}
+            <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" class="print-header-logo">
+            <div class="print-header-content">
+                <div class="header-line">
+                    <span class="header-label">CAMPEONATO:</span>
+                    <div class="header-field">
+                        {% if chave.campeonato %}{{ chave.campeonato.nome }}{% endif %}
+                    </div>
                 </div>
-            </div>
             <div class="header-row">
                 <div class="header-item">
                     <span class="header-item-label">CLASSE:</span>

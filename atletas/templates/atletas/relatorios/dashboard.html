@@ -33,7 +33,7 @@
         </svg>
         <div class="empty-state-title">Nenhum dado disponível ainda</div>
         <div class="empty-state-description">Cadastre atletas para ativar as métricas do sistema</div>
-        <a href="{% url 'cadastrar_atleta' %}" class="btn btn-primary" style="margin-top: var(--spacing-4);">
+        <a href="{% url 'cadastrar_atleta' organizacao_slug=request.organizacao.slug %}" class="btn btn-primary" style="margin-top: var(--spacing-4);">
             Cadastrar Atleta
         </a>
     </div>

@@ -83,7 +83,7 @@
     <div class="card">
         <div class="card-header card-header-flex">
             <h2 class="card-title m-0">Ocorrências</h2>
-            <a href="{% url 'ocorrencias_criar' %}{% if campeonato_selecionado %}?campeonato_id={{ campeonato_selecionado.id }}{% endif %}" class="btn btn-primary">
+            <a href="{% url 'ocorrencias_criar' organizacao_slug=request.organizacao.slug %}{% if campeonato_selecionado %}?campeonato_id={{ campeonato_selecionado.id }}{% endif %}" class="btn btn-primary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -141,7 +141,7 @@
                             </td>
                             <td>{{ ocorrencia.registrado_por.first_name|default:ocorrencia.registrado_por.username }}</td>
                             <td>
-                                <a href="{% url 'ocorrencias_detalhe' ocorrencia.id %}" class="btn btn-sm btn-secondary">Ver</a>
+                                <a href="{% url 'ocorrencias_detalhe' organizacao_slug=request.organizacao.slug ocorrencia_id=ocorrencia.id %}" class="btn btn-sm btn-secondary">Ver</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -166,7 +166,7 @@
             {% else %}
             <div class="text-center py-5">
                 <p class="text-muted">Nenhuma ocorrência encontrada.</p>
-                <a href="{% url 'ocorrencias_criar' %}{% if campeonato_selecionado %}?campeonato_id={{ campeonato_selecionado.id }}{% endif %}" class="btn btn-primary">Registrar Primeira Ocorrência</a>
+                <a href="{% url 'ocorrencias_criar' organizacao_slug=request.organizacao.slug %}{% if campeonato_selecionado %}?campeonato_id={{ campeonato_selecionado.id }}{% endif %}" class="btn btn-primary">Registrar Primeira Ocorrência</a>
             </div>
             {% endif %}
         </div>

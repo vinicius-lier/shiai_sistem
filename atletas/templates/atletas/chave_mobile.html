@@ -131,7 +131,7 @@
     </style>
 </head>
 <body>
-    <a href="{% url 'detalhe_chave' chave.id %}?desktop=1" class="link-voltar">← Versão Desktop</a>
+    <a href="{% url 'detalhe_chave' organizacao_slug=request.organizacao.slug chave_id=chave.id %}?desktop=1" class="link-voltar">← Versão Desktop</a>
     
     <div class="header">
         <h1>🏆 Chave - {{ chave.classe }} {{ chave.get_sexo_display }}</h1>
@@ -178,7 +178,7 @@
                 <small>{{ luta.get_tipo_vitoria_display }} ({{ luta.pontos_vencedor }} pontos)</small>
             </div>
             {% else %}
-            <a href="{% url 'luta_mobile' luta.id %}" class="btn-resolver">✓ Resolver Luta</a>
+            <a href="{% url 'luta_mobile' organizacao_slug=request.organizacao.slug luta_id=luta.id %}" class="btn-resolver">✓ Resolver Luta</a>
             {% endif %}
         </div>
         {% endfor %}

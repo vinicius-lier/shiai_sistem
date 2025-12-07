@@ -17,7 +17,7 @@ def academia_required(view_func):
         
         if not academia_id:
             messages.warning(request, 'Você precisa fazer login como academia para acessar esta página.')
-            return redirect('selecionar_tipo_login')
+            return redirect('academia_login')
         
         try:
             academia = Academia.objects.get(id=academia_id, ativo_login=True)
@@ -29,7 +29,7 @@ def academia_required(view_func):
                     if credencial.esta_expirado:
                         messages.error(request, 'O acesso temporário da sua academia expirou. Para acessar novos eventos, aguarde o envio de novo convite.')
                         request.session.flush()
-                        return redirect('selecionar_tipo_login')
+                        return redirect('academia_login')
                 except AcademiaCampeonatoSenha.DoesNotExist:
                     pass
             
@@ -38,7 +38,7 @@ def academia_required(view_func):
         except Academia.DoesNotExist:
             messages.error(request, 'Academia não encontrada ou inativa.')
             request.session.flush()
-            return redirect('selecionar_tipo_login')
+            return redirect('academia_login')
     
     return _wrapped_view
 
@@ -47,6 +47,8 @@ def operacional_required(view_func):
     """Decorator para verificar se é acesso operacional (não academia) - SEMPRE exige login e senha"""
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
+        # Remover slug da organização dos kwargs para evitar TypeError em views que não o recebem
+        kwargs.pop('organizacao_slug', None)
         # Se está logado como academia, redirecionar
         if request.session.get('academia_id'):
             messages.warning(request, 'Você está logado como academia. Faça logout para acessar o módulo operacional.')
@@ -55,7 +57,7 @@ def operacional_required(view_func):
         # Verificar se está autenticado operacionalmente (Django auth) - OBRIGATÓRIO
         if not request.user.is_authenticated:
             messages.warning(request, 'Você precisa fazer login operacional para acessar esta página.')
-            return redirect('login_operacional')
+            return redirect('login')
         
         # Superusers sempre têm acesso
         if request.user.is_superuser:
@@ -85,12 +87,12 @@ def operacional_required(view_func):
             perfil = request.user.perfil_operacional
             if not perfil.ativo:
                 messages.error(request, 'Seu acesso operacional foi desativado.')
-                return redirect('login_operacional')
+                return redirect('login')
             
             # Verificar expiração
             if perfil.esta_expirado:
                 messages.error(request, f'Seu acesso operacional expirou em {perfil.data_expiracao.strftime("%d/%m/%Y")}.')
-                return redirect('login_operacional')
+                return redirect('login')
         except UsuarioOperacional.DoesNotExist:
             # Usuário não tem perfil operacional - criar um padrão (30 dias)
             from datetime import timedelta
@@ -109,22 +111,45 @@ def operacional_required(view_func):
     return _wrapped_view
 
 
+def operacional_ou_academia_required(view_func):
+    """
+    Permite acesso tanto para login operacional quanto para login de academia.
+    - Se houver sessão de academia, reaproveita a validação de academia_required.
+    - Caso contrário, valida como operacional.
+    """
+    academia_wrapper = academia_required(view_func)
+    operacional_wrapper = operacional_required(view_func)
+
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if request.session.get('academia_id'):
+            return academia_wrapper(request, *args, **kwargs)
+        return operacional_wrapper(request, *args, **kwargs)
+
+    return _wrapped_view
+
 def pode_resetar_required(view_func):
     """Decorator para verificar se o usuário pode resetar campeonato"""
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             messages.error(request, 'Você precisa estar autenticado.')
-            return redirect('login_operacional')
+            return redirect('login')
         
         try:
             perfil = request.user.perfil_operacional
             if not perfil.pode_resetar_campeonato:
                 messages.error(request, 'Você não tem permissão para resetar campeonato.')
-                return redirect('index')
+                organizacao = getattr(request, "organizacao", None)
+                if organizacao and getattr(organizacao, "slug", None):
+                    return redirect('index', organizacao_slug=organizacao.slug)
+                return redirect('landing_publica')
         except UsuarioOperacional.DoesNotExist:
             messages.error(request, 'Você não tem permissão para resetar campeonato.')
-            return redirect('index')
+            organizacao = getattr(request, "organizacao", None)
+            if organizacao and getattr(organizacao, "slug", None):
+                return redirect('index', organizacao_slug=organizacao.slug)
+            return redirect('landing_publica')
         
         return view_func(request, *args, **kwargs)
     
@@ -142,7 +167,7 @@ def pode_criar_usuarios_required(view_func):
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             messages.error(request, 'Você precisa estar autenticado.')
-            return redirect('login_operacional')
+            return redirect('login')
         
         # Superusers sempre têm acesso
         if request.user.is_superuser:
@@ -165,7 +190,11 @@ def pode_criar_usuarios_required(view_func):
         
         # Se chegou aqui, não tem permissão
         messages.error(request, 'Você não tem permissão para criar usuários operacionais.')
-        return redirect('index')
+        # Se estivermos em um contexto multi-tenant, tentar redirecionar para o dashboard da organização
+        organizacao = getattr(request, "organizacao", None)
+        if organizacao and getattr(organizacao, "slug", None):
+            return redirect('index', organizacao_slug=organizacao.slug)
+        return redirect('landing_publica')
     
     return _wrapped_view
 
@@ -193,3 +222,21 @@ def academia_required(view_func):
         return view_func(request, *args, **kwargs)
 
     return wrapper
+
+
+def organizacao_required(view_func):
+    """
+    Garante que a request está associada a uma organização válida.
+    Usado apenas em rotas multi-tenant (que passam por OrganizacaoMiddleware).
+    """
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        # Remover slug da organização dos kwargs para evitar TypeError em views que não o recebem
+        kwargs.pop('organizacao_slug', None)
+        organizacao = getattr(request, "organizacao", None)
+        if not organizacao or not getattr(organizacao, "slug", None):
+            messages.error(request, "Organização não encontrada ou inativa.")
+            return redirect("landing_publica")
+        return view_func(request, *args, **kwargs)
+
+    return _wrapped_view

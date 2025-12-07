@@ -5,13 +5,12 @@
 {% block title %}Gerar Lutas Casadas{% endblock %}
 
 {% block content %}
-<<<<<<< HEAD
 <div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
         <div>
         <h1 class="page-title">Gerar Lutas Casadas (Chave Manual)</h1>
         <p class="page-description">Monte uma chave manual escolhendo os atletas que irão lutar entre si</p>
     </div>
-    <a href="{% url 'lista_chaves' %}" class="btn btn-secondary">
+    <a href="{% url 'lista_chaves' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
         Voltar
     </a>
@@ -43,7 +42,6 @@
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" for="classe">Classe</label>
                     <select id="classe" name="classe" class="form-select">
-=======
 <h1>Gerar Lutas Casadas (Chave Manual)</h1>
 
 <p>Use esta tela para montar uma chave manual, escolhendo os atletas que irão lutar entre si. Esta chave <strong>não conta para o ranking</strong>, é apenas para lutas casadas.</p>
@@ -58,63 +56,52 @@
         <div>
             <label for="classe">Classe:</label>
             <select id="classe" name="classe" style="width: 100%;">
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                 <option value="">Todas</option>
                 {% for c in classes %}
                 <option value="{{ c }}" {% if c == classe_filtro %}selected{% endif %}>{{ c }}</option>
                 {% endfor %}
             </select>
         </div>
-<<<<<<< HEAD
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" for="sexo">Sexo</label>
                     <select id="sexo" name="sexo" class="form-select">
-=======
         <div>
             <label for="sexo">Sexo:</label>
             <select id="sexo" name="sexo" style="width: 100%;">
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                 <option value="">Todos</option>
                 <option value="M" {% if sexo_filtro == 'M' %}selected{% endif %}>Masculino</option>
                 <option value="F" {% if sexo_filtro == 'F' %}selected{% endif %}>Feminino</option>
             </select>
         </div>
-<<<<<<< HEAD
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" for="academia">Academia</label>
                     <select id="academia" name="academia" class="form-select">
-=======
         <div>
             <label for="academia">Academia:</label>
             <select id="academia" name="academia" style="width: 100%;">
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                 <option value="">Todas</option>
                 {% for acad in academias %}
                 <option value="{{ acad.id }}" {% if acad.id|stringformat:"s" == academia_filtro|stringformat:"s" %}selected{% endif %}>{{ acad.nome }}</option>
                 {% endfor %}
             </select>
         </div>
-<<<<<<< HEAD
             </div>
             <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
-                <a href="{% url 'gerar_chave_manual' %}" class="btn btn-secondary">Limpar Filtros</a>
+                <a href="{% url 'gerar_chave_manual' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Limpar Filtros</a>
                 <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
         </div>
     </form>
     </div>
-=======
         <div style="display: flex; gap: 10px; align-items: flex-end;">
             <button type="submit" class="btn" style="flex: 1;">Aplicar filtros</button>
-            <a href="{% url 'gerar_chave_manual' %}" class="btn" style="flex: 1; text-align: center;">Limpar</a>
+            <a href="{% url 'gerar_chave_manual' organizacao_slug=request.organizacao.slug %}" class="btn" style="flex: 1; text-align: center;">Limpar</a>
         </div>
     </form>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 </div>
 
 <form method="post">
     {% csrf_token %}
 
-<<<<<<< HEAD
     <!-- Configuração da Chave -->
     <div class="card mb-6">
         <div class="card-header">
@@ -137,7 +124,6 @@
                     <option value="F">Feminino</option>
                 </select>
                 </div>
-=======
     <div class="filter-box">
         <h3>Configuração da Chave</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
@@ -155,12 +141,10 @@
                     <option value="M">Masculino</option>
                     <option value="F">Feminino</option>
                 </select>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
             </div>
         </div>
     </div>
 
-<<<<<<< HEAD
     <!-- Tabela de Atletas -->
     {% if atletas %}
     <div class="card mb-6">
@@ -175,13 +159,11 @@
                             <th style="width: 50px; text-align: center;">
                                 <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
                             </th>
-=======
     <div class="table-responsive">
         <table>
             <thead>
                 <tr>
                     <th style="width: 40px;">Sel.</th>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                     <th>Nome</th>
                     <th>Classe</th>
                     <th>Sexo</th>
@@ -194,7 +176,6 @@
                 {% for atleta in atletas %}
                 <tr>
                     <td style="text-align: center;">
-<<<<<<< HEAD
                                 <label class="form-checkbox" style="justify-content: center;">
                                     <input type="checkbox" name="atletas" value="{{ atleta.id }}" class="atleta-checkbox">
                                     <span class="checkbox-indicator"></span>
@@ -220,7 +201,6 @@
                             <td style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
                                 {{ atleta.academia.nome }}
                     </td>
-=======
                         <input type="checkbox" name="atletas" value="{{ atleta.id }}">
                     </td>
                     <td>{{ atleta.nome }}</td>
@@ -233,12 +213,10 @@
                 {% empty %}
                 <tr>
                     <td colspan="7" style="text-align: center;">Nenhum atleta encontrado com os filtros atuais</td>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-<<<<<<< HEAD
             </div>
         </div>
     </div>
@@ -258,7 +236,7 @@
     </div>
 
     <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
-        <a href="{% url 'lista_chaves' %}" class="btn btn-secondary">Cancelar</a>
+        <a href="{% url 'lista_chaves' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Cancelar</a>
         <button type="submit" class="btn btn-success">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
             Gerar Lutas Casadas
@@ -295,7 +273,6 @@ document.querySelectorAll('.atleta-checkbox').forEach(checkbox => {
     });
 });
 </script>
-=======
     </div>
 
     <p style="margin-top: 10px; font-size: 14px;">
@@ -303,10 +280,9 @@ document.querySelectorAll('.atleta-checkbox').forEach(checkbox => {
     </p>
 
     <button type="submit" class="btn btn-success">Gerar Lutas Casadas</button>
-    <a href="{% url 'lista_chaves' %}" class="btn">Voltar</a>
+    <a href="{% url 'lista_chaves' organizacao_slug=request.organizacao.slug %}" class="btn">Voltar</a>
 </form>
 
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
 {% endblock %}
 
 

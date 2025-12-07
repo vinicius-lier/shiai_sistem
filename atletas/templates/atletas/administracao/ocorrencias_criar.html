@@ -79,7 +79,7 @@
                 
                 <div class="mt-4 d-flex gap-2">
                     <button type="submit" class="btn btn-primary">Registrar Ocorrência</button>
-                    <a href="{% url 'ocorrencias_lista' %}{% if campeonato_selecionado %}?campeonato_id={{ campeonato_selecionado.id }}{% endif %}" class="btn btn-secondary">Cancelar</a>
+                    <a href="{% url 'ocorrencias_lista' organizacao_slug=request.organizacao.slug %}{% if campeonato_selecionado %}?campeonato_id={{ campeonato_selecionado.id }}{% endif %}" class="btn btn-secondary">Cancelar</a>
                 </div>
             </form>
         </div>

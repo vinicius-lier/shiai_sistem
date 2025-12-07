@@ -14,7 +14,7 @@
                 <strong>Total: {{ total }}</strong>
             </p>
         </div>
-        <a href="{% url 'administracao_equipe' %}" class="btn btn-secondary">
+        <a href="{% url 'administracao_equipe' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
                 <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
@@ -38,7 +38,7 @@
                 
                 <div class="form-group" style="display: flex; align-items: flex-end; gap: var(--spacing-2);">
                     <button type="submit" class="btn btn-primary">Filtrar</button>
-                    <a href="{% url 'administracao_equipe_pessoas_elegiveis' %}" class="btn btn-secondary">Limpar</a>
+                    <a href="{% url 'administracao_equipe_pessoas_elegiveis' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Limpar</a>
                 </div>
             </form>
         </div>

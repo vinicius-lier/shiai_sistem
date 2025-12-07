@@ -187,7 +187,7 @@ def conferencia_pagamentos_salvar(request, academia_id, campeonato_id):
     
     if not status_conferencia:
         messages.error(request, 'Status da conferência é obrigatório.')
-        return redirect('conferencia_pagamentos_detalhe', academia_id=academia_id, campeonato_id=campeonato_id)
+        return redirect('conferencia_pagamentos_detalhe', organizacao_slug=request.organizacao.slug, academia_id=academia_id, campeonato_id=campeonato_id)
     
     # Validar que o status é válido
     if status_conferencia not in ['PENDENTE', 'CONFIRMADO', 'DIVERGENTE', 'NAO_ENCONTRADO']:
@@ -255,7 +255,12 @@ def conferencia_pagamentos_salvar(request, academia_id, campeonato_id):
         request=request
     )
     
-    return redirect('conferencia_pagamentos_detalhe', academia_id=academia_id, campeonato_id=campeonato_id)
+    return redirect(
+        'conferencia_pagamentos_detalhe',
+        organizacao_slug=getattr(request, "organizacao", None).slug if getattr(request, "organizacao", None) else None,
+        academia_id=academia_id,
+        campeonato_id=campeonato_id
+    )
 
 
 @operacional_required

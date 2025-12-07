@@ -217,7 +217,7 @@
                 </div>
             </div>
             <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
-                <a href="{% url 'pesagem_mobile' %}" class="btn btn-secondary">Limpar Filtros</a>
+            <a href="{% url 'pesagem_mobile' request.organizacao.slug %}" class="btn btn-secondary">Limpar Filtros</a>
                 <button type="submit" class="btn btn-primary">Filtrar</button>
             </div>
         </form>
@@ -263,7 +263,7 @@
     <div class="peso-atual-mobile">Peso: {{ atleta.peso_oficial }} kg</div>
     {% endif %}
     
-    <form class="form-pesagem-mobile" method="post" action="{% url 'registrar_peso' atleta.inscricao_obj.id %}" data-inscricao-id="{{ atleta.inscricao_obj.id }}" data-atleta-id="{{ atleta.id }}">
+        <form class="form-pesagem-mobile" method="post" action="{% url 'registrar_peso' request.organizacao.slug atleta.inscricao_obj.id %}" data-inscricao-id="{{ atleta.inscricao_obj.id }}" data-atleta-id="{{ atleta.id }}">
         {% csrf_token %}
         <input type="number" 
                name="peso_oficial" 
@@ -622,7 +622,7 @@ document.addEventListener('click', function(e) {
             <input type="text" name="categoria" placeholder="Buscar categoria..." value="{{ categoria_filtro }}">
             
             <button type="submit" class="btn-filtrar">🔍 Filtrar</button>
-            <a href="{% url 'pesagem_mobile' %}" style="display: block; text-align: center; padding: 10px; background: #dc3545; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">Limpar Filtros</a>
+            <a href="{% url 'pesagem_mobile' request.organizacao.slug %}" style="display: block; text-align: center; padding: 10px; background: #dc3545; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">Limpar Filtros</a>
         </form>
     </div>
 
@@ -631,14 +631,14 @@ document.addEventListener('click', function(e) {
         <div class="atleta-nome">{{ atleta.nome }}</div>
         <div class="atleta-info">📋 {{ atleta.classe }} - {{ atleta.get_sexo_display }}</div>
         <div class="atleta-info">🏋️ Categoria: {{ atleta.categoria_ajustada|default:atleta.categoria_nome }}</div>
-        <div class="atleta-info" style="font-size: 12px; color: #666;">Limite: {{ atleta.get_limite_categoria }}</div>
+        <div class="atleta-info" style="font-size: 12px; color: #666;">Limite: {{ atleta.limite_texto|default:atleta.get_limite_categoria|default:"-" }}</div>
         <div class="atleta-info">🏫 {{ atleta.academia.nome }}</div>
         
         {% if atleta.peso_oficial %}
         <div class="peso-atual">Peso: {{ atleta.peso_oficial }} kg</div>
         {% endif %}
         
-        <form class="form-pesagem-mobile" method="post" action="{% url 'registrar_peso' atleta.id %}" data-atleta-id="{{ atleta.id }}">
+        <form class="form-pesagem-mobile" method="post" action="{% url 'registrar_peso' request.organizacao.slug atleta.id %}" data-atleta-id="{{ atleta.id }}">
             {% csrf_token %}
             <input type="number" 
                    name="peso_oficial" 

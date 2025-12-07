@@ -20,7 +20,7 @@
                     </span>
                 </p>
             </div>
-            <a href="{% url 'ocorrencias_lista' %}?campeonato_id={{ ocorrencia.campeonato.id }}" class="btn btn-secondary">Voltar</a>
+            <a href="{% url 'ocorrencias_lista' organizacao_slug=request.organizacao.slug %}?campeonato_id={{ ocorrencia.campeonato.id }}" class="btn btn-secondary">Voltar</a>
         </div>
         <div class="card-body">
             <div class="row g-4">

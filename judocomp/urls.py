@@ -19,10 +19,33 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from atletas import views as atletas_views
+from atletas import views_org_selector
+
+
 urlpatterns = [
+    # Admin padrão Django
     path('admin/', admin.site.urls),
-    path('', include('atletas.urls')),
-]
+
+    # Landing page pública e login global (sem organização)
+    path('', atletas_views.landing_publica, name='landing_publica'),
+    path('login/', atletas_views.login_operacional, name='login'),
+    path('logout/', atletas_views.logout_geral, name='logout'),
+
+    # Seletor de organização (superuser)
+    path('selecionar-organizacao/', views_org_selector.selecionar_organizacao, name='selecionar_organizacao'),
+
+    # Painel de organizações (apenas superuser)
+    path('painel/organizacoes/', atletas_views.painel_organizacoes, name='painel_organizacoes'),
+
+    # Fluxo de academia (mantido fora do multi-tenant de organização)
+    path('academia/login/', atletas_views.academia_login, name='academia_login'),
+    path('academia/logout/', atletas_views.academia_logout, name='academia_logout'),
+    path('academia/', atletas_views.academia_painel, name='academia_painel'),
+
+    # Rotas multi-tenant: tudo operacional dentro de <organizacao_slug>/
+    path('<slug:organizacao_slug>/', include('atletas.urls_org')),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Servir MEDIA sempre (inclusive produção Render)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -98,9 +98,9 @@ class AtletaAdmin(admin.ModelAdmin):
 
 @admin.register(Inscricao)
 class InscricaoAdmin(admin.ModelAdmin):
-    list_display = ('atleta', 'campeonato', 'classe_escolhida', 'categoria_escolhida', 'status_inscricao', 'peso', 'data_inscricao')
-    list_filter = ('campeonato', 'classe_escolhida', 'status_inscricao', 'remanejado')
-    search_fields = ('atleta__nome', 'campeonato__nome')
+    list_display = ('atleta', 'campeonato', 'classe_real', 'categoria_real', 'status_atual', 'peso_real', 'data_inscricao')
+    list_filter = ('campeonato', 'classe_real', 'categoria_real', 'status_atual', 'remanejado')
+    search_fields = ('atleta__nome', 'campeonato__nome', 'categoria_real__categoria_nome')
     readonly_fields = ('data_inscricao', 'data_pesagem')
     date_hierarchy = 'data_inscricao'
 

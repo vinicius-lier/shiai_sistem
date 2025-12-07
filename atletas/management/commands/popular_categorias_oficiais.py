@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from atletas.models import Categoria
+from atletas.models import Categoria, Classe
 
 
 class Command(BaseCommand):
@@ -163,11 +163,18 @@ class Command(BaseCommand):
         
         # Processar categorias masculinas
         for cat_data in categorias_masculinas:
-            label = f"{cat_data['classe']} - {cat_data['categoria_nome']}"
+            # Buscar o objeto Classe pelo nome
+            try:
+                classe_obj = Classe.objects.get(nome=cat_data['classe'])
+            except Classe.DoesNotExist:
+                self.stdout.write(self.style.WARNING(f'Classe "{cat_data["classe"]}" não encontrada. Pulando categoria.'))
+                continue
+            
+            label = f"{cat_data['classe']} - M - {cat_data['categoria_nome']}"
             
             # Usar limite_min e limite_max como parte da chave única para evitar conflito com categorias de mesmo nome
             categoria, created = Categoria.objects.update_or_create(
-                classe=cat_data['classe'],
+                classe=classe_obj,
                 sexo='M',
                 categoria_nome=cat_data['categoria_nome'],
                 limite_min=cat_data['limite_min'],
@@ -184,11 +191,18 @@ class Command(BaseCommand):
         
         # Processar categorias femininas
         for cat_data in categorias_femininas:
-            label = f"{cat_data['classe']} - {cat_data['categoria_nome']}"
+            # Buscar o objeto Classe pelo nome
+            try:
+                classe_obj = Classe.objects.get(nome=cat_data['classe'])
+            except Classe.DoesNotExist:
+                self.stdout.write(self.style.WARNING(f'Classe "{cat_data["classe"]}" não encontrada. Pulando categoria.'))
+                continue
+            
+            label = f"{cat_data['classe']} - F - {cat_data['categoria_nome']}"
             
             # Usar limite_min e limite_max como parte da chave única para evitar conflito com categorias de mesmo nome
             categoria, created = Categoria.objects.update_or_create(
-                classe=cat_data['classe'],
+                classe=classe_obj,
                 sexo='F',
                 categoria_nome=cat_data['categoria_nome'],
                 limite_min=cat_data['limite_min'],

@@ -498,7 +498,7 @@
             <h2 style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-gray-900); margin: 0 0 var(--spacing-1) 0; line-height: 1.2;">Indicadores Financeiros</h2>
             <p style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin: 0; line-height: 1.5;">Análise detalhada de entradas, saídas e lucratividade</p>
         </div>
-        <a href="{% url 'administracao_financeiro' %}" class="btn btn-secondary" style="width: auto;">
+        <a href="{% url 'administracao_financeiro' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary" style="width: auto;">
             Ver Relatório Completo
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                 <polyline points="9 18 15 12 9 6"></polyline>
@@ -552,7 +552,7 @@
             <h2 style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-gray-900); margin: 0 0 var(--spacing-1) 0; line-height: 1.2;">Indicadores Operacionais</h2>
             <p style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin: 0; line-height: 1.5;">Equipe técnica e recursos cadastrados</p>
         </div>
-        <a href="{% url 'administracao_equipe' %}" class="btn btn-secondary" style="width: auto;">
+        <a href="{% url 'administracao_equipe' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary" style="width: auto;">
             Gerenciar Equipe
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                 <polyline points="9 18 15 12 9 6"></polyline>

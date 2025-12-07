@@ -84,6 +84,15 @@
             --transition-base: 200ms ease;
             --transition-slow: 300ms ease;
         }
+
+        /* Mobile menu background to avoid overlap issues */
+        @media (max-width: 991px) {
+            .navbar-shiai .navbar-collapse {
+                background: #0b1f3a;
+                padding: 12px;
+                z-index: 1051;
+            }
+        }
     </style>
     <style>
         * {
@@ -126,11 +135,15 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             min-height: 56px;
             padding: 0.5rem 0;
+            z-index: 1030; /* Garantir que navbar está acima de outros elementos */
+            position: relative; /* Garantir contexto de z-index */
         }
         
         .navbar-shiai .container-fluid {
             padding-left: 1rem;
             padding-right: 1rem;
+            position: relative;
+            z-index: 1031; /* Container acima do navbar */
         }
         
         .navbar-shiai .navbar-brand {
@@ -204,6 +217,10 @@
             padding: 0.5rem 0;
             margin-top: 0.5rem;
             min-width: 200px;
+            display: none;
+        }
+        .navbar-shiai .dropdown-menu.show {
+            display: block;
         }
         
         .navbar-shiai .dropdown-item {
@@ -238,52 +255,33 @@
             margin: 0.5rem 0;
         }
         
-        .navbar-shiai .navbar-toggler {
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 0.375rem 0.75rem;
-            display: none; /* Ocultar toggler padrão do Bootstrap */
-        }
-        
-        .navbar-shiai .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.9%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-        }
-
-        /* Botão Hambúrguer Customizado para Sidebar */
-        .navbar-toggler-shiai {
+        /* Botão Hambúrguer Customizado (mobile) */
+        .btn-toggle-mobile {
             display: none;
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: var(--border-radius-sm);
-            padding: var(--spacing-2);
-            color: var(--color-white);
+            background: none;
+            border: none;
             cursor: pointer;
-            transition: all var(--transition-base);
+            flex-direction: column;
+            gap: 4px;
+            z-index: 2000;
         }
 
-        .navbar-toggler-shiai:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.5);
+        .btn-toggle-mobile span {
+            width: 30px;
+            height: 4px;
+            background: #fff;
+            display: block;
         }
 
-        .navbar-toggler-shiai:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px var(--color-primary);
-        }
-
-        .navbar-toggler-shiai svg {
-            width: 24px;
-            height: 24px;
-        }
-
-        @media (max-width: 991.98px) {
-            .navbar-toggler-shiai {
+        @media (max-width: 991px) {
+            .btn-toggle-mobile {
                 display: flex;
-                align-items: center;
-                justify-content: center;
             }
-            
+            .navbar-nav {
+                display: none !important;
+            }
             .navbar-shiai .navbar-collapse {
-                display: none !important; /* Ocultar collapse padrão em mobile */
+                display: none !important;
             }
         }
 
@@ -300,12 +298,23 @@
             transition: left 0.3s ease;
             overflow-y: auto;
             box-shadow: var(--shadow-xl);
+            visibility: hidden; /* Ocultar quando fechado */
         }
 
         .sidebar.open {
             left: 0 !important;
             visibility: visible !important;
             display: block !important;
+        }
+        
+        /* Garantir que sidebar seja visível em mobile quando aberto */
+        @media (max-width: 991.98px) {
+            .sidebar.open {
+                left: 0 !important;
+                visibility: visible !important;
+                display: block !important;
+                z-index: 1050 !important; /* Garantir que está acima de tudo */
+            }
         }
 
         /* Sidebar Header */
@@ -502,18 +511,26 @@
         
         /* Garantir que sidebar seja visível quando aberta em mobile */
         @media (max-width: 991.98px) {
+            .sidebar {
+                display: block !important; /* Sempre renderizado em mobile */
+            }
+            
             .sidebar.open {
                 left: 0 !important;
                 visibility: visible !important;
                 display: block !important;
-                z-index: 1040 !important;
+                z-index: 1050 !important; /* Acima de tudo */
+            }
+            
+            .sidebar-overlay {
+                display: block !important; /* Sempre renderizado em mobile */
             }
             
             .sidebar-overlay.active {
                 opacity: 1 !important;
                 visibility: visible !important;
                 display: block !important;
-                z-index: 1035 !important;
+                z-index: 1045 !important;
             }
         }
         
@@ -535,17 +552,22 @@
             }
         }
         
-        /* Mobile: ajustar tamanhos */
-        @media (max-width: 991px) {
-            .navbar-shiai .nav-link {
-                font-size: 0.875rem;
-                padding: 0.75rem 1rem !important;
+            /* Mobile: ajustar tamanhos */
+            @media (max-width: 991px) {
+                .navbar-shiai .nav-link {
+                    font-size: 0.875rem;
+                    padding: 0.75rem 1rem !important;
+                }
+                
+                .navbar-shiai .dropdown-menu {
+                    margin-top: 0.25rem;
+                }
+                
+                /* Usamos sidebar custom; escondemos o collapse padrão */
+                .navbar-shiai .navbar-collapse {
+                    display: none !important;
+                }
             }
-            
-            .navbar-shiai .dropdown-menu {
-                margin-top: 0.25rem;
-            }
-        }
 
         .btn {
             display: inline-flex;
@@ -815,8 +837,10 @@
         }
 
         .badge-success {
-            background: var(--color-success-light);
-            color: #065F46;
+            background: #DCFCE7;
+            color: #166534 !important;
+            font-weight: 700;
+            border: 1px solid #34D399;
         }
 
         .badge-danger {
@@ -825,13 +849,17 @@
         }
 
         .badge-warning {
-            background: var(--color-warning-light);
-            color: #92400E;
+            background: #FDE68A;
+            color: #92400E !important;
+            font-weight: 600;
+            border: 1px solid #F59E0B;
         }
 
         .badge-info {
-            background: #DBEAFE;
-            color: #1E40AF;
+            background: #BFDBFE;
+            color: #0F172A !important;
+            font-weight: 700;
+            border: 1px solid #60A5FA;
         }
 
         .badge-primary {
@@ -1475,29 +1503,29 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <div class="app-container">
+        {% if request.organizacao %}
         <!-- Navbar Bootstrap 5 -->
         <nav class="navbar navbar-expand-lg navbar-dark navbar-shiai fixed-top">
             <div class="container-fluid">
-                <a class="navbar-brand" href="{% url 'index' %}">
+                <a class="navbar-brand" href="{% url 'index' organizacao_slug=request.organizacao.slug %}">
                     <img src="{% static 'atletas/images/logo_white.png' %}" alt="SHIAI SISTEM" height="32" class="d-inline-block align-text-top">
                 </a>
                 <!-- Botão Hambúrguer (Mobile) -->
-                <button class="navbar-toggler-shiai" type="button" id="sidebarToggle" aria-label="Toggle navigation">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
+                <button id="sidebarToggle" class="btn-toggle-mobile" type="button" aria-label="Abrir menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
                         <!-- Início -->
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' organizacao_slug=request.organizacao.slug %}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                                     <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -1516,22 +1544,22 @@
                                 Eventos
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="eventosDropdown">
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'lista_campeonatos' %}active{% endif %}" href="{% url 'lista_campeonatos' %}">Listar Eventos</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'cadastrar_campeonato' %}active{% endif %}" href="{% url 'cadastrar_campeonato' %}">Criar Evento</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'lista_campeonatos' %}active{% endif %}" href="{% url 'lista_campeonatos' organizacao_slug=request.organizacao.slug %}">Listar Eventos</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'cadastrar_campeonato' %}active{% endif %}" href="{% url 'cadastrar_campeonato' organizacao_slug=request.organizacao.slug %}">Criar Evento</a></li>
                                 {% if campeonato_ativo %}
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'inscrever_atletas' %}active{% endif %}" href="{% url 'inscrever_atletas' %}">Inscrições</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' %}active{% endif %}" href="{% url 'pesagem' %}">Pesagem</a></li>
-                                <li><a class="dropdown-item {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_categorias' %}">Categorias</a></li>
-                                <li><a class="dropdown-item {% if 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_chaves' %}">Chaves</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'metricas_evento' %}active{% endif %}" href="{% url 'metricas_evento' %}">Métricas</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'inscrever_atletas' %}active{% endif %}" href="{% url 'inscrever_atletas' organizacao_slug=request.organizacao.slug %}">Inscrições</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' %}active{% endif %}" href="{% url 'pesagem' organizacao_slug=request.organizacao.slug %}">Pesagem</a></li>
+                                <li><a class="dropdown-item {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_categorias' organizacao_slug=request.organizacao.slug %}">Categorias</a></li>
+                                <li><a class="dropdown-item {% if 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_chaves' organizacao_slug=request.organizacao.slug %}">Chaves</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'metricas_evento' %}active{% endif %}" href="{% url 'metricas_evento' organizacao_slug=request.organizacao.slug %}">Métricas</a></li>
                                 {% endif %}
                             </ul>
                         </li>
                         
                         <!-- Atletas -->
                         <li class="nav-item">
-                            <a class="nav-link {% if 'atleta' in request.resolver_match.url_name and request.resolver_match.url_name != 'inscrever_atletas' %}active{% endif %}" href="{% url 'lista_atletas' %}">
+                            <a class="nav-link {% if 'atleta' in request.resolver_match.url_name and request.resolver_match.url_name != 'inscrever_atletas' %}active{% endif %}" href="{% url 'lista_atletas' organizacao_slug=request.organizacao.slug %}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                     <circle cx="9" cy="7" r="4"></circle>
@@ -1544,7 +1572,7 @@
                         
                         <!-- Academias (menu direto) -->
                         <li class="nav-item">
-                            <a class="nav-link {% if 'academia' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_academias' %}">
+                            <a class="nav-link {% if 'academia' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_academias' organizacao_slug=request.organizacao.slug %}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                                     <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -1564,9 +1592,9 @@
                                 Rankings
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="rankingsDropdown">
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ranking_global' %}active{% endif %}" href="{% url 'ranking_global' %}">Ranking Global</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ranking_global' %}active{% endif %}" href="{% url 'ranking_global' organizacao_slug=request.organizacao.slug %}">Ranking Global</a></li>
                                 {% if campeonato_ativo %}
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}active{% endif %}" href="{% url 'ranking_academias' %}">Ranking do Evento</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}active{% endif %}" href="{% url 'ranking_academias' organizacao_slug=request.organizacao.slug %}">Ranking do Evento</a></li>
                                 {% endif %}
                             </ul>
                         </li>
@@ -1582,20 +1610,20 @@
                                 Administração
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_financeiro' %}active{% endif %}" href="{% url 'administracao_financeiro' %}">Financeiro</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_despesas' %}active{% endif %}" href="{% url 'administracao_despesas' %}">Despesas e Receitas</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_equipe' %}active{% endif %}" href="{% url 'administracao_equipe' %}">Equipe Técnica</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_financeiro' %}active{% endif %}" href="{% url 'administracao_financeiro' organizacao_slug=request.organizacao.slug %}">Financeiro</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_despesas' %}active{% endif %}" href="{% url 'administracao_despesas' organizacao_slug=request.organizacao.slug %}">Despesas e Receitas</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_equipe' %}active{% endif %}" href="{% url 'administracao_equipe' organizacao_slug=request.organizacao.slug %}">Equipe Técnica</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'conferencia_pagamentos_lista' or request.resolver_match.url_name == 'conferencia_pagamentos_detalhe' %}active{% endif %}" href="{% url 'conferencia_pagamentos_lista' %}">Conferência de Pagamentos</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'conferencia_pagamentos_lista' or request.resolver_match.url_name == 'conferencia_pagamentos_detalhe' %}active{% endif %}" href="{% url 'conferencia_pagamentos_lista' organizacao_slug=request.organizacao.slug %}">Conferência de Pagamentos</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ocorrencias_lista' or request.resolver_match.url_name == 'ocorrencias_criar' or request.resolver_match.url_name == 'ocorrencias_detalhe' %}active{% endif %}" href="{% url 'ocorrencias_lista' %}">Ocorrências</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ocorrencias_historico' %}active{% endif %}" href="{% url 'ocorrencias_historico' %}">Histórico do Sistema</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ocorrencias_lista' or request.resolver_match.url_name == 'ocorrencias_criar' or request.resolver_match.url_name == 'ocorrencias_detalhe' %}active{% endif %}" href="{% url 'ocorrencias_lista' organizacao_slug=request.organizacao.slug %}">Ocorrências</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ocorrencias_historico' %}active{% endif %}" href="{% url 'ocorrencias_historico' organizacao_slug=request.organizacao.slug %}">Histórico do Sistema</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}" href="{% url 'administracao_relatorios' %}">Relatórios</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}" href="{% url 'administracao_relatorios' organizacao_slug=request.organizacao.slug %}">Relatórios</a></li>
                                 {% if user.is_authenticated %}
                                     {% if user|pode_gerenciar_usuarios %}
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}" href="{% url 'gerenciar_usuarios_operacionais' %}">Usuários Operacionais</a></li>
+                                    <li><a class="dropdown-item {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}" href="{% url 'gerenciar_usuarios_operacionais' organizacao_slug=request.organizacao.slug %}">Usuários Operacionais</a></li>
                                     {% endif %}
                                 {% endif %}
                             </ul>
@@ -1613,14 +1641,17 @@
                                 {% if user.is_authenticated %}{{ user.first_name|default:user.username }}{% else %}Perfil{% endif %}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="perfilDropdown">
-                                <li><a class="dropdown-item" href="{% url 'index' %}">Meu Perfil</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ajuda_manual' %}active{% endif %}" href="{% url 'ajuda_manual' %}">
+                                {% if request.organizacao %}
+                                <li><a class="dropdown-item" href="{% url 'index' organizacao_slug=request.organizacao.slug %}">Meu Perfil</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ajuda_manual' %}active{% endif %}" href="{% url 'ajuda_manual' organizacao_slug=request.organizacao.slug %}">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"></path>
                                     </svg>
                                     Ajuda / Manual
                                 </a></li>
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
+                                {% if request.organizacao %}
                                 <li>
                                     <a class="dropdown-item" href="#" onclick="abrirModalReset(); return false;">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1631,9 +1662,10 @@
                                         Resetar Campeonato
                                     </a>
                                 </li>
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <a class="dropdown-item text-danger" href="{% url 'logout_geral' %}" onclick="if(confirm('Deseja realmente sair do sistema?')) { localStorage.clear(); sessionStorage.clear(); return true; } return false;">
+                                    <a class="dropdown-item text-danger" href="{% url 'logout' %}" onclick="if(confirm('Deseja realmente sair do sistema?')) { localStorage.clear(); sessionStorage.clear(); return true; } return false;">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                                             <polyline points="16 17 21 12 16 7"></polyline>
@@ -1668,7 +1700,7 @@
             <nav>
                 <ul class="sidebar-nav">
                     <li class="nav-item">
-                        <a href="{% url 'index' %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+                        <a href="{% url 'index' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -1686,33 +1718,33 @@
                         </a>
                         <ul class="sidebar-submenu">
                             <li class="nav-item">
-                                <a href="{% url 'lista_campeonatos' %}" class="nav-link {% if request.resolver_match.url_name == 'lista_campeonatos' %}active{% endif %}">Listar Eventos</a>
+                                <a href="{% url 'lista_campeonatos' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'lista_campeonatos' %}active{% endif %}">Listar Eventos</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'cadastrar_campeonato' %}" class="nav-link {% if request.resolver_match.url_name == 'cadastrar_campeonato' %}active{% endif %}">Criar Evento</a>
+                                <a href="{% url 'cadastrar_campeonato' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'cadastrar_campeonato' %}active{% endif %}">Criar Evento</a>
                             </li>
                             {% if campeonato_ativo %}
                             <li><div class="sidebar-submenu-divider"></div></li>
                             <li class="nav-item">
-                                <a href="{% url 'inscrever_atletas' %}" class="nav-link {% if request.resolver_match.url_name == 'inscrever_atletas' %}active{% endif %}">Inscrições</a>
+                                <a href="{% url 'inscrever_atletas' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'inscrever_atletas' %}active{% endif %}">Inscrições</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'pesagem' %}" class="nav-link {% if request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' %}active{% endif %}">Pesagem</a>
+                                <a href="{% url 'pesagem' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' %}active{% endif %}">Pesagem</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'lista_categorias' %}" class="nav-link {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}">Categorias</a>
+                                <a href="{% url 'lista_categorias' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}">Categorias</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'lista_chaves' %}" class="nav-link {% if 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name %}active{% endif %}">Chaves</a>
+                                <a href="{% url 'lista_chaves' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name %}active{% endif %}">Chaves</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'metricas_evento' %}" class="nav-link {% if request.resolver_match.url_name == 'metricas_evento' %}active{% endif %}">Métricas</a>
+                                <a href="{% url 'metricas_evento' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'metricas_evento' %}active{% endif %}">Métricas</a>
                             </li>
                             {% endif %}
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'lista_atletas' %}" class="nav-link {% if 'atleta' in request.resolver_match.url_name and request.resolver_match.url_name != 'inscrever_atletas' %}active{% endif %}">
+                        <a href="{% url 'lista_atletas' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if 'atleta' in request.resolver_match.url_name and request.resolver_match.url_name != 'inscrever_atletas' %}active{% endif %}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="9" cy="7" r="4"></circle>
@@ -1723,7 +1755,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'lista_academias' %}" class="nav-link {% if 'academia' in request.resolver_match.url_name %}active{% endif %}">
+                        <a href="{% url 'lista_academias' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if 'academia' in request.resolver_match.url_name %}active{% endif %}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -1742,11 +1774,11 @@
                         </a>
                         <ul class="sidebar-submenu">
                             <li class="nav-item">
-                                <a href="{% url 'ranking_global' %}" class="nav-link {% if request.resolver_match.url_name == 'ranking_global' %}active{% endif %}">Ranking Global</a>
+                                <a href="{% url 'ranking_global' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'ranking_global' %}active{% endif %}">Ranking Global</a>
                             </li>
                             {% if campeonato_ativo %}
                             <li class="nav-item">
-                                <a href="{% url 'ranking_academias' %}" class="nav-link {% if request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}active{% endif %}">Ranking do Evento</a>
+                                <a href="{% url 'ranking_academias' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}active{% endif %}">Ranking do Evento</a>
                             </li>
                             {% endif %}
                         </ul>
@@ -1762,41 +1794,41 @@
                         </a>
                         <ul class="sidebar-submenu">
                             <li class="nav-item">
-                                <a href="{% url 'administracao_financeiro' %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_financeiro' %}active{% endif %}">Financeiro</a>
+                                <a href="{% url 'administracao_financeiro' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_financeiro' %}active{% endif %}">Financeiro</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'administracao_despesas' %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_despesas' %}active{% endif %}">Despesas e Receitas</a>
+                                <a href="{% url 'administracao_despesas' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_despesas' %}active{% endif %}">Despesas e Receitas</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'administracao_equipe' %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_equipe' %}active{% endif %}">Equipe Técnica</a>
-                            </li>
-                            <li><div class="sidebar-submenu-divider"></div></li>
-                            <li class="nav-item">
-                                <a href="{% url 'conferencia_pagamentos_lista' %}" class="nav-link {% if request.resolver_match.url_name == 'conferencia_pagamentos_lista' or request.resolver_match.url_name == 'conferencia_pagamentos_detalhe' %}active{% endif %}">Conferência de Pagamentos</a>
+                                <a href="{% url 'administracao_equipe' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_equipe' %}active{% endif %}">Equipe Técnica</a>
                             </li>
                             <li><div class="sidebar-submenu-divider"></div></li>
                             <li class="nav-item">
-                                <a href="{% url 'ocorrencias_lista' %}" class="nav-link {% if request.resolver_match.url_name == 'ocorrencias_lista' or request.resolver_match.url_name == 'ocorrencias_criar' or request.resolver_match.url_name == 'ocorrencias_detalhe' %}active{% endif %}">Ocorrências</a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'ocorrencias_historico' %}" class="nav-link {% if request.resolver_match.url_name == 'ocorrencias_historico' %}active{% endif %}">Histórico do Sistema</a>
+                                <a href="{% url 'conferencia_pagamentos_lista' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'conferencia_pagamentos_lista' or request.resolver_match.url_name == 'conferencia_pagamentos_detalhe' %}active{% endif %}">Conferência de Pagamentos</a>
                             </li>
                             <li><div class="sidebar-submenu-divider"></div></li>
                             <li class="nav-item">
-                                <a href="{% url 'administracao_relatorios' %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}">Relatórios</a>
+                                <a href="{% url 'ocorrencias_lista' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'ocorrencias_lista' or request.resolver_match.url_name == 'ocorrencias_criar' or request.resolver_match.url_name == 'ocorrencias_detalhe' %}active{% endif %}">Ocorrências</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'ocorrencias_historico' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'ocorrencias_historico' %}active{% endif %}">Histórico do Sistema</a>
+                            </li>
+                            <li><div class="sidebar-submenu-divider"></div></li>
+                            <li class="nav-item">
+                                <a href="{% url 'administracao_relatorios' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}">Relatórios</a>
                             </li>
                             {% if user.is_authenticated %}
                                 {% if user|pode_gerenciar_usuarios %}
                                 <li><div class="sidebar-submenu-divider"></div></li>
                                 <li class="nav-item">
-                                    <a href="{% url 'gerenciar_usuarios_operacionais' %}" class="nav-link {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}">Usuários Operacionais</a>
+                                <a href="{% url 'gerenciar_usuarios_operacionais' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}">Usuários Operacionais</a>
                                 </li>
                                 {% endif %}
                             {% endif %}
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'logout_geral' %}" class="nav-link" onclick="if(confirm('Deseja realmente sair do sistema?')) { localStorage.clear(); sessionStorage.clear(); return true; } return false;">
+                        <a href="{% url 'logout' %}" class="nav-link" onclick="if(confirm('Deseja realmente sair do sistema?')) { localStorage.clear(); sessionStorage.clear(); return true; } return false;">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                                 <polyline points="16 17 21 12 16 7"></polyline>
@@ -1808,6 +1840,7 @@
                 </ul>
             </nav>
         </aside>
+        {% endif %}
 
         <!-- Main Content -->
         <main class="main-content">
@@ -1867,383 +1900,55 @@
                 <button class="btn btn-danger" onclick="document.getElementById('form-reset').dispatchEvent(new Event('submit'))">🔄 Resetar</button>
             </div>
 
-        <!-- Bootstrap 5 JS -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-        
-        <script>
+        <!-- Bootstrap JS removido daqui; carregado uma única vez no final -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function(){
+            const sidebar = document.getElementById("sidebar");
+            const toggle = document.getElementById("sidebarToggle");
+            const closeBtn = document.getElementById("sidebarClose");
+            const overlay = document.getElementById("sidebarOverlay");
 
-        // Modal functions
-        function abrirModalReset() {
-            document.getElementById('modal-reset').classList.add('active');
-        }
+            if (!sidebar || !toggle || !overlay || !closeBtn) return;
 
-        function useIsMobile() {
-            const width = window.innerWidth || document.documentElement.clientWidth;
-            const ua = navigator.userAgent || navigator.vendor || window.opera || '';
-            const byWidth = width <= 768;
-            const byUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-            const byMedia = window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
-            return !!(byWidth || byUA || byMedia);
-        }
+            const openSidebar = ()=>{
+                sidebar.classList.add("open");
+                overlay.classList.add("active");
+                document.body.style.overflow = "hidden";
+            };
 
-        function applyResponsiveFlags() {
-            const isMobile = useIsMobile();
-            document.documentElement.dataset.isMobile = isMobile ? '1' : '0';
-            document.body.classList.toggle('is-mobile', isMobile);
-        }
+            const closeSidebar = ()=>{
+                sidebar.classList.remove("open");
+                overlay.classList.remove("active");
+                document.body.style.overflow = "";
+            };
 
-        document.addEventListener('DOMContentLoaded', function () {
-            applyResponsiveFlags();
-
-            function abrirModalReset() {
-                document.getElementById('modal-reset').style.display = 'flex';
-                document.getElementById('senha-reset').focus();
-            }
-
-            function fecharModalReset() {
-            document.getElementById('modal-reset').classList.remove('active');
-                document.getElementById('modal-reset').style.display = 'none';
-                document.getElementById('form-reset').reset();
-                document.getElementById('mensagem-reset').style.display = 'none';
-            }
-
-            window.abrirModalReset = abrirModalReset;
-            window.fecharModalReset = fecharModalReset;
-
-        // Modal reset form handler
-            const formReset = document.getElementById('form-reset');
-            if (formReset) {
-                formReset.addEventListener('submit', function(e) {
+            toggle.addEventListener("click", openSidebar);
+            overlay.addEventListener("click", closeSidebar);
+            closeBtn.addEventListener("click", closeSidebar);
+        });
+    </script>
+    <script>
+        // Submenus mobile
+        document.addEventListener("DOMContentLoaded", function(){
+            document.querySelectorAll('.sidebar .has-submenu > a').forEach((menu)=>{
+                menu.addEventListener("click", function(e){
                     e.preventDefault();
-                    
-                    const senha = document.getElementById('senha-reset').value;
-                    const mensagem = document.getElementById('mensagem-reset');
-                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                    
-                    fetch('{% url "reset_campeonato" %}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        },
-                        body: JSON.stringify({ senha: senha })
-                    })
-                    .then(async response => {
-                        const data = await response.json().catch(() => ({}));
-                        mensagem.style.display = 'block';
-                        if (response.ok && data.detail) {
-                        mensagem.style.background = 'var(--color-success-light)';
-                        mensagem.style.color = '#065F46';
-                            mensagem.style.background = '#d4edda';
-                            mensagem.style.color = '#155724';
-                            mensagem.textContent = data.detail;
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 2000);
-                        } else {
-                        mensagem.style.background = 'var(--color-danger-light)';
-                        mensagem.style.color = '#991B1B';
-                            mensagem.style.background = '#f8d7da';
-                            mensagem.style.color = '#721c24';
-                            mensagem.textContent = data.detail || 'Senha incorreta. Ação não autorizada.';
-                        }
-                    })
-                    .catch(error => {
-                        mensagem.style.display = 'block';
-                    mensagem.style.background = 'var(--color-danger-light)';
-                    mensagem.style.color = '#991B1B';
-                        mensagem.style.background = '#f8d7da';
-                        mensagem.style.color = '#721c24';
-                        mensagem.textContent = 'Erro ao processar requisição';
+                    const li = this.parentElement;
+                    const open = li.classList.contains("open");
+
+                    document.querySelectorAll('.sidebar .has-submenu').forEach(s=>{
+                        s.classList.remove("open");
                     });
-                });
-            }
 
-        // Close modal on overlay click
-        document.getElementById('modal-reset')?.addEventListener('click', function(e) {
-            if (e.target === this) {
-                fecharModalReset();
-            }
-        });
-
-        // Auto-close alerts
-        function closeAlert(button) {
-            const alert = button.closest('.alert');
-            if (alert) {
-                alert.classList.add('fading');
-                setTimeout(() => {
-                    alert.remove();
-                    // Remove container if empty
-                    const container = document.getElementById('alerts-container');
-                    if (container && container.children.length === 0) {
-                        container.remove();
+                    if(!open){
+                        li.classList.add("open");
                     }
-                }, 300);
-            }
-        }
-
-        // Auto-hide alerts after 5 seconds
-        document.addEventListener('DOMContentLoaded', function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert, index) {
-                // Delay for each alert to appear sequentially
-                setTimeout(function() {
-                    // Start countdown after animation completes
-                    setTimeout(function() {
-                        const closeButton = alert.querySelector('.alert-close');
-                        if (closeButton) {
-                            closeAlert(closeButton);
-                        }
-                    }, 5000); // 5 seconds
-                }, index * 100); // Stagger appearance
+                });
             });
         });
-
-        // Make closeAlert available globally
-        window.closeAlert = closeAlert;
-        
-        // ============================================
-        // SIDEBAR MOBILE - CONTROLE DE ABERTURA/FECHAMENTO
-        // ============================================
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.getElementById('sidebar');
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const sidebarClose = document.getElementById('sidebarClose');
-            const sidebarOverlay = document.getElementById('sidebarOverlay');
-            
-            console.log('🔵 Sidebar elements:', {
-                sidebar: !!sidebar,
-                sidebarToggle: !!sidebarToggle,
-                sidebarClose: !!sidebarClose,
-                sidebarOverlay: !!sidebarOverlay
-            });
-            
-            if (!sidebar || !sidebarToggle) {
-                console.error('❌ Sidebar ou sidebarToggle não encontrados!');
-                return;
-            }
-            
-            function openSidebar() {
-                console.log('🔵 Abrindo sidebar...');
-                sidebar.classList.add('open');
-                if (sidebarOverlay) {
-                    sidebarOverlay.classList.add('active');
-                }
-                document.body.classList.add('sidebar-open');
-                console.log('✅ Sidebar aberta. Classes:', {
-                    sidebar: sidebar.className,
-                    overlay: sidebarOverlay ? sidebarOverlay.className : 'N/A',
-                    body: document.body.className
-                });
-            }
-            
-            function closeSidebar() {
-                console.log('🔵 Fechando sidebar...');
-                sidebar.classList.remove('open');
-                if (sidebarOverlay) {
-                    sidebarOverlay.classList.remove('active');
-                }
-                document.body.classList.remove('sidebar-open');
-            }
-            
-            function toggleSidebar(e) {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                console.log('🔵 Toggle sidebar. Estado atual:', sidebar.classList.contains('open'));
-                if (sidebar.classList.contains('open')) {
-                    closeSidebar();
-                } else {
-                    openSidebar();
-                }
-            }
-            
-            // Event listeners - usando arrow functions para evitar problemas de contexto
-            if (sidebarToggle) {
-                sidebarToggle.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleSidebar(e);
-                });
-                console.log('✅ Event listener adicionado ao sidebarToggle');
-            }
-            
-            if (sidebarClose) {
-                sidebarClose.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    closeSidebar();
-                });
-            }
-            
-            if (sidebarOverlay) {
-                sidebarOverlay.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    closeSidebar();
-                });
-            }
-            
-            // Controlar submenus (acordeon)
-            const submenuToggles = sidebar.querySelectorAll('.nav-link.has-submenu');
-            submenuToggles.forEach(toggle => {
-                toggle.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const navItem = this.closest('.nav-item.has-submenu');
-                    if (navItem) {
-                        const isOpen = navItem.classList.contains('open');
-                        const submenu = navItem.querySelector('.sidebar-submenu');
-                        
-                        // Fechar todos os outros submenus
-                        sidebar.querySelectorAll('.nav-item.has-submenu').forEach(item => {
-                            if (item !== navItem) {
-                                item.classList.remove('open');
-                                const otherSubmenu = item.querySelector('.sidebar-submenu');
-                                if (otherSubmenu) {
-                                    otherSubmenu.style.maxHeight = '0';
-                                }
-                            }
-                        });
-                        
-                        // Abrir/fechar o submenu clicado
-                        if (!isOpen) {
-                            navItem.classList.add('open');
-                            if (submenu) {
-                                submenu.style.maxHeight = submenu.scrollHeight + 'px';
-                            }
-                        } else {
-                            navItem.classList.remove('open');
-                            if (submenu) {
-                                submenu.style.maxHeight = '0';
-                            }
-                        }
-                    }
-                });
-            });
-            
-            // Fechar sidebar ao clicar em link (mobile) - apenas links que não são toggles
-            const sidebarLinks = sidebar.querySelectorAll('.nav-link:not(.has-submenu)');
-            sidebarLinks.forEach(link => {
-                link.addEventListener('click', function() {
-                    // Pequeno delay para permitir navegação
-                    setTimeout(function() {
-                        closeSidebar();
-                    }, 100);
-                });
-            });
-            
-            // Fechar sidebar ao redimensionar para desktop
-            let resizeTimer;
-            window.addEventListener('resize', function() {
-                clearTimeout(resizeTimer);
-                resizeTimer = setTimeout(function() {
-                    if (window.innerWidth >= 992) {
-                        closeSidebar();
-                    }
-                }, 100);
-            });
-            
-            // Tornar funções globais para debug (usando arrow functions para manter contexto)
-            window.toggleSidebar = function(e) {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                toggleSidebar(e);
-            };
-            window.openSidebar = function() {
-                openSidebar();
-            };
-            window.closeSidebar = function() {
-                closeSidebar();
-            };
-        });
-        
-        // ============================================
-        // SOLUÇÃO ROBUSTA PARA GARANTIR EXIBIÇÃO DE MODAIS
-        // ============================================
-        // Função auxiliar para forçar exibição de modal
-        function forcarExibicaoModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (!modal) {
-                console.error('Modal não encontrado:', modalId);
-                return false;
-            }
-            
-            // Adicionar classe active se não tiver
-            if (!modal.classList.contains('active')) {
-                modal.classList.add('active');
-            }
-            
-            // Forçar exibição via JavaScript (solução robusta)
-            setTimeout(() => {
-                const computedStyle = window.getComputedStyle(modal);
-                
-                // Verificar se o modal está realmente visível
-                if (computedStyle.display === 'none' || 
-                    computedStyle.visibility === 'hidden' || 
-                    parseFloat(computedStyle.opacity) < 0.1) {
-                    
-                    console.warn('⚠️ Modal não está visível, forçando exibição...', modalId);
-                    
-                    // Forçar propriedades CSS críticas
-                    modal.style.setProperty('display', 'flex', 'important');
-                    modal.style.setProperty('visibility', 'visible', 'important');
-                    modal.style.setProperty('opacity', '1', 'important');
-                    modal.style.setProperty('z-index', '1055', 'important');
-                    modal.style.setProperty('position', 'fixed', 'important');
-                    modal.style.setProperty('top', '0', 'important');
-                    modal.style.setProperty('left', '0', 'important');
-                    modal.style.setProperty('right', '0', 'important');
-                    modal.style.setProperty('bottom', '0', 'important');
-                    modal.style.setProperty('background', 'rgba(0, 0, 0, 0.5)', 'important');
-                    modal.style.setProperty('align-items', 'center', 'important');
-                    modal.style.setProperty('justify-content', 'center', 'important');
-                    
-                    // Garantir que o modal interno também está visível
-                    const modalInner = modal.querySelector('.modal');
-                    if (modalInner) {
-                        modalInner.style.setProperty('display', 'block', 'important');
-                        modalInner.style.setProperty('visibility', 'visible', 'important');
-                        modalInner.style.setProperty('opacity', '1', 'important');
-                        modalInner.style.setProperty('z-index', '1056', 'important');
-                        modalInner.style.setProperty('position', 'relative', 'important');
-                    }
-                }
-            }, 10);
-            
-            // Bloquear scroll do body
-            document.body.style.overflow = 'hidden';
-            
-            return true;
-        }
-        
-        // Interceptar adição de classe 'active' em modais
-        const originalClassListAdd = Element.prototype.classList.add;
-        Element.prototype.classList.add = function(...args) {
-            const result = originalClassListAdd.apply(this, args);
-            
-            // Se adicionou classe 'active' e é um modal-overlay, verificar e forçar se necessário
-            if (args.includes('active') && this.classList.contains('modal-overlay')) {
-                const modalId = this.id;
-                if (modalId) {
-                    setTimeout(() => {
-                        const computedStyle = window.getComputedStyle(this);
-                        if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
-                            forcarExibicaoModal(modalId);
-                        }
-                    }, 10);
-                }
-            }
-            
-            return result;
-        };
-        
-        // Tornar função global
-        window.forcarExibicaoModal = forcarExibicaoModal;
-        </script>
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    {% block extra_modals %}{% endblock %}
     {% block extra_js %}{% endblock %}
 </body>
 </html>

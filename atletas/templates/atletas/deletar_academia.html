@@ -40,7 +40,7 @@
             </div>
             
             <div style="text-align: center;">
-                <a href="{% url 'detalhe_academia' academia.id %}" class="btn btn-secondary">
+                <a href="{% url 'detalhe_academia' organizacao_slug=request.organizacao.slug academia_id=academia.id %}" class="btn btn-secondary">
                     Voltar
                 </a>
             </div>
@@ -59,7 +59,7 @@
             <form method="post" style="margin: 0;">
                 {% csrf_token %}
                 <div style="display: flex; gap: var(--spacing-3); justify-content: center;">
-                    <a href="{% url 'detalhe_academia' academia.id %}" class="btn btn-secondary" style="flex: 1;">
+                    <a href="{% url 'detalhe_academia' organizacao_slug=request.organizacao.slug academia_id=academia.id %}" class="btn btn-secondary" style="flex: 1;">
                         Cancelar
                     </a>
                     <button type="submit" class="btn" style="flex: 1; background: var(--color-danger); color: white; border-color: var(--color-danger);">

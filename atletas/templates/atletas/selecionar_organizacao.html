@@ -1,0 +1,38 @@
+{% extends 'atletas/base.html' %}
+{% block title %}Selecionar Organização{% endblock %}
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+    <div>
+        <h1 class="page-title">Selecionar Organização</h1>
+        <p class="page-description">Escolha uma organização para entrar como superuser.</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if organizacoes %}
+        <form method="post" style="display: grid; gap: var(--spacing-3);">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="organizacao_slug">Organização</label>
+                <select name="organizacao_slug" id="organizacao_slug" class="form-select" required>
+                    <option value="">Selecione...</option>
+                    {% for org in organizacoes %}
+                    <option value="{{ org.slug }}">{{ org.nome }} (slug: {{ org.slug }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary">Entrar</button>
+            </div>
+        </form>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-title">Nenhuma organização encontrada</div>
+            <div class="empty-state-description">Crie uma organização primeiro.</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

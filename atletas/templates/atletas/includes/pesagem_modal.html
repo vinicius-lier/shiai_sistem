@@ -1,0 +1,22 @@
+<div class="modal-overlay" id="modal-remanejamento">
+    <div class="modal" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Confirmação de Remanejamento</h3>
+            <button class="modal-close" onclick="fecharModal()">&times;</button>
+        </div>
+        <div id="modal-conteudo" class="modal-body">
+            <!-- Conteúdo preenchido dinamicamente -->
+        </div>
+        <form id="form-confirmacao" method="post">
+                {% csrf_token %}
+            <input type="hidden" name="peso_oficial" id="modal-peso">
+                <input type="hidden" name="categoria_nova" id="modal-categoria-nova">
+            <input type="hidden" name="acao" id="modal-acao" value="remanejar">
+            <div class="modal-footer" style="justify-content: space-between;">
+                <button type="button" class="btn btn-danger" id="btn-desclassificar">Desclassificar</button>
+                <button type="submit" class="btn btn-primary">Remanejar</button>
+            </div>
+            </form>
+    </div>
+</div>
+

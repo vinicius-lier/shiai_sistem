@@ -11,7 +11,7 @@
             <h1 class="page-title">Gerenciar Academias do Campeonato</h1>
             <p class="page-description">{{ campeonato.nome }}</p>
         </div>
-        <a href="{% url 'lista_campeonatos' %}" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: var(--spacing-2);">
+        <a href="{% url 'lista_campeonatos' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: var(--spacing-2);">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                 <polyline points="15 18 9 12 15 6"></polyline>
             </svg>

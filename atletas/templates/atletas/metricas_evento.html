@@ -268,7 +268,7 @@
                         <div style="font-weight: 600; color: var(--color-danger);">{{ rem.categoria_original }}</div>
                     </div>
                     <div>
-                        <a href="{% url 'pesagem' %}?inscricao_id={{ rem.id }}" class="btn btn-sm btn-primary">
+                        <a href="{% url 'pesagem' organizacao_slug=request.organizacao.slug %}?inscricao_id={{ rem.id }}" class="btn btn-sm btn-primary">
                             Ver Detalhes
                         </a>
                     </div>
@@ -282,7 +282,7 @@
             {% endfor %}
             {% if remanejamentos.pendentes > 10 %}
             <div style="text-align: center; margin-top: var(--spacing-4);">
-                <a href="{% url 'pesagem' %}" class="btn btn-secondary">
+                <a href="{% url 'pesagem' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">
                     Ver todos os {{ remanejamentos.pendentes }} remanejamentos pendentes
                 </a>
             </div>

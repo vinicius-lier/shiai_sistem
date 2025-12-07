@@ -48,7 +48,7 @@
                 </div>
             </div>
             <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
-                <a href="{% url 'ranking_global' %}" class="btn btn-secondary">Limpar Filtros</a>
+                <a href="{% url 'ranking_global' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Limpar Filtros</a>
                 <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
             </div>
         </form>

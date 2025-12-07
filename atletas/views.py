@@ -2957,9 +2957,13 @@ def definir_campeonato_ativo(request, campeonato_id):
     return redirect('lista_campeonatos')
 
 @operacional_required
-def gerenciar_academias_campeonato(request, campeonato_id):
+def gerenciar_academias_campeonato(request, organizacao_slug, campeonato_id):
     """Gerenciar permissões de academias no campeonato"""
-    campeonato = get_object_or_404(Campeonato, id=campeonato_id)
+    campeonato = get_object_or_404(
+        Campeonato,
+        id=campeonato_id,
+        organizacao__slug=organizacao_slug,
+    )
     
     if request.method == 'POST':
         acao = request.POST.get('acao')
@@ -3002,7 +3006,11 @@ def gerenciar_academias_campeonato(request, campeonato_id):
                 except Exception as e:
                     messages.error(request, f'Erro ao adicionar academia: {str(e)}')
         
-        return redirect('gerenciar_academias_campeonato', campeonato_id=campeonato_id)
+        return redirect(
+            'gerenciar_academias_campeonato',
+            organizacao_slug=organizacao_slug,
+            campeonato_id=campeonato_id,
+        )
     
     # GET: Listar todas as academias e seus status no campeonato
     todas_academias = Academia.objects.filter(ativo_login=True).order_by('nome')

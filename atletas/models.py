@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.auth.models import User
 from django.conf import settings
 from datetime import date, timedelta
 from django.utils import timezone
@@ -96,6 +95,15 @@ class Organizador(models.Model):
         super().save(*args, **kwargs)
 
 
+class GrupoFaixa(models.Model):
+    nome = models.CharField(max_length=60)
+    faixa_ordem_min = models.PositiveSmallIntegerField()
+    faixa_ordem_max = models.PositiveSmallIntegerField()
+
+    def __str__(self):
+        return self.nome
+
+
 class Academia(models.Model):
     organizador = models.ForeignKey(Organizador, on_delete=models.CASCADE, related_name='academias', verbose_name="Organização", null=True, blank=True)
     nome = models.CharField(max_length=200)
@@ -159,6 +167,30 @@ class Classe(models.Model):
 
     def __str__(self):
         return self.nome
+
+
+class ClasseElegivel(models.Model):
+    """Mapa de elegibilidade entre classes (origem -> destino)."""
+    classe_origem = models.ForeignKey(
+        Classe,
+        on_delete=models.CASCADE,
+        related_name="elegiveis_origem",
+        verbose_name="Classe de Origem"
+    )
+    classe_destino = models.ForeignKey(
+        Classe,
+        on_delete=models.CASCADE,
+        related_name="elegiveis_destino",
+        verbose_name="Classe de Destino"
+    )
+
+    class Meta:
+        verbose_name = "Classe Elegível"
+        verbose_name_plural = "Classes Elegíveis"
+        unique_together = ("classe_origem", "classe_destino")
+
+    def __str__(self):
+        return f"{self.classe_origem} -> {self.classe_destino}"
 
 
 class Categoria(models.Model):
@@ -271,13 +303,13 @@ class Atleta(models.Model):
         """Verifica se o atleta tem documento oficial cadastrado"""
         return bool(self.documento_oficial)
     
-    def get_classe_atual(self):
-        """Calcula a classe atual baseada na data de nascimento"""
+    def get_classe_atual(self, ano_evento=None):
+        """Calcula a classe atual baseada no ano do evento (somente o ano)."""
         try:
             from .utils import calcular_classe
             ano = self.get_ano_nasc()
             if ano:
-                classe = calcular_classe(ano)
+                classe = calcular_classe(ano, ano_evento=ano_evento)
                 if classe:
                     return classe
             # Fallback para classe_inicial ou padrão
@@ -522,6 +554,20 @@ class Inscricao(models.Model):
         verbose_name="Status Atual",
         db_index=True
     )
+    STATUS_WORKFLOW_CHOICES = [
+        ('RASCUNHO', 'Rascunho'),
+        ('CONFIRMADA', 'Confirmada'),
+        ('PESADA', 'Pesada'),
+        ('BLOQUEADA', 'Bloqueada'),
+        ('CANCELADA', 'Cancelada'),
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_WORKFLOW_CHOICES,
+        default='RASCUNHO',
+        verbose_name="Status (Workflow)",
+        db_index=False
+    )
     
     # Peso informado na inscrição
     peso_informado = models.DecimalField(max_digits=6, decimal_places=1, null=True, blank=True, verbose_name="Peso Informado (kg)")
@@ -574,7 +620,7 @@ class PesagemHistorico(models.Model):
     categoria_ajustada = models.CharField(max_length=100, blank=True, verbose_name="Categoria Ajustada")
     motivo_ajuste = models.TextField(blank=True, verbose_name="Motivo do Ajuste")
     observacoes = models.TextField(blank=True, verbose_name="Observações")
-    pesado_por = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='pesagens_realizadas', verbose_name="Pesado por")
+    pesado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='pesagens_realizadas', verbose_name="Pesado por")
     data_hora = models.DateTimeField(auto_now_add=True, verbose_name="Data e Hora da Pesagem")
     
     class Meta:
@@ -801,7 +847,7 @@ class CadastroOperacional(models.Model):
 
 class UserProfile(models.Model):
     """Perfil de usuário multi-tenant completo"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     
     # Organização (superior)
     organizador = models.ForeignKey(
@@ -826,7 +872,8 @@ class UserProfile(models.Model):
         verbose_name_plural = "Perfis de Usuário"
 
     def __str__(self):
-        texto = [self.user.username]
+        # AUTH_USER_MODEL usa email como login (não existe "username" no User custom)
+        texto = [getattr(self.user, "get_username", lambda: "")() or getattr(self.user, "email", "") or str(self.user)]
         if self.organizador:
             texto.append(f"Org: {self.organizador.nome}")
         if self.academia:
@@ -838,11 +885,11 @@ class UserProfile(models.Model):
 
 class UsuarioOperacional(models.Model):
     """Perfil de usuário operacional com permissões e expiração"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil_operacional', verbose_name="Usuário")
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='perfil_operacional', verbose_name="Usuário")
     pode_resetar_campeonato = models.BooleanField(default=False, verbose_name="Pode Resetar Campeonato", help_text="Permissão para resetar campeonato (apenas usuário principal)")
     pode_criar_usuarios = models.BooleanField(default=False, verbose_name="Pode Criar Usuários", help_text="Permissão para criar novos usuários operacionais (apenas usuário principal)")
     data_expiracao = models.DateTimeField(null=True, blank=True, verbose_name="Data de Expiração", help_text="Data de expiração do acesso (null = vitalício)")
-    criado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios_criados', verbose_name="Criado Por")
+    criado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios_criados', verbose_name="Criado Por")
     data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
     ativo = models.BooleanField(default=True, verbose_name="Ativo")
     senha_alterada = models.BooleanField(default=False, verbose_name="Senha Alterada", help_text="Indica se o usuário já alterou a senha no primeiro acesso")
@@ -853,10 +900,11 @@ class UsuarioOperacional(models.Model):
         ordering = ['-data_criacao']
     
     def __str__(self):
+        identificador = getattr(self.user, "get_username", lambda: "")() or getattr(self.user, "email", "") or str(self.user)
         if not self.data_expiracao:
-            return f"{self.user.username} - Vitalício"
+            return f"{identificador} - Vitalício"
         else:
-            return f"{self.user.username} - Expira em {self.data_expiracao.strftime('%d/%m/%Y')}"
+            return f"{identificador} - Expira em {self.data_expiracao.strftime('%d/%m/%Y')}"
     
     @property
     def esta_expirado(self):
@@ -1086,7 +1134,7 @@ class Pagamento(models.Model):
     )
     motivo_rejeicao = models.TextField(blank=True, verbose_name="Motivo da Rejeição", help_text="Motivo da rejeição do pagamento (preenchido pelo operador)")
     validado_por = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -1132,7 +1180,7 @@ class ConferenciaPagamento(models.Model):
         help_text="Comprovante de pagamento enviado pela academia (JPG, PNG, PDF ou HEIC)"
     )
     conferido_por = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -1174,7 +1222,7 @@ class HistoricoSistema(models.Model):
     tipo_acao = models.CharField(max_length=50, choices=TIPO_ACAO_CHOICES, verbose_name="Tipo de Ação")
     descricao = models.TextField(verbose_name="Descrição")
     usuario = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -1290,7 +1338,7 @@ class Ocorrencia(models.Model):
     
     # Responsáveis
     registrado_por = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -1298,7 +1346,7 @@ class Ocorrencia(models.Model):
         verbose_name="Registrado por"
     )
     responsavel_resolucao = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

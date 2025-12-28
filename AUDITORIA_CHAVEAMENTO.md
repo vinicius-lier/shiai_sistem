@@ -141,3 +141,9 @@ def listar_inscricoes_apta_chave(qs):
 - `python3 manage.py test` (adicionar suíte para chaveamento)
 
 
+
+
+
+
+
+

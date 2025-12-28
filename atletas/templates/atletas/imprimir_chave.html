@@ -15,13 +15,13 @@
 
         @page {
             size: A4 portrait;
-            margin: 15mm;
+            margin: 10mm;
         }
 
         body {
             font-family: 'Arial', 'Helvetica', sans-serif;
-            font-size: 11pt;
-            line-height: 1.4;
+            font-size: 10pt;
+            line-height: 1.35;
             color: #000;
             background: #fff;
             width: 100%;
@@ -35,10 +35,10 @@
             }
             
             .print-container {
-                max-width: 210mm;
+                max-width: 190mm;
                 margin: 0 auto;
                 background: #fff;
-                padding: 20px;
+                padding: 16px;
                 box-shadow: 0 0 10px rgba(0,0,0,0.1);
             }
         }
@@ -55,22 +55,49 @@
                 padding: 0;
                 box-shadow: none;
             }
+
+            .no-print,
+            .print-alerts {
+                display: none !important;
+            }
+        }
+
+        .print-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .print-button {
+            border: 1px solid #000;
+            background: #fff;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 10pt;
+        }
+
+        .print-hint {
+            font-size: 9pt;
+            color: #444;
+            align-self: center;
         }
 
         /* Cabeçalho */
         .print-header {
             border-bottom: 2px solid #000;
-            padding-bottom: 8mm;
-            margin-bottom: 10mm;
+            padding-bottom: 4mm;
+            margin-bottom: 6mm;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
+            gap: 6mm;
         }
         
         .print-header-logo {
-            height: 50px;
+            height: 38px;
             width: auto;
-            margin-right: 10mm;
+            margin-right: 6mm;
         }
         
         .print-header-content {
@@ -80,28 +107,28 @@
         .header-line {
             display: flex;
             align-items: baseline;
-            margin-bottom: 5mm;
-            font-size: 11pt;
+            margin-bottom: 3mm;
+            font-size: 10pt;
         }
 
         .header-label {
             font-weight: bold;
-            min-width: 35mm;
+            min-width: 28mm;
             margin-right: 3mm;
         }
 
         .header-field {
             flex: 1;
             border-bottom: 1px solid #000;
-            min-height: 6mm;
+            min-height: 5mm;
             padding: 0 2mm;
         }
 
         .header-row {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 5mm;
-            margin-bottom: 5mm;
+            gap: 4mm;
+            margin-bottom: 3mm;
         }
 
         .header-item {
@@ -112,13 +139,13 @@
         .header-item-label {
             font-weight: bold;
             margin-right: 3mm;
-            min-width: 20mm;
+            min-width: 18mm;
         }
 
         .header-item-field {
             flex: 1;
             border-bottom: 1px solid #000;
-            min-height: 6mm;
+            min-height: 5mm;
         }
 
         /* Container Principal */
@@ -128,100 +155,100 @@
 
         /* Seção de Chave */
         .chave-section {
-            margin-top: 10mm;
+            margin-top: 6mm;
             page-break-inside: avoid;
         }
 
         .section-title {
-            font-size: 12pt;
+            font-size: 11pt;
             font-weight: bold;
             text-transform: uppercase;
             border-bottom: 2px solid #000;
             padding-bottom: 2mm;
-            margin-bottom: 6mm;
+            margin-bottom: 4mm;
         }
 
         /* Melhor de 3 */
         .melhor-de-3 {
-            margin-bottom: 8mm;
+            margin-bottom: 6mm;
         }
 
         .atleta-line {
             display: flex;
             align-items: baseline;
-            margin-bottom: 4mm;
-            font-size: 11pt;
+            margin-bottom: 3mm;
+            font-size: 10pt;
         }
 
         .atleta-label {
             font-weight: bold;
-            min-width: 25mm;
+            min-width: 22mm;
             margin-right: 3mm;
         }
 
         .atleta-field {
             flex: 1;
             border-bottom: 1px solid #000;
-            min-height: 6mm;
+            min-height: 5mm;
         }
 
         .luta-line {
             display: flex;
             align-items: baseline;
-            margin-bottom: 3mm;
-            margin-left: 10mm;
-            font-size: 10pt;
+            margin-bottom: 2mm;
+            margin-left: 8mm;
+            font-size: 9pt;
         }
 
         .luta-label {
             font-weight: bold;
-            min-width: 20mm;
+            min-width: 18mm;
             margin-right: 3mm;
         }
 
         .luta-field {
             flex: 1;
             border-bottom: 1px solid #000;
-            min-height: 5mm;
+            min-height: 4mm;
         }
 
         .resultado-final {
-            margin-top: 8mm;
-            padding-top: 6mm;
+            margin-top: 6mm;
+            padding-top: 4mm;
             border-top: 2px solid #000;
         }
 
         .resultado-line {
             display: flex;
             align-items: baseline;
-            margin-bottom: 4mm;
-            font-size: 11pt;
+            margin-bottom: 3mm;
+            font-size: 10pt;
         }
 
         .resultado-label {
             font-weight: bold;
-            min-width: 35mm;
+            min-width: 28mm;
             margin-right: 3mm;
         }
 
         .resultado-field {
             flex: 1;
             border-bottom: 1px solid #000;
-            min-height: 6mm;
+            min-height: 5mm;
         }
 
         /* Round Robin - Tabela */
         .round-robin-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 6mm;
-            font-size: 10pt;
+            margin-top: 4mm;
+            font-size: 9pt;
         }
 
         .round-robin-table th,
         .round-robin-table td {
             border: 1px solid #000;
-            padding: 3mm;
+            padding: 2mm;
             text-align: center;
         }
 
@@ -231,7 +258,7 @@
         }
 
         .round-robin-table td {
-            min-height: 8mm;
+            min-height: 6mm;
         }
 
         .round-robin-table .atleta-col {
@@ -241,32 +268,32 @@
 
         /* Eliminatória */
         .eliminatoria-round {
-            margin-bottom: 10mm;
+            margin-bottom: 6mm;
             page-break-inside: avoid;
         }
 
         .luta-box {
             display: flex;
             align-items: center;
-            margin-bottom: 5mm;
-            font-size: 11pt;
+            margin-bottom: 3mm;
+            font-size: 10pt;
         }
 
         .luta-box-atleta {
             border: 1px solid #000;
-            padding: 3mm 5mm;
+            padding: 3mm 4mm;
             min-width: 40mm;
             min-height: 8mm;
             text-align: center;
         }
 
         .luta-box-vs {
-            margin: 0 5mm;
+            margin: 0 3mm;
             font-weight: bold;
         }
 
         .luta-box-vencedor {
-            margin-left: 8mm;
+            margin-left: 5mm;
             display: flex;
             align-items: baseline;
         }
@@ -278,53 +305,53 @@
 
         .luta-box-vencedor-field {
             border-bottom: 1px solid #000;
-            min-width: 50mm;
+            min-width: 45mm;
             min-height: 6mm;
         }
 
         /* Classificação Final */
         .classificacao-final {
-            margin-top: 12mm;
-            padding-top: 8mm;
+            margin-top: 8mm;
+            padding-top: 6mm;
             border-top: 2px solid #000;
             page-break-inside: avoid;
         }
 
         .classificacao-title {
-            font-size: 12pt;
+            font-size: 11pt;
             font-weight: bold;
             text-transform: uppercase;
-            margin-bottom: 6mm;
+            margin-bottom: 4mm;
             text-align: center;
         }
 
         .classificacao-line {
             display: flex;
             align-items: baseline;
-            margin-bottom: 4mm;
-            font-size: 11pt;
+            margin-bottom: 3mm;
+            font-size: 10pt;
         }
 
         .classificacao-pos {
             font-weight: bold;
-            min-width: 25mm;
+            min-width: 22mm;
             margin-right: 3mm;
         }
 
         .classificacao-field {
             flex: 1;
             border-bottom: 1px solid #000;
-            min-height: 6mm;
+            min-height: 5mm;
         }
 
         /* Assinaturas */
         .assinaturas {
-            margin-top: 15mm;
-            padding-top: 8mm;
+            margin-top: 10mm;
+            padding-top: 6mm;
             border-top: 1px solid #000;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20mm;
+            gap: 12mm;
         }
 
         .assinatura-item {
@@ -332,15 +359,120 @@
         }
 
         .assinatura-label {
-            font-size: 9pt;
+            font-size: 8pt;
             font-weight: bold;
-            margin-bottom: 3mm;
+            margin-bottom: 2mm;
         }
 
         .assinatura-field {
             border-bottom: 1px solid #000;
             min-height: 10mm;
             margin-top: 5mm;
+        }
+
+        .observacoes {
+            margin-top: 6mm;
+        }
+
+        .observacoes-title {
+            font-weight: bold;
+            margin-bottom: 3mm;
+        }
+
+        .observacoes-line {
+            border-bottom: 1px solid #000;
+            min-height: 6mm;
+            margin-bottom: 2mm;
+        }
+
+        .manual-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 8mm;
+            align-items: start;
+        }
+
+        .manual-panel {
+            border: 1px solid #000;
+            padding: 4mm;
+        }
+
+        .manual-panel-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 10pt;
+            margin-bottom: 4mm;
+            padding-bottom: 2mm;
+            border-bottom: 1px solid #000;
+        }
+
+        .bracket {
+            display: grid;
+            gap: 4mm;
+        }
+
+        .bracket-round {
+            display: flex;
+            flex-direction: column;
+            gap: 3mm;
+            min-width: 28mm;
+        }
+
+        .bracket-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 9pt;
+            border-bottom: 1px solid #000;
+            padding-bottom: 1mm;
+        }
+
+        .match-card {
+            border: 1px solid #000;
+            padding: 2.5mm;
+            display: grid;
+            gap: 2mm;
+        }
+
+        .match-line {
+            display: grid;
+            grid-template-columns: 1fr 12mm;
+            gap: 2mm;
+            align-items: center;
+        }
+
+        .match-field {
+            border-bottom: 1px solid #000;
+            min-height: 5mm;
+        }
+
+        .match-score {
+            border: 1px solid #000;
+            min-height: 5mm;
+        }
+
+        .bracket.is-compact .match-field,
+        .bracket.is-compact .match-score {
+            min-height: 4.5mm;
+        }
+
+        .bracket.is-xcompact .match-field,
+        .bracket.is-xcompact .match-score {
+            min-height: 4mm;
+        }
+
+        @media print {
+            .round-robin-table th,
+            .round-robin-table td {
+                padding: 1.5mm;
+            }
+
+            .section-title {
+                letter-spacing: 0.5px;
+            }
+
+            .manual-panel {
+                padding: 3mm;
+            }
         }
 
         /* Quebra de página */
@@ -360,6 +492,10 @@
     </style>
 </head>
 <body>
+    <div class="no-print print-actions">
+        <button class="print-button" onclick="window.print()">Imprimir</button>
+        <span class="print-hint">Dica: use escala 100% para melhor preenchimento manual</span>
+    </div>
     {% if messages %}
     <div class="print-alerts" style="margin-bottom:10px;">
         {% for message in messages %}
@@ -409,38 +545,34 @@
         <div class="chave-section">
             {% if tipo_chave == "melhor_de_3" %}
                 <!-- MELHOR DE 3 -->
-                <div class="melhor-de-3">
-                    <div class="section-title">MELHOR DE 3</div>
-                    
-                    <div class="atleta-line">
-                        <span class="atleta-label">ATLETA 1:</span>
-                        <div class="atleta-field"></div>
-                    </div>
-                    
-                    <div class="atleta-line">
-                        <span class="atleta-label">ATLETA 2:</span>
-                        <div class="atleta-field"></div>
-                    </div>
-                    
-                    <div style="margin-top: 8mm;">
-                        <div class="luta-line">
-                            <span class="luta-label">Luta 1:</span>
-                            <div class="luta-field"></div>
+                <div class="manual-grid">
+                    <div class="manual-panel">
+                        <div class="manual-panel-title">Melhor de 3</div>
+                        <div class="atleta-line">
+                            <span class="atleta-label">ATLETA 1:</span>
+                            <div class="atleta-field"></div>
                         </div>
-                        
-                        <div class="luta-line">
-                            <span class="luta-label">Luta 2:</span>
-                            <div class="luta-field"></div>
+                        <div class="atleta-line">
+                            <span class="atleta-label">ATLETA 2:</span>
+                            <div class="atleta-field"></div>
                         </div>
-                        
-                        <div class="luta-line">
-                            <span class="luta-label">Luta 3:</span>
-                            <div class="luta-field"></div>
+                        <div style="margin-top: 6mm;">
+                            <div class="luta-line">
+                                <span class="luta-label">Luta 1:</span>
+                                <div class="luta-field"></div>
+                            </div>
+                            <div class="luta-line">
+                                <span class="luta-label">Luta 2:</span>
+                                <div class="luta-field"></div>
+                            </div>
+                            <div class="luta-line">
+                                <span class="luta-label">Luta 3:</span>
+                                <div class="luta-field"></div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="resultado-final">
-                        <div class="section-title">RESULTADO FINAL</div>
+                    <div class="manual-panel">
+                        <div class="manual-panel-title">Resultado Final</div>
                         <div class="resultado-line">
                             <span class="resultado-label">Campeão:</span>
                             <div class="resultado-field"></div>
@@ -449,6 +581,32 @@
                             <span class="resultado-label">Vice-campeão:</span>
                             <div class="resultado-field"></div>
                         </div>
+                        <div class="manual-panel-title" style="margin-top: 6mm;">Classificação</div>
+                        <div class="classificacao-line">
+                            <span class="classificacao-pos">1º Lugar:</span>
+                            <div class="classificacao-field"></div>
+                        </div>
+                        <div class="classificacao-line">
+                            <span class="classificacao-pos">2º Lugar:</span>
+                            <div class="classificacao-field"></div>
+                        </div>
+                        <div class="classificacao-line">
+                            <span class="classificacao-pos">3º Lugar:</span>
+                            <div class="classificacao-field"></div>
+                        </div>
+                        <div class="manual-panel-title" style="margin-top: 6mm;">Assinaturas</div>
+                        <div class="assinatura-item" style="margin-bottom: 6mm;">
+                            <div class="assinatura-label">Oficial da Mesa</div>
+                            <div class="assinatura-field"></div>
+                        </div>
+                        <div class="assinatura-item">
+                            <div class="assinatura-label">Árbitro Principal</div>
+                            <div class="assinatura-field"></div>
+                        </div>
+                        <div class="manual-panel-title" style="margin-top: 6mm;">Observações</div>
+                        <div class="observacoes-line"></div>
+                        <div class="observacoes-line"></div>
+                        <div class="observacoes-line"></div>
                     </div>
                 </div>
 
@@ -498,82 +656,132 @@
 
             {% elif tipo_chave == "eliminatoria_repescagem" or tipo_chave == "eliminatoria_simples" or tipo_chave == "olimpica_4" or tipo_chave == "olimpica_8" or tipo_chave == "olimpica_16" or tipo_chave == "olimpica_32" %}
                 <!-- ELIMINATÓRIA -->
-                {% if tamanho_chave >= 8 %}
-                <div class="eliminatoria-round">
-                    <div class="section-title">QUARTAS DE FINAL</div>
-                    {% for i in "1234" %}
-                    <div class="luta-box">
-                        <div class="luta-box-atleta"></div>
-                        <span class="luta-box-vs">vs</span>
-                        <div class="luta-box-atleta"></div>
-                        <div class="luta-box-vencedor">
-                            <span class="luta-box-vencedor-label">Vencedor:</span>
-                            <div class="luta-box-vencedor-field"></div>
+                <div class="section-title">CHAVE ELIMINATÓRIA</div>
+                <div class="bracket {% if tamanho_chave >= 32 %}is-xcompact{% elif tamanho_chave >= 16 %}is-compact{% endif %}"
+                     style="{% if tamanho_chave >= 32 %}grid-template-columns: repeat(5, 1fr);{% elif tamanho_chave >= 16 %}grid-template-columns: repeat(4, 1fr);{% elif tamanho_chave >= 8 %}grid-template-columns: repeat(3, 1fr);{% else %}grid-template-columns: repeat(2, 1fr);{% endif %}">
+                    {% if tamanho_chave >= 32 %}
+                    <div class="bracket-round">
+                        <div class="bracket-title">16 avos</div>
+                        {% for i in "1234567890123456" %}
+                        <div class="match-card">
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
+                    {% endif %}
 
-                {% if tamanho_chave >= 4 %}
-                <div class="eliminatoria-round">
-                    <div class="section-title">SEMIFINAIS</div>
-                    {% for i in "12" %}
-                    <div class="luta-box">
-                        <div class="luta-box-atleta"></div>
-                        <span class="luta-box-vs">vs</span>
-                        <div class="luta-box-atleta"></div>
-                        <div class="luta-box-vencedor">
-                            <span class="luta-box-vencedor-label">Vencedor:</span>
-                            <div class="luta-box-vencedor-field"></div>
+                    {% if tamanho_chave >= 16 %}
+                    <div class="bracket-round">
+                        <div class="bracket-title">Oitavas</div>
+                        {% for i in "12345678" %}
+                        <div class="match-card">
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
+                    {% endif %}
 
-                <div class="eliminatoria-round">
-                    <div class="section-title">FINAL</div>
-                    <div class="luta-box">
-                        <div class="luta-box-atleta"></div>
-                        <span class="luta-box-vs">vs</span>
-                        <div class="luta-box-atleta"></div>
-                        <div class="luta-box-vencedor">
-                            <span class="luta-box-vencedor-label">Campeão:</span>
-                            <div class="luta-box-vencedor-field"></div>
+                    {% if tamanho_chave >= 8 %}
+                    <div class="bracket-round">
+                        <div class="bracket-title">Quartas</div>
+                        {% for i in "1234" %}
+                        <div class="match-card">
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
-                </div>
+                    {% endif %}
 
-                {% if tipo_chave == "eliminatoria_repescagem" %}
-                <div class="eliminatoria-round">
-                    <div class="section-title">DISPUTA 3º LUGAR</div>
-                    <div class="luta-box">
-                        <div class="luta-box-atleta"></div>
-                        <span class="luta-box-vs">vs</span>
-                        <div class="luta-box-atleta"></div>
-                        <div class="luta-box-vencedor">
-                            <span class="luta-box-vencedor-label">Terceiro lugar:</span>
-                            <div class="luta-box-vencedor-field"></div>
+                    <div class="bracket-round">
+                        <div class="bracket-title">Semifinais</div>
+                        {% for i in "12" %}
+                        <div class="match-card">
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
                         </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="bracket-round">
+                        <div class="bracket-title">Final</div>
+                        <div class="match-card">
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
+                        </div>
+                        {% if tipo_chave == "eliminatoria_repescagem" %}
+                        <div class="match-card">
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
-                {% endif %}
 
             {% else %}
                 <!-- Estrutura genérica -->
                 <div class="section-title">CHAVE DE COMPETIÇÃO</div>
-                <div style="margin-top: 10mm; text-align: center; padding: 10mm; border: 1px solid #000;">
-                    <p style="margin-bottom: 5mm;">Estrutura da chave para anotação manual</p>
-                    <div style="display: grid; gap: 3mm;">
+                <div class="bracket" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="bracket-round">
+                        <div class="bracket-title">Lutas</div>
                         {% for i in "12345678" %}
-                        <div class="luta-box">
-                            <div class="luta-box-atleta"></div>
-                            <span class="luta-box-vs">vs</span>
-                            <div class="luta-box-atleta"></div>
-                            <div class="luta-box-vencedor">
-                                <span class="luta-box-vencedor-label">Vencedor:</span>
-                                <div class="luta-box-vencedor-field"></div>
+                        <div class="match-card">
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="bracket-round">
+                        <div class="bracket-title">Vencedores</div>
+                        {% for i in "12345678" %}
+                        <div class="match-card">
+                            <div class="match-line">
+                                <div class="match-field"></div>
+                                <div class="match-score"></div>
                             </div>
                         </div>
                         {% endfor %}
@@ -582,6 +790,7 @@
             {% endif %}
         </div>
 
+        {% if tipo_chave != "melhor_de_3" %}
         <!-- Classificação Final -->
         <div class="classificacao-final">
             <div class="classificacao-title">CLASSIFICAÇÃO FINAL</div>
@@ -620,6 +829,14 @@
                 <div class="assinatura-field"></div>
             </div>
         </div>
+
+        <div class="observacoes">
+            <div class="observacoes-title">Observações</div>
+            <div class="observacoes-line"></div>
+            <div class="observacoes-line"></div>
+            <div class="observacoes-line"></div>
+        </div>
+        {% endif %}
     </div>
 </body>
 </html>

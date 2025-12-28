@@ -2,6 +2,7 @@
 Sistema de autenticação para Login de Academia e Operacional
 """
 from functools import wraps
+import inspect
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.utils import timezone
@@ -47,8 +48,19 @@ def operacional_required(view_func):
     """Decorator para verificar se é acesso operacional (não academia) - SEMPRE exige login e senha"""
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        # Remover slug da organização dos kwargs para evitar TypeError em views que não o recebem
-        kwargs.pop('organizacao_slug', None)
+        # Remover slug apenas quando a view nao aceita esse argumento.
+        if 'organizacao_slug' in kwargs:
+            try:
+                signature = inspect.signature(view_func)
+                accepts_kwargs = any(
+                    param.kind == inspect.Parameter.VAR_KEYWORD
+                    for param in signature.parameters.values()
+                )
+                if not accepts_kwargs and 'organizacao_slug' not in signature.parameters:
+                    kwargs.pop('organizacao_slug', None)
+            except (TypeError, ValueError):
+                # Caso nao seja possivel inspecionar, mantenha o slug para evitar erro em views que o exigem.
+                pass
         # Se está logado como academia, redirecionar
         if request.session.get('academia_id'):
             messages.warning(request, 'Você está logado como academia. Faça logout para acessar o módulo operacional.')

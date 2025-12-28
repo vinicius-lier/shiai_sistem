@@ -1,81 +1,48 @@
-{% extends 'atletas/base.html' %}
+{% extends "atletas/layouts/base_auth.html" %}
 {% load static %}
 
 {% block title %}Alterar Senha - SHIAI SISTEM{% endblock %}
 
-{% block content %}
-<div class="container" style="max-width: 600px; margin: var(--spacing-8) auto; padding: 0 var(--spacing-4);">
-    <div class="card">
-        <div class="card-header" style="text-align: center; padding: var(--spacing-6);">
-            <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" style="max-width: 120px; margin-bottom: var(--spacing-4);">
-            <h2 class="card-title" style="margin: 0;">Alteração de Senha Obrigatória</h2>
-            <p style="color: var(--color-gray-600); margin: var(--spacing-2) 0 0 0; font-size: var(--font-size-sm);">
-                Por segurança, você precisa alterar sua senha no primeiro acesso
-            </p>
-        </div>
-        <div class="card-body" style="padding: var(--spacing-6);">
-            <form method="post">
-                {% csrf_token %}
-                
-                <div class="form-group">
-                    <label class="form-label" for="senha_atual">
-                        Senha Atual
-                        <span style="color: var(--color-danger);">*</span>
-                    </label>
-                    <input type="password" id="senha_atual" name="senha_atual" class="form-input" required 
-                           placeholder="Digite sua senha atual" autocomplete="current-password" autofocus>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="nova_senha">
-                        Nova Senha
-                        <span style="color: var(--color-danger);">*</span>
-                    </label>
-                    <input type="password" id="nova_senha" name="nova_senha" class="form-input" required 
-                           placeholder="Mínimo 6 caracteres" autocomplete="new-password" minlength="6">
-                    <small style="color: var(--color-gray-500); font-size: var(--font-size-xs);">
-                        A senha deve ter pelo menos 6 caracteres
-                    </small>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="confirmar_senha">
-                        Confirmar Nova Senha
-                        <span style="color: var(--color-danger);">*</span>
-                    </label>
-                    <input type="password" id="confirmar_senha" name="confirmar_senha" class="form-input" required 
-                           placeholder="Digite a nova senha novamente" autocomplete="new-password" minlength="6">
-                </div>
-                
-                <div style="margin-top: var(--spacing-6); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
-                    <button type="submit" class="btn btn-primary w-full">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                            <polyline points="7 3 7 8 15 8"></polyline>
-                        </svg>
-                        Alterar Senha
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <div class="card" style="margin-top: var(--spacing-4); background: var(--color-warning-light); border-color: var(--color-warning);">
-        <div class="card-body" style="padding: var(--spacing-4);">
-            <p style="margin: 0; font-size: var(--font-size-sm); color: var(--color-gray-700); text-align: center;">
-                <strong>⚠️ Importante:</strong> Você não poderá acessar o sistema até alterar sua senha.
-            </p>
-        </div>
-    </div>
+{% block auth_content %}
+<div class="stack" style="align-items:center;">
+  <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" style="width:110px; height:110px; object-fit:contain;">
+  <div class="stack" style="gap: var(--space-1); text-align:center;">
+    <div style="font-weight:800; font-size: var(--font-size-lg);">Alteração de Senha Obrigatória</div>
+    <div style="color: var(--muted);">Por segurança, você precisa alterar sua senha no primeiro acesso</div>
+  </div>
+</div>
+
+<form method="post" class="stack" style="margin-top: var(--space-4); gap: var(--space-3);">
+  {% csrf_token %}
+
+  <div class="stack" style="gap: var(--space-2);">
+    <label for="senha_atual" style="font-weight:600;">Senha Atual</label>
+    <input type="password" id="senha_atual" name="senha_atual" required placeholder="Digite sua senha atual" autocomplete="current-password" autofocus>
+  </div>
+
+  <div class="stack" style="gap: var(--space-2);">
+    <label for="nova_senha" style="font-weight:600;">Nova Senha</label>
+    <input type="password" id="nova_senha" name="nova_senha" required placeholder="Mínimo 6 caracteres" autocomplete="new-password" minlength="6">
+    <div style="color: var(--muted); font-size: var(--font-size-xs);">A senha deve ter pelo menos 6 caracteres</div>
+  </div>
+
+  <div class="stack" style="gap: var(--space-2);">
+    <label for="confirmar_senha" style="font-weight:600;">Confirmar Nova Senha</label>
+    <input type="password" id="confirmar_senha" name="confirmar_senha" required placeholder="Digite a nova senha novamente" autocomplete="new-password" minlength="6">
+  </div>
+
+  <button type="submit" class="btn btn-primary" style="width:100%;">Alterar Senha</button>
+</form>
+
+<div class="alert alert-warning" style="margin-top: var(--space-3);">
+  <strong>Importante:</strong> Você não poderá acessar o sistema até alterar sua senha.
 </div>
 
 <script>
-// Validar se as senhas coincidem em tempo real
+// Validar se as senhas coincidem em tempo real (UX only)
 document.getElementById('confirmar_senha')?.addEventListener('input', function() {
     const novaSenha = document.getElementById('nova_senha').value;
     const confirmarSenha = this.value;
-    
     if (confirmarSenha && novaSenha !== confirmarSenha) {
         this.setCustomValidity('As senhas não coincidem');
     } else {

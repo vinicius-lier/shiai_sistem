@@ -34,7 +34,7 @@
                     <select class="form-select" name="usuario_id">
                         <option value="">Todos</option>
                         {% for user in usuarios %}
-                        <option value="{{ user.id }}" {% if usuario_id == user.id|stringformat:"s" %}selected{% endif %}>{{ user.first_name|default:user.username }}</option>
+                        <option value="{{ user.id }}" {% if usuario_id == user.id|stringformat:"s" %}selected{% endif %}>{{ user.first_name|default:user.get_username|default:user.email }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -75,7 +75,7 @@
                             <td>{{ historico.data_hora|date:"d/m/Y H:i:s" }}</td>
                             <td><span class="badge badge-info">{{ historico.get_tipo_acao_display }}</span></td>
                             <td>{{ historico.descricao }}</td>
-                            <td>{{ historico.usuario.first_name|default:historico.usuario.username|default:"-" }}</td>
+                            <td>{{ historico.usuario.first_name|default:historico.usuario.get_username|default:historico.usuario.email|default:"-" }}</td>
                             <td>{{ historico.campeonato.nome|default:"-" }}</td>
                             <td>
                                 {% if historico.academia %}{{ historico.academia.nome }}{% endif %}

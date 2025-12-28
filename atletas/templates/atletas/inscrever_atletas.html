@@ -1,18 +1,15 @@
 
-{% extends 'atletas/base.html' %}
+{% extends "atletas/layouts/base_operational.html" %}
 {% load static %}
 
 {% block title %}Inscrever Atletas - Sistema de Gestão de Competições de Judô{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">Inscrever Atletas no Campeonato</h1>
-    {% if campeonato_ativo %}
-    <p class="page-description">{{ campeonato_ativo.nome }}</p>
-    {% else %}
-    <p class="page-description" style="color: var(--color-warning);">Nenhum campeonato ativo</p>
-    {% endif %}
-</div>
+{% if campeonato_ativo %}
+  {% include "atletas/ui/_page_head.html" with title="Inscrever Atletas no Campeonato" subtitle=campeonato_ativo.nome %}
+{% else %}
+  {% include "atletas/ui/_page_head.html" with title="Inscrever Atletas no Campeonato" subtitle="Nenhum campeonato ativo" %}
+{% endif %}
 
 <!-- Filtros -->
 <div class="card mb-6">
@@ -385,30 +382,40 @@ function toggleTabelaCategorias() {
     tabela.style.display = isHidden ? 'block' : 'none';
     if (!isHidden) return;
     // Ao abrir, renderizar com a classe selecionada (ou classe do atleta) e sexo
-    const classeSelecionada = document.getElementById('classe_escolhida') ? document.getElementById('classe_escolhida').value : '';
-    const classeFiltro = classeSelecionada || classeAtleta || '';
+    const classeSelect = document.getElementById('classe_escolhida');
+    const classeSelecionadaNome = classeSelect && classeSelect.selectedOptions[0]
+        ? classeSelect.selectedOptions[0].dataset.classeNome || classeSelect.selectedOptions[0].textContent
+        : '';
+    const classeFiltro = classeSelecionadaNome || classeAtleta || '';
     renderTabelaCategorias(classeFiltro, sexoAtleta);
 }
 
+function normalizeClasseNome(nome) {
+    if (!nome) return '';
+    let up = nome.toUpperCase().trim().replace('SUB ', 'SUB-');
+    if (up === 'VETERANO' || up === 'VETERANOS' || up === 'MASTER' || up === 'MASTERS') {
+        return 'VETERANOS';
+    }
+    if (up === 'SENIOR' || up === 'SÊNIOR') {
+        return 'SÊNIOR';
+    }
+    return up;
+}
+
 function categoriasPermitidas(classeAtleta) {
-    const classeNormalizada = classeAtleta.toUpperCase().trim();
+    const classeNormalizada = normalizeClasseNome(classeAtleta);
     
     // Obter classes que existem nas categorias disponíveis
     const classesExistentes = [...new Set(categorias.map(c => c.classe.toUpperCase().trim()))];
     
     // Regras de elegibilidade
     let classesPermitidas = [];
-    
-    if (classeNormalizada === 'VETERANOS' || classeNormalizada === 'VETERANO') {
+    if (classeNormalizada === 'VETERANOS') {
         classesPermitidas = ['VETERANOS', 'SÊNIOR'];
-    } else if (classeNormalizada === 'SUB 18' || classeNormalizada === 'SUB18') {
-        classesPermitidas = ['SUB 18', 'SUB 21', 'SÊNIOR'];
-    } else if (classeNormalizada === 'FESTIVAL') {
-        // Festival: apenas sua própria classe
-        classesPermitidas = ['Festival'];
+    } else if (['SUB-18', 'SUB-21', 'SÊNIOR'].includes(classeNormalizada)) {
+        classesPermitidas = ['SUB-18', 'SUB-21', 'SÊNIOR'];
     } else {
-        // Regra padrão: apenas sua própria classe
-        classesPermitidas = [classeAtleta];
+        classesPermitidas = classeNormalizada ? [classeNormalizada] : [];
     }
     
     // Filtrar apenas classes que existem nas categorias
@@ -444,7 +451,7 @@ if (classeSelectEl) {
                    cat.sexo === sexoAtleta;
         });
         
-        console.log('Categorias filtradas para', classeSelecionada, '-', sexoAtleta, ':', categoriasFiltradas);
+        console.log('Categorias filtradas para', classeSelecionadaNome, '-', sexoAtleta, ':', categoriasFiltradas);
         
         categoriaSelect.innerHTML = '<option value="">Selecione uma categoria</option>';
         
@@ -488,4 +495,3 @@ document.getElementById('modal-inscricao').addEventListener('click', function(e)
 });
 </script>
 {% endblock %}
-

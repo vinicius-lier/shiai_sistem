@@ -1,5 +1,5 @@
 
-{% extends 'atletas/base.html' %}
+{% extends 'atletas/layouts/base_operational.html' %}
 {% load static %}
 
 {% block title %}Cadastrar Categoria - Sistema de Gestão de Competições de Judô{% endblock %}
@@ -34,23 +34,10 @@
                         <span style="color: var(--color-danger);">*</span>
                     </label>
                     <select id="sexo" name="sexo" class="form-select" required>
-{% block title %}Cadastrar Categoria{% endblock %}
-
-{% block content %}
-<h1>Cadastrar Categoria</h1>
-
-<form method="post">
-    {% csrf_token %}
-    
-    <label for="classe">Classe:</label>
-    <input type="text" id="classe" name="classe" placeholder="Ex: SUB 9, SUB 11, SUB 13..." required>
-    
-    <label for="sexo">Sexo:</label>
-    <select id="sexo" name="sexo" required>
-        <option value="">Selecione</option>
-        <option value="M">Masculino</option>
-        <option value="F">Feminino</option>
-    </select>
+                        <option value="">Selecione</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Feminino</option>
+                    </select>
                 </div>
                 
                 <div class="form-group">
@@ -88,7 +75,7 @@
                 </div>
             </div>
             
-            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end; margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
+            <div class="form-actions">
                 <a href="{% url 'lista_categorias' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Cancelar</a>
                 <button type="submit" class="btn btn-primary">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
@@ -99,22 +86,3 @@
     </div>
 </div>
 {% endblock %}
-    
-    <label for="categoria_nome">Nome da Categoria:</label>
-    <input type="text" id="categoria_nome" name="categoria_nome" placeholder="Ex: Meio Leve, Leve, Médio..." required>
-    
-    <label for="limite_min">Limite Mínimo (kg):</label>
-    <input type="number" id="limite_min" name="limite_min" step="0.1" min="0" required>
-    
-    <label for="limite_max">Limite Máximo (kg):</label>
-    <input type="number" id="limite_max" name="limite_max" step="0.1" min="0" required>
-    
-    <label for="label">Label Completo:</label>
-    <input type="text" id="label" name="label" placeholder="Ex: SUB 11 - Meio Leve" required>
-    
-    <button type="submit">Cadastrar Categoria</button>
-</form>
-
-<a href="{% url 'lista_categorias' organizacao_slug=request.organizacao.slug %}" class="btn">Voltar para Lista</a>
-{% endblock %}
-

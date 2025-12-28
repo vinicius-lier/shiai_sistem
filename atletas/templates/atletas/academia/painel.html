@@ -1,823 +1,722 @@
-{% extends 'atletas/academia/base_academia.html' %}
+{% extends "atletas/layouts/base_academy.html" %}
 {% load static %}
 
 {% block title %}Painel da Academia - SHIAI SISTEM{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* Container Principal */
     .painel-container {
         max-width: 1200px;
         margin: 0 auto;
-        padding: var(--spacing-4);
+        padding: var(--space-4);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6);
     }
 
     @media (min-width: 768px) {
         .painel-container {
-            padding: var(--spacing-6);
+            padding: var(--space-6);
+            gap: var(--space-8);
         }
     }
 
-    @media (min-width: 1024px) {
-        .painel-container {
-            padding: var(--spacing-8);
-        }
+    .academy-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-5);
+        background: var(--surface);
+        border: var(--border-width) solid var(--border);
+        border-radius: var(--radius-xl);
+        padding: var(--space-5);
     }
 
-    /* Header da Academia */
-    .academia-header {
-        background: var(--color-white);
-        border: 1px solid var(--color-gray-200);
-        border-radius: var(--border-radius-xl);
-        margin-bottom: var(--spacing-6);
-        box-shadow: var(--shadow-sm);
-        padding: var(--spacing-6);
+    .academy-header-main {
         display: flex;
         align-items: center;
-        gap: var(--spacing-6);
-        flex-wrap: wrap;
+        gap: var(--space-4);
+        flex: 1;
+        min-width: 220px;
     }
 
-    @media (min-width: 768px) {
-        .academia-header {
-            padding: var(--spacing-8);
-            gap: var(--spacing-8);
-        }
-    }
-
-    .academia-header .logo-wrapper {
-        flex-shrink: 0;
-        width: 100px;
-        height: 100px;
+    .academy-logo {
+        width: 64px;
+        height: 64px;
+        border-radius: var(--radius-lg);
+        background: var(--color-gray-50);
+        border: var(--border-width) solid var(--border);
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--color-gray-50);
-        border-radius: var(--border-radius-lg);
-        padding: var(--spacing-3);
-        border: 1px solid var(--color-gray-200);
+        padding: var(--space-2);
+        flex-shrink: 0;
     }
 
-    @media (min-width: 768px) {
-        .academia-header .logo-wrapper {
-            width: 120px;
-            height: 120px;
-            padding: var(--spacing-4);
-        }
-    }
-
-    .academia-header .logo-wrapper img {
+    .academy-logo img {
         max-width: 100%;
         max-height: 100%;
-        width: auto;
-        height: auto;
         object-fit: contain;
-        border-radius: var(--border-radius-md);
     }
 
-    .academia-header .info-wrapper {
-        flex: 1;
-        min-width: 200px;
+    .academy-info {
         display: flex;
         flex-direction: column;
-        gap: var(--spacing-2);
+        gap: var(--space-2);
     }
 
-    .academia-header h1 {
-        color: var(--color-gray-900);
-        font-size: var(--font-size-xl);
-        font-weight: 700;
+    .academy-info h1 {
+        font-size: var(--font-size-lg);
         margin: 0;
-        line-height: 1.2;
+        color: var(--color-gray-900);
     }
 
-    @media (min-width: 768px) {
-        .academia-header h1 {
-            font-size: var(--font-size-2xl);
-        }
-    }
-
-    .academia-header p {
+    .academy-info p {
+        margin: 0;
         color: var(--color-gray-600);
         font-size: var(--font-size-sm);
-        margin: 0;
-        line-height: 1.5;
     }
 
-    @media (min-width: 768px) {
-        .academia-header p {
-            font-size: var(--font-size-base);
-        }
+    .academy-cta {
+        width: 100%;
     }
 
-    /* Seções */
-    .section {
-        margin-bottom: var(--spacing-8);
-    }
-
-    @media (min-width: 768px) {
-        .section {
-            margin-bottom: var(--spacing-10);
-        }
-    }
-
-    .section-title {
-        font-size: var(--font-size-lg);
-        font-weight: 600;
-        color: var(--color-gray-900);
-        margin-bottom: var(--spacing-4);
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-2);
-    }
-
-    @media (min-width: 768px) {
-        .section-title {
-            font-size: var(--font-size-xl);
-            margin-bottom: var(--spacing-6);
-        }
-    }
-
-    /* Grid de Eventos */
-    .events-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: var(--spacing-4);
-    }
-
-    @media (min-width: 768px) {
-        .events-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: var(--spacing-6);
-            max-width: 900px;
-            margin: 0 auto;
-        }
-    }
-
-    @media (min-width: 1024px) {
-        .events-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    /* Card de Evento Aberto */
-    .evento-card {
-        background: var(--color-white);
-        border-radius: var(--border-radius-lg);
-        border: 1px solid var(--color-gray-200);
-        box-shadow: var(--shadow-sm);
-        padding: var(--spacing-6);
-        transition: all var(--transition-base);
-        border-left: 5px solid #10b981;
-        position: relative;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        gap: var(--spacing-4);
-    }
-
-    @media (min-width: 768px) {
-        .evento-card {
-            padding: var(--spacing-6);
-            gap: var(--spacing-5);
-        }
-    }
-
-    @media (min-width: 1024px) {
-        .evento-card {
-            padding: var(--spacing-6);
-        }
-    }
-
-    .evento-card:hover {
-        box-shadow: var(--shadow-md);
-        transform: translateY(-2px);
-    }
-
-    .evento-card h3 {
-        font-size: var(--font-size-lg);
-        font-weight: 600;
-        color: var(--color-gray-900);
-        margin: 0;
-        line-height: 1.4;
-    }
-
-    @media (min-width: 768px) {
-        .evento-card h3 {
-            font-size: var(--font-size-xl);
-        }
-    }
-
-    .evento-info {
-        font-size: var(--font-size-sm);
-        color: var(--color-gray-600);
-        display: flex;
-        flex-direction: column;
-        gap: var(--spacing-3);
-        margin: 0;
-    }
-
-    .evento-info-item {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-3);
-        line-height: 1.5;
-    }
-
-    .evento-info-item svg {
-        flex-shrink: 0;
-        color: var(--color-gray-500);
-        width: 18px;
-        height: 18px;
-    }
-
-    /* Card de Evento Encerrado */
-    .evento-card.encerrado {
-        background: var(--color-gray-50);
-        border-left-color: var(--color-gray-400);
-        opacity: 0.85;
-    }
-
-    .evento-card.encerrado:hover {
-        transform: none;
-        box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.05);
-    }
-
-    .evento-card.encerrado h3 {
-        color: var(--color-gray-600);
-    }
-
-    .evento-card.encerrado .evento-info {
-        color: var(--color-gray-500);
-    }
-
-    .badge-encerrado {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--spacing-1);
-        padding: var(--spacing-2) var(--spacing-3);
-        background: var(--color-gray-200);
-        border-radius: var(--border-radius-md);
-        font-size: var(--font-size-xs);
-        color: var(--color-gray-700);
-        font-weight: 500;
-        margin-bottom: var(--spacing-3);
-    }
-
-    /* Botões */
-    .btn-evento {
+    .academy-cta .btn-primary {
         width: 100%;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: var(--spacing-2);
-        padding: var(--spacing-4) var(--spacing-5);
-        border-radius: var(--border-radius-md);
-        font-size: var(--font-size-sm);
+        gap: var(--space-2);
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-lg);
         font-weight: 600;
         text-decoration: none;
-        transition: all var(--transition-base);
-        border: none;
-        cursor: pointer;
-        margin-top: auto;
     }
 
     @media (min-width: 768px) {
-        .btn-evento {
-            padding: var(--spacing-4) var(--spacing-6);
-            font-size: var(--font-size-base);
+        .academy-header {
+            padding: var(--space-5);
+        }
+
+        .academy-logo {
+            width: 72px;
+            height: 72px;
+        }
+
+        .academy-info h1 {
+            font-size: var(--font-size-xl);
+        }
+
+        .academy-cta {
+            width: auto;
+            margin-left: auto;
+        }
+
+        .academy-cta .btn-primary {
+            width: auto;
         }
     }
 
-    .btn-evento-primary {
-        background: #4285F4;
+    .section {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+    }
+
+    .section-title {
+        margin: 0;
+        font-size: var(--font-size-lg);
+        color: var(--color-gray-900);
+    }
+
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-3);
+    }
+
+    @media (min-width: 1024px) {
+        .quick-actions {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+
+    .action-card {
+        background: var(--surface);
+        border: var(--border-width) solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: var(--space-3);
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        text-decoration: none;
+        color: var(--color-gray-900);
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .action-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
+
+    .action-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--color-gray-100);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-gray-700);
+        flex-shrink: 0;
+    }
+
+    .action-text {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+    }
+
+    .action-text span {
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+    }
+
+    .action-text small {
+        color: var(--color-gray-500);
+        font-size: var(--font-size-xs);
+    }
+
+    .event-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-4);
+    }
+
+    @media (min-width: 768px) {
+        .event-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .event-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    .event-card {
+        background: var(--surface);
+        border: var(--border-width) solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: var(--space-4);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .event-card h3 {
+        margin: 0;
+        font-size: var(--font-size-base);
+    }
+
+    .event-meta {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        color: var(--color-gray-600);
+        font-size: var(--font-size-xs);
+    }
+
+    .event-meta span {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    .event-cta {
+        margin-top: auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .event-cta.primary {
+        background: var(--color-primary);
         color: var(--color-white);
     }
 
-    .btn-evento-primary:hover {
-        background: #357AE8;
-        transform: translateY(-1px);
-        box-shadow: 0px 4px 12px rgba(66, 133, 244, 0.3);
-    }
-
-    .btn-evento-primary svg {
-        width: 18px;
-        height: 18px;
-    }
-
-    .btn-evento-secondary {
-        background: var(--color-gray-300);
+    .event-cta.secondary {
+        background: var(--color-gray-200);
         color: var(--color-gray-700);
     }
 
-    .btn-evento-secondary:hover {
-        background: var(--color-gray-400);
+    .inscricoes-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
     }
 
-    /* Empty State */
+    .inscricao-item {
+        background: var(--surface);
+        border: var(--border-width) solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: var(--space-3);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    @media (min-width: 768px) {
+        .inscricao-item {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+    }
+
+    .inscricao-title {
+        font-weight: 600;
+        color: var(--color-gray-900);
+    }
+
+    .inscricao-meta {
+        font-size: var(--font-size-xs);
+        color: var(--color-gray-600);
+    }
+
+    .status-pill {
+        padding: var(--space-1) var(--space-2);
+        border-radius: 999px;
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+    }
+
+    .status-pill.is-pending { background: var(--color-gray-200); color: var(--color-gray-700); }
+    .status-pill.is-active { background: #dbeafe; color: #1e3a8a; }
+    .status-pill.is-approved { background: #d1fae5; color: #047857; }
+    .status-pill.is-warning { background: #fef3c7; color: #b45309; }
+
+    .tabs {
+        display: flex;
+        gap: var(--space-2);
+        border-bottom: var(--border-width) solid var(--border);
+    }
+
+    .tab-button {
+        background: transparent;
+        border: none;
+        padding: var(--space-2) var(--space-3);
+        font-weight: 600;
+        color: var(--color-gray-600);
+        cursor: pointer;
+    }
+
+    .tab-button.is-active {
+        color: var(--color-gray-900);
+        border-bottom: 2px solid var(--color-primary);
+    }
+
+    .tab-panel {
+        display: none;
+        padding-top: var(--space-3);
+    }
+
+    .tab-panel.is-active {
+        display: block;
+    }
+
+    .ranking-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .ranking-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        background: var(--color-gray-50);
+    }
+
+    .ranking-item span {
+        font-size: var(--font-size-xs);
+        color: var(--color-gray-600);
+    }
+
+    .accordion {
+        border: var(--border-width) solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: var(--space-3);
+        background: var(--surface);
+    }
+
+    .accordion summary {
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--color-gray-800);
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .accordion summary::-webkit-details-marker {
+        display: none;
+    }
+
     .empty-state {
         text-align: center;
-        padding: var(--spacing-8) var(--spacing-4);
-    }
-
-    .empty-state svg {
-        width: 64px;
-        height: 64px;
-        color: var(--color-gray-400);
-        margin: 0 auto var(--spacing-4);
-    }
-
-    .empty-state p {
-        font-size: var(--font-size-base);
-        color: var(--color-gray-500);
-    }
-
-    @media (min-width: 768px) {
-        .empty-state {
-            padding: var(--spacing-12) var(--spacing-6);
-        }
-
-        .empty-state p {
-            font-size: var(--font-size-lg);
-        }
-    }
-
-    /* Botão Cadastrar Atleta */
-    .btn-cadastrar-atleta {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--spacing-2);
-        padding: var(--spacing-3) var(--spacing-5);
-        background: var(--color-primary);
-        color: var(--color-white);
-        border-radius: var(--border-radius-lg);
-        font-size: var(--font-size-sm);
-        font-weight: 500;
-        text-decoration: none;
-        transition: all var(--transition-base);
-        margin-top: var(--spacing-4);
-    }
-
-    .btn-cadastrar-atleta:hover {
-        background: var(--color-primary-hover);
-        transform: translateY(-1px);
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    /* Botão Logout */
-    .btn-logout {
-        position: fixed;
-        bottom: var(--spacing-4);
-        right: var(--spacing-4);
-        width: auto;
-        padding: var(--spacing-3) var(--spacing-4);
-        background: var(--color-gray-700);
-        color: var(--color-white);
-        border-radius: var(--border-radius-lg);
-        font-size: var(--font-size-sm);
-        z-index: 100;
-        box-shadow: var(--shadow-lg);
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: var(--spacing-2);
-    }
-
-    .btn-logout:hover {
-        background: var(--color-gray-800);
-        transform: translateY(-2px);
-    }
-
-    @media (min-width: 768px) {
-        .btn-logout {
-            bottom: var(--spacing-6);
-            right: var(--spacing-6);
-        }
+        padding: var(--space-4);
+        border: var(--border-width) dashed var(--border);
+        border-radius: var(--radius-lg);
+        color: var(--color-gray-600);
+        background: var(--color-gray-50);
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="painel-container">
-    <!-- Header da Academia com Logo -->
-    <div class="academia-header">
-        <div class="logo-wrapper">
-            {% if academia.foto_perfil %}
-            <img src="{{ academia.foto_perfil.url }}" alt="{{ academia.nome }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-            <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" style="display: none;">
+    <section class="academy-header">
+        <div class="academy-header-main">
+            <div class="academy-logo">
+                {% if academia.foto_perfil %}
+                <img src="{{ academia.foto_perfil.url }}" alt="{{ academia.nome }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" class="is-hidden">
+                {% else %}
+                <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM">
+                {% endif %}
+            </div>
+            <div class="academy-info">
+                <h1>{{ academia.nome }}</h1>
+                <p>{{ academia.cidade }}, {{ academia.estado }}</p>
+            </div>
+        </div>
+        <div class="academy-cta">
+            <a href="{% url 'academia_cadastrar_atleta' %}" class="btn btn-primary">
+                <svg class="icon-18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Cadastrar Atleta
+            </a>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">Acoes Rapidas</h2>
+        </div>
+        <div class="quick-actions">
+            <a href="{% url 'academia_cadastrar_atleta' %}" class="action-card">
+                <div class="action-icon">
+                    <svg class="icon-18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="7" r="4"></circle>
+                        <path d="M20 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M4 21v-2a4 4 0 0 1 4-4"></path>
+                        <line x1="12" y1="14" x2="12" y2="20"></line>
+                        <line x1="9" y1="17" x2="15" y2="17"></line>
+                    </svg>
+                </div>
+                <div class="action-text">
+                    <span>Cadastrar Atleta</span>
+                    <small>Novo cadastro</small>
+                </div>
+            </a>
+            <a href="{% url 'academia_lista_atletas' %}" class="action-card">
+                <div class="action-icon">
+                    <svg class="icon-18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <div class="action-text">
+                    <span>Ver Atletas</span>
+                    <small>Lista completa</small>
+                </div>
+            </a>
+            {% if campeonato_ativo %}
+            <a href="{% url 'academia_inscrever_atletas' campeonato_ativo.id %}" class="action-card">
+                <div class="action-icon">
+                    <svg class="icon-18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                </div>
+                <div class="action-text">
+                    <span>Minhas Inscricoes</span>
+                    <small>Evento ativo</small>
+                </div>
+            </a>
+            {% elif inscricoes_resumo %}
+            <a href="{% url 'academia_evento' inscricoes_resumo.0.campeonato_id %}" class="action-card">
+                <div class="action-icon">
+                    <svg class="icon-18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                </div>
+                <div class="action-text">
+                    <span>Minhas Inscricoes</span>
+                    <small>Ultimo evento</small>
+                </div>
+            </a>
             {% else %}
-            <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM">
+            <div class="action-card" style="opacity:0.6; cursor:not-allowed;">
+                <div class="action-icon">
+                    <svg class="icon-18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                </div>
+                <div class="action-text">
+                    <span>Minhas Inscricoes</span>
+                    <small>Sem eventos ativos</small>
+                </div>
+            </div>
+            {% endif %}
+            {% if campeonato_ativo %}
+            <a href="{% url 'academia_evento' campeonato_ativo.id %}" class="action-card">
+                <div class="action-icon">
+                    <svg class="icon-18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="20" x2="12" y2="10"></line>
+                        <line x1="18" y1="20" x2="18" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="16"></line>
+                    </svg>
+                </div>
+                <div class="action-text">
+                    <span>Rankings</span>
+                    <small>Evento ativo</small>
+                </div>
+            </a>
+            {% else %}
+            <div class="action-card" style="opacity:0.6; cursor:not-allowed;">
+                <div class="action-icon">
+                    <svg class="icon-18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="20" x2="12" y2="10"></line>
+                        <line x1="18" y1="20" x2="18" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="16"></line>
+                    </svg>
+                </div>
+                <div class="action-text">
+                    <span>Rankings</span>
+                    <small>Apos eventos</small>
+                </div>
+            </div>
             {% endif %}
         </div>
-        <div class="info-wrapper">
-            <h1>{{ academia.nome }}</h1>
-            <p>{{ academia.cidade }}, {{ academia.estado }}</p>
-        </div>
-    </div>
-    
-    <!-- Botão para cadastrar novo atleta -->
-    <div style="text-align: center; margin-bottom: var(--spacing-6);">
-        <a href="{% url 'academia_cadastrar_atleta' %}" class="btn-cadastrar-atleta">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Cadastrar Novo Atleta
-        </a>
-    </div>
+    </section>
 
-    <!-- Rankings Lado a Lado - DESTAQUE -->
-    {% if campeonato_ativo %}
-    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-6); margin-bottom: var(--spacing-8);">
-        <!-- Ranking de Atletas -->
-        <div class="card ranking-card" style="display: flex; flex-direction: column; height: 100%; border-radius: var(--border-radius-lg); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-            <div class="card-header" style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%); color: white; border: none; flex-shrink: 0; border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <h3 class="card-title" style="color: white; margin: 0; font-size: var(--font-size-xl); font-weight: 700;">🏆 Ranking de Atletas</h3>
-                        <p style="margin: var(--spacing-1) 0 0 0; font-size: var(--font-size-sm); opacity: 0.9;">Top atletas do campeonato</p>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body" style="padding: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                {% if ranking_global_atletas %}
-                    <!-- Top 3 Destaque -->
-                    <div class="ranking-top3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-3); padding: var(--spacing-4); background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); flex-shrink: 0;">
-                        {% for item in ranking_global_atletas|slice:":3" %}
-                        <div class="ranking-podium-item" style="text-align: center; position: relative;">
-                            <div style="position: relative; display: inline-block; margin-bottom: var(--spacing-2);">
-                                <!-- Avatar -->
-                                <div class="ranking-avatar" style="width: 60px; height: 60px; border-radius: 50%; background: {% if forloop.counter == 1 %}linear-gradient(135deg, #FFD700 0%, #FFA500 100%){% elif forloop.counter == 2 %}linear-gradient(135deg, #C0C0C0 0%, #808080 100%){% else %}linear-gradient(135deg, #CD7F32 0%, #8B4513 100%){% endif %}; display: flex; align-items: center; justify-content: center; font-size: var(--font-size-xl); font-weight: 700; color: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); margin: 0 auto;">
-                                    {% if item.atleta.foto_perfil %}
-                                        <img src="{{ item.atleta.foto_perfil.url }}" alt="{{ item.atleta.nome }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-                                    {% else %}
-                                        {{ item.atleta.nome|first|upper }}
-                                    {% endif %}
-                                </div>
-                                <!-- Medalha -->
-                                <div style="position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: {% if forloop.counter == 1 %}#FFD700{% elif forloop.counter == 2 %}#C0C0C0{% else %}#CD7F32{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
-                                    {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
-                                </div>
-                            </div>
-                            <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--color-gray-900); margin-bottom: var(--spacing-1); line-height: 1.2;">{{ item.atleta.nome|truncatewords:2 }}</div>
-                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-bottom: var(--spacing-1); line-height: 1.2;">{{ item.atleta.academia.nome|truncatewords:2 }}</div>
-                            <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--color-primary);">
-                                {{ item.total_medalhas }} medalhas
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    
-                    <!-- Lista Rolável (4º em diante) -->
-                    {% if ranking_global_atletas|length > 3 %}
-                    <div class="ranking-scrollable-list" style="flex: 1; overflow-y: auto; padding: var(--spacing-4); min-height: 0;">
-                        <style>
-                            .ranking-scrollable-list::-webkit-scrollbar {
-                                width: 6px;
-                            }
-                            .ranking-scrollable-list::-webkit-scrollbar-track {
-                                background: var(--color-gray-100);
-                                border-radius: 3px;
-                            }
-                            .ranking-scrollable-list::-webkit-scrollbar-thumb {
-                                background: var(--color-gray-400);
-                                border-radius: 3px;
-                            }
-                            .ranking-scrollable-list::-webkit-scrollbar-thumb:hover {
-                                background: var(--color-gray-500);
-                            }
-                        </style>
-                        <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
-                            {% for item in ranking_global_atletas|slice:"3:" %}
-                            <div class="ranking-list-item" style="display: flex; align-items: center; gap: var(--spacing-3); padding: var(--spacing-2); border-radius: var(--border-radius-md); background: var(--color-white); border: 1px solid var(--color-gray-200); transition: all 0.2s ease;">
-                                <div style="width: 32px; text-align: center; font-weight: 600; color: var(--color-gray-600); font-size: var(--font-size-xs); flex-shrink: 0;">
-                                    {{ forloop.counter|add:3 }}º
-                                </div>
-                                <div class="ranking-avatar-small" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%); display: flex; align-items: center; justify-content: center; font-size: var(--font-size-base); font-weight: 600; color: white; flex-shrink: 0;">
-                                    {% if item.atleta.foto_perfil %}
-                                        <img src="{{ item.atleta.foto_perfil.url }}" alt="{{ item.atleta.nome }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-                                    {% else %}
-                                        {{ item.atleta.nome|first|upper }}
-                                    {% endif %}
-                                </div>
-                                <div style="flex: 1; min-width: 0;">
-                                    <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--color-gray-900); margin-bottom: var(--spacing-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.atleta.nome }}</div>
-                                    <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.atleta.academia.nome }}</div>
-                                </div>
-                                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: var(--spacing-1); flex-shrink: 0;">
-                                    <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--color-primary);">
-                                        {{ item.total_medalhas }}
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: var(--spacing-1);">
-                                        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥇{{ item.ouro }}</span>
-                                        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥈{{ item.prata }}</span>
-                                        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥉{{ item.bronze }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-                {% else %}
-                    <div class="empty-state" style="padding: var(--spacing-8); text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin: 0 auto var(--spacing-3); color: var(--color-gray-400);">
-                            <line x1="12" y1="20" x2="12" y2="10"></line>
-                            <line x1="18" y1="20" x2="18" y2="4"></line>
-                            <line x1="6" y1="20" x2="6" y2="16"></line>
-                        </svg>
-                        <div class="empty-state-title" style="font-size: var(--font-size-base);">Nenhum ranking disponível</div>
-                        <div class="empty-state-description" style="font-size: var(--font-size-sm);">O ranking aparecerá após gerar chaves e registrar resultados</div>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Ranking de Academias -->
-        <div class="card ranking-card" style="display: flex; flex-direction: column; height: 100%; border-radius: var(--border-radius-lg); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-            <div class="card-header" style="background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%); color: white; border: none; flex-shrink: 0; border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <h3 class="card-title" style="color: white; margin: 0; font-size: var(--font-size-xl); font-weight: 700;">🏅 Ranking de Academias</h3>
-                        <p style="margin: var(--spacing-1) 0 0 0; font-size: var(--font-size-sm); opacity: 0.9;">Top academias do campeonato</p>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body" style="padding: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                {% if ranking_academias_completo %}
-                    <!-- Top 3 Destaque -->
-                    <div class="ranking-top3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-3); padding: var(--spacing-4); background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); flex-shrink: 0;">
-                        {% for item in ranking_academias_completo|slice:":3" %}
-                        <div class="ranking-podium-item" style="text-align: center; position: relative;">
-                            <div style="position: relative; display: inline-block; margin-bottom: var(--spacing-2);">
-                                <!-- Avatar Academia -->
-                                <div class="ranking-avatar" style="width: 60px; height: 60px; border-radius: 50%; background: {% if forloop.counter == 1 %}linear-gradient(135deg, #FFD700 0%, #FFA500 100%){% elif forloop.counter == 2 %}linear-gradient(135deg, #C0C0C0 0%, #808080 100%){% else %}linear-gradient(135deg, #CD7F32 0%, #8B4513 100%){% endif %}; display: flex; align-items: center; justify-content: center; font-size: var(--font-size-xl); font-weight: 700; color: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); margin: 0 auto;">
-                                    {% if item.academia.foto_perfil %}
-                                        <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-                                    {% else %}
-                                        {{ item.academia.nome|first|upper }}
-                                    {% endif %}
-                                </div>
-                                <!-- Medalha -->
-                                <div style="position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: {% if forloop.counter == 1 %}#FFD700{% elif forloop.counter == 2 %}#C0C0C0{% else %}#CD7F32{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
-                                    {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
-                                </div>
-                            </div>
-                            <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--color-gray-900); margin-bottom: var(--spacing-1); line-height: 1.2;">{{ item.academia.nome|truncatewords:3 }}</div>
-                            <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--color-primary); margin-bottom: var(--spacing-1);">
-                                {{ item.pontos_totais }} pts
-                            </div>
-                            {% if item.total_atletas_ativos %}
-                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-600);">
-                                {{ item.total_atletas_ativos }} atleta{{ item.total_atletas_ativos|pluralize:"s" }}
-                            </div>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    
-                    <!-- Lista Rolável (4º em diante) -->
-                    {% if ranking_academias_completo|length > 3 %}
-                    <div class="ranking-scrollable-list" style="flex: 1; overflow-y: auto; padding: var(--spacing-4); min-height: 0;">
-                        <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
-                            {% for item in ranking_academias_completo|slice:"3:" %}
-                            <div class="ranking-list-item" style="display: flex; align-items: center; gap: var(--spacing-3); padding: var(--spacing-2); border-radius: var(--border-radius-md); background: var(--color-white); border: 1px solid var(--color-gray-200); transition: all 0.2s ease;">
-                                <div style="width: 32px; text-align: center; font-weight: 600; color: var(--color-gray-600); font-size: var(--font-size-xs); flex-shrink: 0;">
-                                    {{ forloop.counter|add:3 }}º
-                                </div>
-                                <div class="ranking-avatar-small" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%); display: flex; align-items: center; justify-content: center; font-size: var(--font-size-base); font-weight: 600; color: white; flex-shrink: 0;">
-                                    {% if item.academia.foto_perfil %}
-                                        <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-                                    {% else %}
-                                        {{ item.academia.nome|first|upper }}
-                                    {% endif %}
-                                </div>
-                                <div style="flex: 1; min-width: 0;">
-                                    <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--color-gray-900); margin-bottom: var(--spacing-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.academia.nome }}</div>
-                                    {% if item.total_atletas_ativos %}
-                                    <div style="font-size: var(--font-size-xs); color: var(--color-gray-600);">
-                                        {{ item.total_atletas_ativos }} atleta{{ item.total_atletas_ativos|pluralize:"s" }}
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: var(--spacing-1); flex-shrink: 0;">
-                                    <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--color-secondary);">
-                                        {{ item.pontos_totais }} pts
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: var(--spacing-1);">
-                                        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥇{{ item.ouro }}</span>
-                                        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥈{{ item.prata }}</span>
-                                        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">🥉{{ item.bronze }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-                {% else %}
-                    <div class="empty-state" style="padding: var(--spacing-8); text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin: 0 auto var(--spacing-3); color: var(--color-gray-400);">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                        </svg>
-                        <div class="empty-state-title" style="font-size: var(--font-size-base);">Nenhum ranking disponível</div>
-                        <div class="empty-state-description" style="font-size: var(--font-size-sm);">O ranking aparecerá após gerar chaves e registrar resultados</div>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <style>
-    /* Responsividade para Rankings */
-    @media (max-width: 992px) {
-        .ranking-card {
-            grid-column: 1 / -1;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .ranking-top3 {
-            grid-template-columns: 1fr !important;
-            gap: var(--spacing-4) !important;
-        }
-        
-        .ranking-podium-item {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-3);
-            text-align: left !important;
-        }
-        
-        .ranking-podium-item > div:first-child {
-            margin-bottom: 0 !important;
-        }
-    }
-    </style>
-    {% endif %}
-
-    <!-- Seção: Agenda de Eventos (Futuros) -->
-    {% if eventos_abertos %}
     <section class="section">
-        <h2 class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; color: #10b981;">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            Agenda de Eventos
-        </h2>
-        
-        <div class="events-grid">
+        <div class="section-header">
+            <h2 class="section-title">Agenda de Eventos</h2>
+        </div>
+        {% if eventos_abertos %}
+        <div class="event-grid">
             {% for evento in eventos_abertos %}
-            <div class="evento-card">
+            <div class="event-card">
                 <h3>{{ evento.nome }}</h3>
-                <div class="evento-info">
+                <div class="event-meta">
                     {% if evento.data_competicao %}
-                    <div class="evento-info-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <span>
+                        <svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2"></rect>
                             <line x1="16" y1="2" x2="16" y2="6"></line>
                             <line x1="8" y1="2" x2="8" y2="6"></line>
                             <line x1="3" y1="10" x2="21" y2="10"></line>
                         </svg>
-                        <span>Data: {{ evento.data_competicao|date:"d/m/Y" }}</span>
-                    </div>
+                        Data: {{ evento.data_competicao|date:"d/m/Y" }}
+                    </span>
                     {% endif %}
                     {% if evento.data_limite_inscricao %}
-                    <div class="evento-info-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                    <span>
+                        <svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
-                        <span>Inscrições até: {{ evento.data_limite_inscricao|date:"d/m/Y" }}</span>
-                        {% if evento.data_limite_inscricao < hoje %}
-                        <span class="badge" style="background: var(--color-warning-light); color: #92400E; font-size: var(--font-size-xs); margin-left: var(--spacing-2);">Inscrições encerradas</span>
-                        {% endif %}
-                    </div>
+                        Inscricoes ate: {{ evento.data_limite_inscricao|date:"d/m/Y" }}
+                    </span>
                     {% endif %}
                 </div>
-                <a href="{% url 'academia_evento' evento.id %}" class="btn-evento btn-evento-primary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                        <polyline points="15 3 21 3 21 9"></polyline>
-                        <line x1="10" y1="14" x2="21" y2="3"></line>
-                    </svg>
-                    Ver Evento
-                </a>
+                <a href="{% url 'academia_evento' evento.id %}" class="event-cta primary">Inscrever Atletas</a>
             </div>
             {% endfor %}
         </div>
-    </section>
-    {% else %}
-    <section class="section">
-        <h2 class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; color: #10b981;">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            Agenda de Eventos
-        </h2>
+        {% else %}
         <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            <p>Nenhum evento na agenda no momento.</p>
+            Nenhum evento ativo ou proximo no momento. Assim que houver um evento, ele aparecera aqui para inscricao.
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">Minhas Inscricoes</h2>
+        </div>
+        {% if inscricoes_resumo %}
+        <div class="inscricoes-list">
+            {% for item in inscricoes_resumo %}
+            <div class="inscricao-item">
+                <div>
+                    <div class="inscricao-title">{{ item.campeonato_nome }}</div>
+                    <div class="inscricao-meta">{{ item.total }} atleta{{ item.total|pluralize:"s" }} inscritos</div>
+                </div>
+                <div>
+                    <span class="status-pill {{ item.status_class }}">{{ item.status_label }}</span>
+                </div>
+                <div>
+                    <a href="{% url 'academia_evento' item.campeonato_id %}" class="event-cta secondary">Ver Inscricao</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            Sua academia ainda nao possui inscricoes. Use "Inscrever Atletas" quando um evento estiver ativo.
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">Rankings</h2>
+        </div>
+        <div class="tabs" data-tabs>
+            <button type="button" class="tab-button is-active" data-tab="atletas">Atletas</button>
+            <button type="button" class="tab-button" data-tab="academias">Academias</button>
+        </div>
+        <div class="tab-panel is-active" data-panel="atletas">
+            {% if ranking_global_atletas %}
+            <div class="ranking-list">
+                {% for item in ranking_global_atletas|slice:":8" %}
+                <div class="ranking-item">
+                    <div style="display: flex; align-items: center; gap: var(--spacing-3);">
+                        <div class="ranking-avatar-small">
+                            {% if item.atleta.foto_perfil %}
+                                <img src="{{ item.atleta.foto_perfil.url }}" alt="{{ item.atleta.nome }}">
+                            {% else %}
+                                <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI">
+                            {% endif %}
+                        </div>
+                        <div>
+                            <strong>{{ item.atleta.nome }}</strong>
+                            <span>{{ item.atleta.academia.nome }}</span>
+                        </div>
+                    </div>
+                    <div>{{ item.total_medalhas }} medalhas</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">Ranking de atletas sera exibido apos eventos com resultados.</div>
+            {% endif %}
+        </div>
+        <div class="tab-panel" data-panel="academias">
+            {% if ranking_academias_completo %}
+            <div class="ranking-list">
+                {% for item in ranking_academias_completo|slice:":8" %}
+                <div class="ranking-item">
+                    <div style="display: flex; align-items: center; gap: var(--spacing-3);">
+                        <div class="ranking-avatar-small">
+                            {% if item.academia.foto_perfil %}
+                                <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}">
+                            {% else %}
+                                <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI">
+                            {% endif %}
+                        </div>
+                        <div>
+                            <strong>{{ item.academia.nome }}</strong>
+                            {% if item.total_atletas_ativos %}
+                            <span>{{ item.total_atletas_ativos }} atleta{{ item.total_atletas_ativos|pluralize:"s" }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>{{ item.pontos_totais }} pts</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">Ranking de academias sera exibido apos eventos com resultados.</div>
+            {% endif %}
         </div>
     </section>
-    {% endif %}
 
-    <!-- Seção: Eventos Encerrados (Apenas Consulta) -->
     {% if eventos_encerrados %}
     <section class="section">
-        <h2 class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; color: var(--color-gray-500);">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            Eventos Encerrados (Apenas Consulta)
-        </h2>
-        
-        <div class="events-grid">
-            {% for evento in eventos_encerrados %}
-            <div class="evento-card encerrado">
-                <h3>{{ evento.nome }}</h3>
-                <div class="evento-info">
-                    {% if evento.data_competicao %}
-                    <div class="evento-info-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        <span>Data: {{ evento.data_competicao|date:"d/m/Y" }}</span>
+        <details class="accordion">
+            <summary>Eventos encerrados (consulta)</summary>
+            <div class="event-grid" style="margin-top: var(--space-3);">
+                {% for evento in eventos_encerrados %}
+                <div class="event-card">
+                    <h3>{{ evento.nome }}</h3>
+                    <div class="event-meta">
+                        {% if evento.data_competicao %}
+                        <span>
+                            <svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Data: {{ evento.data_competicao|date:"d/m/Y" }}
+                        </span>
+                        {% endif %}
                     </div>
-                    {% endif %}
+                    <a href="{% url 'academia_evento' evento.id %}" class="event-cta secondary">Ver Detalhes</a>
                 </div>
-                <div class="badge-encerrado">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                        <line x1="12" y1="9" x2="12" y2="13"></line>
-                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                    Evento encerrado — Apenas consulta
-                </div>
-                <a href="{% url 'academia_evento' evento.id %}" class="btn-evento btn-evento-secondary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                    Consultar Evento
-                </a>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
+        </details>
     </section>
-    {% else %}
-    <section class="section">
-        <h2 class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; color: var(--color-gray-500);">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            Eventos Encerrados (Apenas Consulta)
-        </h2>
-        <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            <p>Nenhum evento encerrado encontrado.</p>
-        </div>
-    </section>
-    {% endif %}
-
-    <!-- Estado vazio geral -->
-    {% if not eventos_abertos and not eventos_encerrados %}
-    <div class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-        <p>Nenhum evento disponível no momento.</p>
-    </div>
     {% endif %}
 </div>
 
-<!-- Botão Logout -->
 <a href="{% url 'academia_logout' %}" class="btn-logout">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+    <svg class="icon-18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
         <polyline points="16 17 21 12 16 7"></polyline>
         <line x1="21" y1="12" x2="9" y2="12"></line>
     </svg>
     Sair
 </a>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('[data-tabs]').forEach(tabGroup => {
+        const buttons = tabGroup.querySelectorAll('[data-tab]');
+        const panels = tabGroup.parentElement.querySelectorAll('[data-panel]');
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                const target = button.getAttribute('data-tab');
+                buttons.forEach(btn => btn.classList.remove('is-active'));
+                button.classList.add('is-active');
+                panels.forEach(panel => {
+                    panel.classList.toggle('is-active', panel.getAttribute('data-panel') === target);
+                });
+            });
+        });
+    });
+</script>
 {% endblock %}

@@ -1,5 +1,5 @@
 
-{% extends 'atletas/base.html' %}
+{% extends 'atletas/layouts/base_operational.html' %}
 {% load static %}
 
 {% block title %}Atletas - Sistema de Gestão de Competições de Judô{% endblock %}
@@ -78,7 +78,7 @@
             </select>
                 </div>
             </div>
-            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
+            <div class="action-row">
                 <a href="{% url 'lista_atletas' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Limpar</a>
                 <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
             </div>

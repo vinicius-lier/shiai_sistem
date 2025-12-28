@@ -1,10 +1,11 @@
 
-{% extends 'atletas/base.html' %}
+{% extends "atletas/layouts/base_operational.html" %}
 {% load static %}
 
 {% block title %}Métricas do Evento - Sistema de Gestão de Competições de Judô{% endblock %}
 
 {% block extra_css %}
+{{ block.super }}
 <style>
 .metric-card {
     border-radius: var(--border-radius-md);
@@ -77,32 +78,23 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
-    <div>
-        <h1 class="page-title">Painel Operacional - Métricas do Evento</h1>
-        <p class="page-description">
-            {% if campeonato_ativo %}
-                <strong style="color: var(--color-primary);">{{ campeonato_ativo.nome }}</strong>
-                {% if campeonato_ativo.data_competicao %}
-                    - {{ campeonato_ativo.data_competicao|date:"d/m/Y" }}
-                {% endif %}
-            {% else %}
-                Nenhum campeonato ativo
-            {% endif %}
-        </p>
-    </div>
-    <div style="display: flex; gap: var(--spacing-2); align-items: center;">
-        <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);" id="ultima-atualizacao">
-            Atualizado: {{ "now"|date:"H:i:s" }}
-        </span>
-        <button type="button" class="btn btn-sm btn-secondary" onclick="location.reload()" title="Atualizar manualmente">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <polyline points="1 20 1 14 7 14"></polyline>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-            </svg>
-        </button>
-    </div>
+{% if campeonato_ativo %}
+  {% include "atletas/ui/_page_head.html" with title="Painel Operacional - Métricas do Evento" subtitle=campeonato_ativo.nome %}
+{% else %}
+  {% include "atletas/ui/_page_head.html" with title="Painel Operacional - Métricas do Evento" subtitle="Nenhum campeonato ativo" %}
+{% endif %}
+
+<div class="action-row action-row--spaced">
+  <span class="text-xs text-gray-500" id="ultima-atualizacao">
+    Atualizado: {{ "now"|date:"H:i:s" }}
+  </span>
+  <button type="button" class="btn btn-secondary btn-sm" onclick="location.reload()" title="Atualizar manualmente">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+      <polyline points="23 4 23 10 17 10"></polyline>
+      <polyline points="1 20 1 14 7 14"></polyline>
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+    </svg>
+  </button>
 </div>
 
 {% if not campeonato_ativo %}

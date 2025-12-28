@@ -1,5 +1,5 @@
 
-{% extends 'atletas/base.html' %}
+{% extends "atletas/layouts/base_weighing.html" %}
 {% load static %}
 
 {% block title %}Pesagem - Sistema de Gestão de Competições de Judô{% endblock %}
@@ -160,7 +160,7 @@
                     </select>
                 </div>
             </div>
-            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
+            <div class="action-row">
                 <a href="{% url 'pesagem' request.organizacao.slug %}{% if campeonato_selecionado %}?campeonato_id={{ campeonato_selecionado.id }}{% endif %}" class="btn btn-secondary">Limpar Filtros</a>
                 <button type="submit" class="btn btn-primary">Filtrar</button>
             </div>
@@ -317,7 +317,7 @@
                                         <div style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-top: var(--spacing-1);">
                                             {{ historico.data_hora|date:"d/m/Y H:i" }}
                                             {% if historico.pesado_por %}
-                                                • Por: {{ historico.pesado_por.first_name|default:historico.pesado_por.username }}
+                                                • Por: {{ historico.pesado_por.first_name|default:historico.pesado_por.email }}
                                             {% endif %}
                                         </div>
                                         {% if historico.motivo_ajuste %}

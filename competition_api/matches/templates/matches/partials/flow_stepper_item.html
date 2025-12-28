@@ -1,0 +1,13 @@
+{# internal helper #}
+{% if code == current %}
+  <div class="shiai-stepper__item is-current" aria-current="step">
+    <span class="shiai-stepper__dot"></span>
+    <span class="shiai-stepper__label">{{ label }}</span>
+  </div>
+{% else %}
+  <div class="shiai-stepper__item">
+    <span class="shiai-stepper__dot"></span>
+    <span class="shiai-stepper__label">{{ label }}</span>
+  </div>
+{% endif %}
+

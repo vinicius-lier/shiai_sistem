@@ -46,8 +46,14 @@ def map_status_legado(status_legado: str) -> str:
 
 
 # =========================
-# Classe / Idade
+# Classe / Idade (ano do evento)
 # =========================
+def _normalize_classe_nome(classe_nome: str) -> str:
+    if not classe_nome:
+        return ""
+    return classe_nome.strip().upper().replace("SUB ", "SUB-")
+
+
 def calcular_classe_por_idade(idade: Optional[int]) -> Optional[str]:
     if idade is None:
         return None
@@ -55,7 +61,9 @@ def calcular_classe_por_idade(idade: Optional[int]) -> Optional[str]:
         return "FESTIVAL"
     if 7 <= idade <= 8:
         return "SUB-9"
-    if 9 <= idade <= 10:
+    if idade == 9:
+        return "SUB-10"
+    if idade == 10:
         return "SUB-11"
     if 11 <= idade <= 12:
         return "SUB-13"
@@ -63,9 +71,7 @@ def calcular_classe_por_idade(idade: Optional[int]) -> Optional[str]:
         return "SUB-15"
     if 15 <= idade <= 17:
         return "SUB-18"
-    if 18 <= idade <= 20:
-        return "SUB-21"
-    if 21 <= idade <= 29:
+    if 18 <= idade <= 29:
         return "SÊNIOR"
     return "VETERANOS"
 
@@ -73,29 +79,55 @@ def calcular_classe_por_idade(idade: Optional[int]) -> Optional[str]:
 def validar_classe(classe_nome: str, idade: Optional[int]) -> bool:
     if not classe_nome:
         return False
-    cls = classe_nome.upper().strip()
+    cls = _normalize_classe_nome(classe_nome)
     if idade is None:
         return True
-    calc = calcular_classe_por_idade(idade)
-    if calc == "SUB-18" and cls in ("SUB-18", "SUB-21", "SÊNIOR"):
-        return True
-    if calc == "SUB-21" and cls in ("SUB-21", "SÊNIOR"):
-        return True
-    if calc == "VETERANOS" and cls in ("VETERANOS", "SÊNIOR"):
-        return True
-    # Igual calculado
+    calc = _normalize_classe_nome(calcular_classe_por_idade(idade))
+    if cls in ("MASTER", "MASTERS"):
+        cls = "VETERANOS"
+    if calc in ("SUB-18", "SUB-21", "SÊNIOR"):
+        return cls in ("SUB-18", "SUB-21", "SÊNIOR")
+    if calc == "VETERANOS":
+        return cls in ("VETERANOS", "SÊNIOR")
     return cls == calc
 
 
-def _idade_atual(data_nascimento) -> Optional[int]:
-    if not data_nascimento:
+def _ano_evento_from_campeonato(campeonato) -> int:
+    if campeonato and getattr(campeonato, "data_competicao", None):
+        return campeonato.data_competicao.year
+    return date.today().year
+
+
+def _ano_nascimento_atleta(atleta) -> Optional[int]:
+    if atleta is None:
         return None
-    hoje = date.today()
-    return (
-        hoje.year
-        - data_nascimento.year
-        - ((hoje.month, hoje.day) < (data_nascimento.month, data_nascimento.day))
-    )
+    if hasattr(atleta, "get_ano_nasc"):
+        return atleta.get_ano_nasc()
+    data_nascimento = getattr(atleta, "data_nascimento", None)
+    if data_nascimento:
+        return data_nascimento.year
+    return getattr(atleta, "ano_nasc", None)
+
+
+def _idade_evento(ano_nascimento: Optional[int], ano_evento: int) -> Optional[int]:
+    if not ano_nascimento or not ano_evento:
+        return None
+    return int(ano_evento) - int(ano_nascimento)
+
+
+def _get_classe_por_nome(classe_nome: Optional[str]) -> Optional[Classe]:
+    if not classe_nome:
+        return None
+    nome = _normalize_classe_nome(classe_nome)
+    classe = Classe.objects.filter(nome__iexact=nome).first()
+    if classe:
+        return classe
+    if nome == "VETERANOS":
+        classe = Classe.objects.filter(nome__iexact="MASTER").first()
+        if classe:
+            return classe
+    alt = nome.replace("-", " ")
+    return Classe.objects.filter(nome__iexact=alt).first()
 
 
 # =========================
@@ -154,10 +186,11 @@ def inscrever_atleta(atleta, campeonato, classe: Optional[Classe], categoria: Op
 
     # Classe obrigatória (por FK)
     if not classe:
-        # tenta por idade
-        idade = _idade_atual(getattr(atleta, "data_nascimento", None))
+        # tenta por idade no ano do evento (sem considerar mês/dia)
+        ano_evento = _ano_evento_from_campeonato(campeonato)
+        idade = _idade_evento(_ano_nascimento_atleta(atleta), ano_evento)
         classe_nome = calcular_classe_por_idade(idade)
-        classe = Classe.objects.filter(nome__iexact=classe_nome).first() if classe_nome else None
+        classe = _get_classe_por_nome(classe_nome)
     if not classe:
         raise ValidationError("Classe não informada ou inválida.")
 
@@ -221,4 +254,3 @@ def desclassificar(inscricao: Inscricao, motivo: str = ""):
         inscricao.motivo_ajuste = motivo
     inscricao.save(update_fields=["status_atual", "bloqueado_chave", "remanejado", "motivo_ajuste"])
     return inscricao
-

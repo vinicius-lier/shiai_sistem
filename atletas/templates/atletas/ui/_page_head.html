@@ -1,0 +1,16 @@
+<!-- Cabeçalho padrão de página.
+     Uso: include este arquivo com as variáveis "title" e opcional "subtitle".
+     Ações: passe "actions_html" (string HTML) se precisar de botões/links no topo. -->
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ title|default:"" }}</h1>
+    {% if subtitle %}
+      <p class="page-description">{{ subtitle }}</p>
+    {% endif %}
+  </div>
+  {% if actions_html %}
+    <div class="page-actions">{{ actions_html|safe }}</div>
+  {% endif %}
+</div>
+

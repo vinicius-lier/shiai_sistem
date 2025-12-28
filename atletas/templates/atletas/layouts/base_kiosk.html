@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <link rel="icon" type="image/png" href="{% static 'atletas/images/logo_black.png' %}">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SHIAI — Kiosk{% endblock %}</title>
+  {% include "atletas/ui/_reset.html" %}
+  {% include "atletas/ui/_tokens.html" %}
+  {% include "atletas/ui/_helpers.html" %}
+  {% include "atletas/ui/_components.html" %}
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="tv">
+  <main style="padding: var(--space-4);">
+    {% block content %}{% endblock %}
+  </main>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,335 @@
+{% extends "matches/base_competition.html" %}
+<!--
+Organização de Mesas (frontend-only). Nenhuma ação altera backend.
+-->
+
+{% block title %}Organização de Mesas{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root { --blue:#1d4ed8; --red:#b91c1c; }
+  .name-blue { color: var(--blue); font-weight: 700; }
+  .name-red  { color: var(--red);  font-weight: 700; }
+  .subtext { font-size: 12px; color: #6b7280; }
+  .match-card { display:grid; grid-template-columns: 180px 1fr 120px; gap: 10px; align-items:center; padding: 12px; border-radius: 12px; background: #fff; border: 1px solid #e5e7eb; }
+  .readonly { opacity: 0.65; }
+  .btn-outline { background: transparent; }
+  .mesas-grid { display:grid; grid-template-columns: repeat(3, minmax(260px, 1fr)); gap: 12px; }
+  .pill { padding: 2px 8px; border-radius: 8px; border: 1px solid #d1d5db; color: #374151; font-size: 12px; background:#f9fafb; }
+  .current-highlight { border: 2px solid #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15); }
+  .board-card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Organização de Mesas</h1>
+    <p class="page-subtitle">Monte a fila de cada mesa (local no navegador). Depois a Mesa registra resultados.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-outline-secondary btn-sm" href="/matches/" target="_blank">Abrir TV</a>
+    <a class="btn btn-outline-secondary btn-sm" href="/matches/mesa/" target="_blank">Abrir Mesa</a>
+    <div id="role-banner" class="alert alert-secondary py-2 mb-0" style="display:none;">
+      Seu perfil não permite organizar mesas. Tela em modo somente leitura.
+    </div>
+  </div>
+</div>
+
+<div class="board-card mb-3">
+  {% include "matches/_filters.html" %}
+</div>
+
+  <div class="board-card mb-3 shiai-card">
+  <h3 class="h5 fw-bold mb-2">Matches Disponíveis (SCHEDULED)</h3>
+  <div class="d-flex flex-column gap-2" id="available-matches">
+    {% for match in matches %}
+    <div class="match-card {% if match.status != 'SCHEDULED' %}readonly{% endif %}"
+         data-id="{{ match.id }}"
+         data-event="{{ match.bracket.event_id }}"
+         data-class="{{ match.bracket.class_code|default:'' }}"
+         data-category="{{ match.bracket.category_code|default:'' }}"
+         data-belt="{{ match.bracket.belt_group|default:'' }}"
+         data-blue-name="{{ match.blue_name|default:match.blue_athlete_id }}"
+         data-blue-display="{% if match.blue_display %}{{ match.blue_display }}{% elif match.blue_name %}{{ match.blue_name }}{% else %}{{ match.blue_athlete_id }}{% endif %}"
+         data-blue-org="{{ match.blue_org|default:match.blue_academy|default:'' }}"
+         data-blue-academy="{{ match.blue_academy|default:'' }}"
+         data-white-name="{{ match.white_name|default:match.white_athlete_id }}"
+         data-white-display="{% if match.white_display %}{{ match.white_display }}{% elif match.white_name %}{{ match.white_name }}{% else %}{{ match.white_athlete_id }}{% endif %}"
+         data-white-org="{{ match.white_org|default:match.white_academy|default:'' }}"
+         data-white-academy="{{ match.white_academy|default:'' }}"
+         data-status="{{ match.status|default:'SCHEDULED' }}">
+      <div>
+      <div class="subtext">Evento <span class="id-chip" title="{{ match.bracket.event_id }}">{{ match.bracket.event_id|slice:":8" }}</span></div>
+        <div class="subtext">{{ match.bracket.class_code|default:"-" }} • {{ match.bracket.category_code|default:"-" }} • Grupo {{ match.bracket.belt_group|default:"-" }}</div>
+      </div>
+      <div>
+        {% include "matches/partials/match_row.html" with match=match layout="block_compact" %}
+      </div>
+      <div class="text-end">
+        {% if match.status == "SCHEDULED" %}
+          <div class="btn-group btn-group-sm" role="group" aria-label="Adicionar à mesa">
+            <button class="btn btn-outline-primary add-to-mesa" data-mesa="1" type="button">Mesa 1</button>
+            <button class="btn btn-outline-primary add-to-mesa" data-mesa="2" type="button">Mesa 2</button>
+            <button class="btn btn-outline-primary add-to-mesa" data-mesa="3" type="button">Mesa 3</button>
+          </div>
+        {% else %}
+          <span class="text-muted">Não disponível</span>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="text-muted">Nenhuma luta SCHEDULED disponível.</div>
+    {% endfor %}
+  </div>
+ </div>
+
+<div class="board-card shiai-card">
+  <h3 class="h5 fw-bold mb-2">Mesas</h3>
+  <div class="mesas-grid" id="mesa-queue">
+    {% for i in "123" %}
+    <div class="board-card" data-mesa="{{ forloop.counter }}">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h4 class="h6 fw-bold m-0">Mesa {{ forloop.counter }}</h4>
+        <span class="pill" id="mesa-count-{{ forloop.counter }}">0 na fila</span>
+      </div>
+      <div class="subtext mb-2" id="mesa-current-{{ forloop.counter }}">Luta atual: nenhuma</div>
+      <div class="d-flex flex-column gap-2" id="mesa-list-{{ forloop.counter }}">
+        <div class="text-muted">Nenhuma luta na fila.</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  // Estado local simples (futuro: HTMX/WebSocket pode atualizar este state e re-renderizar DOM)
+  window.ShiaiUIState = window.ShiaiUIState || { matchesById:{}, filtersAtivos:{}, lastUpdateAt:null };
+
+  // UX-only: respeitar papel do usuário se o backend injetar window.USER_ROLE.
+  // NÃO é segurança. O backend continua sendo a fonte de verdade.
+  const USER_ROLE = (window.USER_ROLE || "").toString();
+  const CAN_ORGANIZE = !USER_ROLE || USER_ROLE === "TABLE_OFFICIAL" || USER_ROLE === "OPERATIONS";
+
+  const STORAGE_KEY = "shiai_mesas_state";
+  const mesas = { 1: [], 2: [], 3: [] };
+  const availableMatches = document.getElementById("available-matches");
+  const mesaQueue = document.getElementById("mesa-queue");
+
+  if (!CAN_ORGANIZE) {
+    document.getElementById("role-banner").style.display = "block";
+    if (availableMatches) availableMatches.querySelectorAll(".add-to-mesa").forEach(btn => (btn.style.display = "none"));
+    if (mesaQueue) { mesaQueue.style.opacity = "0.6"; mesaQueue.style.pointerEvents = "none"; }
+    return;
+  }
+
+  function findMesaOfMatch(matchId) {
+    for (const mesaId of [1,2,3]) if (mesas[mesaId].some(m => m.id === matchId)) return String(mesaId);
+    return null;
+  }
+
+  function matchFromCard(card) {
+    return {
+      id: card.dataset.id,
+      event_id: card.dataset.event || "",
+      bracket_id: card.dataset.bracket || "",
+      round_number: card.dataset.round || "",
+      match_number: card.dataset.number || "",
+      class_code: card.dataset.class || "",
+      sex: card.dataset.sex || "",
+      category_code: card.dataset.category || "",
+      belt_group: card.dataset.belt || "",
+      blue_athlete_id: card.dataset.blue || "",
+      blue_name: card.dataset.blueName || "",
+      blue_display: card.dataset.blueDisplay || card.dataset.blueName || card.dataset.blue || "-",
+      blue_org: card.dataset.blueOrg || card.dataset.blueAcademy || "",
+      white_athlete_id: card.dataset.white || "",
+      white_name: card.dataset.whiteName || "",
+      white_display: card.dataset.whiteDisplay || card.dataset.whiteName || card.dataset.white || "-",
+      white_org: card.dataset.whiteOrg || card.dataset.whiteAcademy || "",
+      status: card.dataset.status || "",
+    };
+  }
+
+  function hydrateStateFromDom() {
+    const state = window.ShiaiUIState;
+    const sp = new URLSearchParams(window.location.search);
+    state.filtersAtivos = {
+      event_id: sp.get("event_id") || "",
+      class_code: sp.get("class_code") || "",
+      sex: sp.get("sex") || "",
+      category_code: sp.get("category_code") || "",
+      belt_group: sp.get("belt_group") || "",
+      bracket_id: sp.get("bracket_id") || "",
+    };
+    if (availableMatches) {
+      availableMatches.querySelectorAll(".match-card[data-id]").forEach(card => {
+        const m = matchFromCard(card);
+        if (m && m.id) state.matchesById[m.id] = m;
+      });
+    }
+    state.lastUpdateAt = new Date().toISOString();
+  }
+
+  function buildMatchObj(el) {
+    const m = window.ShiaiUIState.matchesById[el.dataset.id] || matchFromCard(el);
+    return { id: m.id, blue: m.blue_display || "-", blueAcademy: m.blue_org || "", white: m.white_display || "-", whiteAcademy: m.white_org || "" };
+  }
+
+  function saveState() {
+    const idsOnly = { 1: mesas[1].map(m => m.id), 2: mesas[2].map(m => m.id), 3: mesas[3].map(m => m.id) };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(idsOnly)); } catch(e) {}
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const idsOnly = JSON.parse(raw);
+      [1,2,3].forEach(mesaId => {
+        const listIds = idsOnly[mesaId] || [];
+        listIds.forEach(id => {
+          const card = document.querySelector(`.match-card[data-id="${id}"]`);
+          if (!card) return;
+          if ((card.dataset.status || "SCHEDULED") !== "SCHEDULED") return;
+          if (findMesaOfMatch(id)) return;
+          const obj = buildMatchObj(card);
+          if (mesas[mesaId].some(m => m.id === obj.id)) return;
+          mesas[mesaId].push(obj);
+        });
+        renderMesa(mesaId);
+      });
+    } catch(e) {}
+  }
+
+  function renderMesa(mesaId) {
+    const listEl = document.getElementById(`mesa-list-${mesaId}`);
+    const currentEl = document.getElementById(`mesa-current-${mesaId}`);
+    const countEl = document.getElementById(`mesa-count-${mesaId}`);
+    const queue = mesas[mesaId];
+
+    listEl.innerHTML = "";
+    if (queue.length === 0) {
+      currentEl.textContent = "Luta atual: nenhuma";
+      listEl.innerHTML = '<div class="text-muted">Nenhuma luta na fila.</div>';
+      countEl.textContent = "0 na fila";
+      return;
+    }
+
+    const current = queue[0];
+    currentEl.innerHTML = `
+      <div class="match-card draggable-match current-highlight" draggable="true" data-id="${current.id}" data-mesa="${mesaId}">
+        <div><div class="subtext">Atual</div><div class="subtext">Mesa ${mesaId}</div></div>
+        <div>
+          <div class="name-blue">${current.blue}</div>
+          ${current.blueAcademy ? `<div class="subtext">${current.blueAcademy}</div>` : ""}
+          <div class="name-red mt-1">${current.white}</div>
+          ${current.whiteAcademy ? `<div class="subtext">${current.whiteAcademy}</div>` : ""}
+        </div>
+        <div class="text-end subtext">Arraste para outra mesa</div>
+      </div>
+    `;
+
+    queue.slice(1).forEach(m => {
+      const div = document.createElement("div");
+      div.className = "match-card draggable-match";
+      div.setAttribute("draggable", "true");
+      div.dataset.id = m.id;
+      div.dataset.mesa = mesaId;
+      div.style.gridTemplateColumns = "1fr 70px";
+      div.innerHTML = `
+        <div>
+          <div class="name-blue">${m.blue}</div>
+          ${m.blueAcademy ? `<div class="subtext">${m.blueAcademy}</div>` : ""}
+          <div class="name-red mt-1">${m.white}</div>
+          ${m.whiteAcademy ? `<div class="subtext">${m.whiteAcademy}</div>` : ""}
+        </div>
+        <div class="text-end"><button class="btn btn-outline-secondary btn-sm remove-from-mesa" data-id="${m.id}" data-mesa="${mesaId}">Remover</button></div>
+      `;
+      listEl.appendChild(div);
+    });
+
+    countEl.textContent = `${queue.length} na fila`;
+  }
+
+  function addToMesa(matchEl, mesaIdPreset) {
+    const status = matchEl.dataset.status;
+    if (status !== "SCHEDULED") { alert("Somente lutas SCHEDULED podem ser adicionadas."); return; }
+    const mesaId = mesaIdPreset || prompt("Adicionar a qual mesa? (1, 2 ou 3)", "1");
+    if (!["1","2","3"].includes(String(mesaId))) return;
+    const alreadyIn = findMesaOfMatch(matchEl.dataset.id);
+    if (alreadyIn) { alert(`Esta luta já está na Mesa ${alreadyIn}. Remova/mova antes de adicionar em outra mesa.`); return; }
+    const matchObj = buildMatchObj(matchEl);
+    mesas[mesaId].push(matchObj);
+    renderMesa(mesaId);
+    saveState();
+  }
+
+  function removeFromMesa(mesaId, matchId) {
+    mesas[mesaId] = mesas[mesaId].filter(m => m.id !== matchId);
+    renderMesa(mesaId);
+    saveState();
+  }
+
+  hydrateStateFromDom();
+  availableMatches.querySelectorAll(".add-to-mesa").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const mesaId = btn.dataset.mesa || "";
+      addToMesa(btn.closest(".match-card"), mesaId);
+    });
+  });
+
+  mesaQueue.addEventListener("click", (e) => {
+    if (e.target.classList.contains("remove-from-mesa")) {
+      const mesaId = e.target.dataset.mesa;
+      const matchId = e.target.dataset.id;
+      if (!confirm("Remover esta luta da mesa?")) return;
+      removeFromMesa(mesaId, matchId);
+    }
+  });
+
+  // Drag & Drop
+  let dragData = null;
+  function onDragStart(e) {
+    const id = e.target.dataset.id;
+    const mesa = e.target.dataset.mesa;
+    if (!id || !mesa) return;
+    dragData = { id, mesaFrom: mesa };
+    e.dataTransfer.effectAllowed = "move";
+  }
+  function onDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }
+  function onDrop(e) {
+    e.preventDefault();
+    if (!dragData) return;
+    const mesaTo = e.currentTarget.dataset.mesa;
+    if (!mesaTo) return;
+    if (dragData.mesaFrom === mesaTo) return;
+    const { id, mesaFrom } = dragData;
+    if (mesas[mesaTo].some(m => m.id === id)) { alert(`Esta luta já está na Mesa ${mesaTo}.`); dragData = null; return; }
+    const matchObj = mesas[mesaFrom].find(m => m.id === id);
+    if (!matchObj) return;
+    mesas[mesaFrom] = mesas[mesaFrom].filter(m => m.id !== id);
+    mesas[mesaTo].push(matchObj);
+    renderMesa(mesaFrom);
+    renderMesa(mesaTo);
+    saveState();
+    dragData = null;
+  }
+  function bindDragDrop() {
+    document.querySelectorAll(".draggable-match").forEach(el => el.addEventListener("dragstart", onDragStart));
+    document.querySelectorAll("#mesa-queue [data-mesa]").forEach(card => { card.addEventListener("dragover", onDragOver); card.addEventListener("drop", onDrop); });
+  }
+
+  const originalRender = renderMesa;
+  renderMesa = function(mesaId) { originalRender(mesaId); bindDragDrop(); };
+
+  renderMesa(1); renderMesa(2); renderMesa(3);
+  loadState();
+  bindDragDrop();
+})();
+</script>
+{% endblock %}
+

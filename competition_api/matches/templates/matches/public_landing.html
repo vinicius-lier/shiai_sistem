@@ -1,0 +1,36 @@
+{% extends "matches/base_public.html" %}
+{% load static %}
+
+{% block title %}SHIAI — Acesso{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <div class="card-header">
+      <h1 class="page-title" style="margin:0;">Acesso restrito</h1>
+      <p class="page-subtitle" style="margin:6px 0 0;">
+        Este endereço é do módulo <strong>Competition (Mesas/Telão)</strong> e deve ser usado apenas pelo <strong>Operacional</strong>.
+      </p>
+    </div>
+    <div class="card-body">
+      <div class="badge badge-warning" style="width: fit-content;">Operacional</div>
+      <p style="margin:10px 0 0; color: var(--color-gray-700);">
+        Para evitar navegação surpresa, a raiz (<code>/</code>) <strong>não</strong> redireciona automaticamente para <code>/matches/</code> quando o usuário não está autenticado.
+      </p>
+      <p style="margin:10px 0 0; color: var(--color-gray-700);">
+        Para entrar como Operacional, use o login administrativo do módulo:
+      </p>
+      <div class="row" style="margin-top: 12px;">
+        <a class="btn btn-primary" href="/admin/login/?next=/matches/">Entrar (Operacional) →</a>
+        <a class="btn btn-secondary" href="/admin/">Abrir Admin</a>
+      </div>
+
+      <hr style="margin: 18px 0; border-top: 1px solid var(--shiai-gray-200);">
+
+      <p style="margin:0; color: var(--color-gray-700);">
+        Se você esperava ver o <strong>dashboard operacional</strong> ou o <strong>portal da academia</strong>, acesse o sistema principal (Core) no host/serviço correspondente.
+      </p>
+    </div>
+  </div>
+{% endblock %}
+
+

@@ -1,4 +1,4 @@
-{% extends 'atletas/base.html' %}
+{% extends 'atletas/layouts/base_operational.html' %}
 {% load static %}
 
 {% block title %}Ajuda / Manual do Sistema - SHIAI SISTEM{% endblock %}
@@ -36,7 +36,7 @@
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <a href="{% url 'ajuda_manual_web' 'operacional' %}" class="btn btn-outline flex-1">
+                            <a href="{% url 'ajuda_manual_web' organizacao_slug=request.organizacao.slug tipo='operacional' %}" class="btn btn-outline flex-1">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                                     <polyline points="15 3 21 3 21 9"></polyline>
@@ -74,7 +74,7 @@
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <a href="{% url 'ajuda_manual_web' 'academia' %}" class="btn btn-outline flex-1">
+                            <a href="{% url 'ajuda_manual_web' organizacao_slug=request.organizacao.slug tipo='academia' %}" class="btn btn-outline flex-1">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                                     <polyline points="15 3 21 3 21 9"></polyline>
@@ -105,7 +105,7 @@
         </div>
         <div class="card-body">
             <div class="grid grid-auto-fit gap-4">
-                <a href="{% url 'ajuda_manual_web' 'operacional' %}" class="card flex items-center gap-4" style="text-decoration: none; border: 1px solid var(--color-gray-200); transition: all 0.2s; padding: var(--spacing-4);">
+                <a href="{% url 'ajuda_manual_web' organizacao_slug=request.organizacao.slug tipo='operacional' %}" class="card flex items-center gap-4" style="text-decoration: none; border: 1px solid var(--color-gray-200); transition: all 0.2s; padding: var(--spacing-4);">
                     <div style="width: 48px; height: 48px; border-radius: var(--border-radius-lg); background: var(--color-primary-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; stroke: var(--color-primary);">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -121,7 +121,7 @@
                     </svg>
                 </a>
                 
-                <a href="{% url 'ajuda_manual_web' 'academia' %}" class="card flex items-center gap-4" style="text-decoration: none; border: 1px solid var(--color-gray-200); transition: all 0.2s; padding: var(--spacing-4);">
+                <a href="{% url 'ajuda_manual_web' organizacao_slug=request.organizacao.slug tipo='academia' %}" class="card flex items-center gap-4" style="text-decoration: none; border: 1px solid var(--color-gray-200); transition: all 0.2s; padding: var(--spacing-4);">
                     <div style="width: 48px; height: 48px; border-radius: var(--border-radius-lg); background: var(--color-secondary-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; stroke: var(--color-secondary);">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -326,4 +326,3 @@
     </section>
 </div>
 {% endblock %}
-

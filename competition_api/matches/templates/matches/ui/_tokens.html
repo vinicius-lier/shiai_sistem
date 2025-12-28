@@ -1,0 +1,56 @@
+{# Tokens e utilitários mínimos (CSS puro) para Competition API.
+   Mantém nomes compatíveis com atletas/ui/_tokens.html para padronizar classes. #}
+<style>
+  :root {
+    --shiai-bg: #F9FAFB;
+    --shiai-surface: #FFFFFF;
+    --shiai-text: #111827;
+    --shiai-muted: #6B7280;
+    --shiai-border: #E5E7EB;
+
+    --shiai-primary: #2563EB;
+    --shiai-primary-contrast: #FFFFFF;
+    --shiai-danger: #DC2626;
+    --shiai-success: #16A34A;
+    --shiai-warning: #D97706;
+
+    --shiai-judo-blue: #1D4ED8;
+    --shiai-judo-red: #B91C1C;
+
+    --shiai-font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --shiai-text-sm: 0.875rem;
+    --shiai-title: 1.6rem;
+    --shiai-tv-title: clamp(2.2rem, 3.6vw, 3.2rem);
+    --shiai-tv-subtitle: clamp(1.1rem, 1.8vw, 1.4rem);
+    --shiai-gap-2: 10px;
+    --shiai-gap-3: 14px;
+    --shiai-radius: 12px;
+    --shiai-radius-sm: 10px;
+    --shiai-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+
+  :focus-visible { outline: 3px solid rgba(37, 99, 235, 0.55); outline-offset: 2px; }
+
+  body[data-shiai-ui="1"] { font-family: var(--shiai-font); background: var(--shiai-bg); color: var(--shiai-text); }
+  body[data-shiai-ui="1"] .muted { color: var(--shiai-muted); }
+  body[data-shiai-ui="1"] .page-title{ font-weight: 800; font-size: var(--shiai-title); margin:0; }
+  body[data-shiai-ui="1"].tv .page-title{ font-size: var(--shiai-tv-title); }
+  body[data-shiai-ui="1"].tv .page-subtitle{ font-size: var(--shiai-tv-subtitle); }
+
+  body[data-shiai-ui="1"] .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:10px; border:1px solid transparent; font-weight:700; font-size: var(--shiai-text-sm); text-decoration:none; cursor:pointer; white-space:nowrap; }
+  body[data-shiai-ui="1"] .btn-primary{ background: var(--shiai-primary); color: var(--shiai-primary-contrast); }
+  body[data-shiai-ui="1"] .btn-secondary{ background: #F3F4F6; border-color: #E5E7EB; color: var(--shiai-text); }
+  body[data-shiai-ui="1"] .btn-ghost{ background: transparent; color: var(--shiai-text); }
+  body[data-shiai-ui="1"] .btn-outline{ background: transparent; border-color: var(--shiai-border); color: var(--shiai-text); }
+
+  body[data-shiai-ui="1"] .badge{ display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:2px 10px; font-size:12px; font-weight:800; border:1px solid transparent; }
+  body[data-shiai-ui="1"] .badge-scheduled{ background:#E0F2FE; color:#075985; border-color:#38BDF8; }
+  body[data-shiai-ui="1"] .badge-finished{ background:#ECFDF3; color:#166534; border-color:#34D399; }
+  body[data-shiai-ui="1"] .badge-wo{ background:#FFF7ED; color:#9A3412; border-color:#FB923C; }
+  body[data-shiai-ui="1"] .badge-info{ background: #EFF6FF; color: #1E3A8A; border-color: #BFDBFE; }
+  body[data-shiai-ui="1"] .badge-success{ background: #ECFDF3; color: #166534; border-color: #86EFAC; }
+  body[data-shiai-ui="1"] .badge-warning{ background: #FFFBEB; color: #92400E; border-color: #FDE68A; }
+  body[data-shiai-ui="1"] .badge-danger{ background: #FEF2F2; color: #991B1B; border-color: #FCA5A5; }
+</style>
+
+

@@ -45,6 +45,10 @@ O sistema foi projetado para ser **intuitivo**, **confiável** e **eficiente**, 
 - **Equipe Operacional**: Registro de pesagem, resultados e controle de chaves
 - **Administradores**: Visão geral financeira e operacional
 
+### Controle de Acesso
+
+- Controle de acesso baseado em role (`ADMIN`/`STAFF`), não em `auth_permission`.
+
 ---
 
 ## 🛠️ Tecnologias

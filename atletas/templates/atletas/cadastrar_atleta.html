@@ -1,4 +1,4 @@
-{% extends 'atletas/base.html' %}
+{% extends 'atletas/layouts/base_operational.html' %}
 {% load static %}
 
 {% block title %}Cadastrar Atleta{% endblock %}
@@ -132,7 +132,7 @@
                 </div>
             </div>
 
-            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+            <div class="form-actions">
                 <a href="{% url 'lista_atletas' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Cancelar</a>
                 <button type="submit" class="btn btn-primary">Cadastrar atleta</button>
             </div>

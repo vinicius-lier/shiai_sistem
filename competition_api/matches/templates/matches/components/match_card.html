@@ -1,0 +1,46 @@
+{# Card visual (somente UI).
+   Params esperados:
+   - match (obrigatório)
+   - title (opcional): texto no topo, ex "Round 1 • Match 2"
+   - show_status (default true)
+   - show_method (default false)
+   - show_bracket (default false)
+   - show_winner_star (default false) -> usa match.winner_side ("blue"/"white") se existir
+#}
+<div class="match-row {% if match.status == 'SCHEDULED' %}match-scheduled{% elif match.status == 'FINISHED' %}match-finished{% elif match.status == 'WALKOVER' %}match-walkover{% endif %}">
+  <div class="d-flex justify-content-between gap-2 align-items-center mb-2">
+    <div class="fw-bold">
+      {% if title %}{{ title }}{% else %}Round {{ match.round_number }} • Match {{ match.match_number }}{% endif %}
+      {% if show_bracket %}<span class="ms-2 text-muted fw-normal">Bracket {{ match.bracket_id }}</span>{% endif %}
+    </div>
+    {% if show_status|default:True %}
+      {% include "matches/components/status_badge.html" with status=match.status %}
+    {% endif %}
+  </div>
+
+  <div class="row g-2">
+    <div class="col-12 col-md-6">
+      <div class="athlete-sub">AZUL</div>
+      <div class="athlete-blue fs-5">
+        {% if show_winner_star and match.winner_side == "blue" %}★ {% endif %}
+        {{ match.blue_display|default:match.blue_name|default:match.blue_athlete_id|default:"-" }}
+      </div>
+      {% if match.blue_academy %}<div class="athlete-sub">{{ match.blue_academy }}</div>{% endif %}
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="athlete-sub">BRANCO</div>
+      <div class="athlete-red fs-5">
+        {% if show_winner_star and match.winner_side == "white" %}★ {% endif %}
+        {{ match.white_display|default:match.white_name|default:match.white_athlete_id|default:"-" }}
+      </div>
+      {% if match.white_academy %}<div class="athlete-sub">{{ match.white_academy }}</div>{% endif %}
+    </div>
+  </div>
+
+  {% if show_method %}
+    <div class="mt-2 text-muted">
+      <strong>Método:</strong> {{ match.win_method|default:"-" }}
+    </div>
+  {% endif %}
+</div>
+

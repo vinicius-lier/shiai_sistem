@@ -1,0 +1,85 @@
+classe,sexo,nome_categoria,limite_minimo_kg,limite_maximo_kg,label_completo
+SUB-11,Masculino,Super Ligeiro,0,30,SUB-11 - Masculino - Super Ligeiro (até 30kg)
+SUB-11,Masculino,Ligeiro,30.1,33,SUB-11 - Masculino - Ligeiro (30,1kg a 33kg)
+SUB-11,Masculino,Meio Leve,33.1,36,SUB-11 - Masculino - Meio Leve (33,1kg a 36kg)
+SUB-11,Masculino,Leve,36.1,40,SUB-11 - Masculino - Leve (36,1kg a 40kg)
+SUB-11,Masculino,Meio Médio,40.1,45,SUB-11 - Masculino - Meio Médio (40,1kg a 45kg)
+SUB-11,Masculino,Médio,45.1,50,SUB-11 - Masculino - Médio (45,1kg a 50kg)
+SUB-11,Masculino,Meio Pesado,50.1,55,SUB-11 - Masculino - Meio Pesado (50,1kg a 55kg)
+SUB-11,Masculino,Pesado,55.1,999,SUB-11 - Masculino - Pesado (acima de 55kg)
+
+SUB-11,Feminino,Super Ligeiro,0,30,SUB-11 - Feminino - Super Ligeiro (até 30kg)
+SUB-11,Feminino,Ligeiro,30.1,33,SUB-11 - Feminino - Ligeiro (30,1kg a 33kg)
+SUB-11,Feminino,Meio Leve,33.1,36,SUB-11 - Feminino - Meio Leve (33,1kg a 36kg)
+SUB-11,Feminino,Leve,36.1,40,SUB-11 - Feminino - Leve (36,1kg a 40kg)
+SUB-11,Feminino,Meio Médio,40.1,45,SUB-11 - Feminino - Meio Médio (40,1kg a 45kg)
+SUB-11,Feminino,Médio,45.1,50,SUB-11 - Feminino - Médio (45,1kg a 50kg)
+SUB-11,Feminino,Meio Pesado,50.1,55,SUB-11 - Feminino - Meio Pesado (50,1kg a 55kg)
+SUB-11,Feminino,Pesado,55.1,999,SUB-11 - Feminino - Pesado (acima de 55kg)
+
+SUB-13,Masculino,Super Ligeiro,0,31,SUB-13 - Masculino - Super Ligeiro (até 31kg)
+SUB-13,Masculino,Ligeiro,31.1,34,SUB-13 - Masculino - Ligeiro (31,1kg a 34kg)
+SUB-13,Masculino,Meio Leve,34.1,38,SUB-13 - Masculino - Meio Leve (34,1kg a 38kg)
+SUB-13,Masculino,Leve,38.1,42,SUB-13 - Masculino - Leve (38,1kg a 42kg)
+SUB-13,Masculino,Meio Médio,42.1,47,SUB-13 - Masculino - Meio Médio (42,1kg a 47kg)
+SUB-13,Masculino,Médio,47.1,52,SUB-13 - Masculino - Médio (47,1kg a 52kg)
+SUB-13,Masculino,Meio Pesado,52.1,60,SUB-13 - Masculino - Meio Pesado (52,1kg a 60kg)
+SUB-13,Masculino,Pesado,60.1,999,SUB-13 - Masculino - Pesado (acima de 60kg)
+
+SUB-13,Feminino,Super Ligeiro,0,30,SUB-13 - Feminino - Super Ligeiro (até 30kg)
+SUB-13,Feminino,Ligeiro,30.1,33,SUB-13 - Feminino - Ligeiro (30,1kg a 33kg)
+SUB-13,Feminino,Meio Leve,33.1,36,SUB-13 - Feminino - Meio Leve (33,1kg a 36kg)
+SUB-13,Feminino,Leve,36.1,40,SUB-13 - Feminino - Leve (36,1kg a 40kg)
+SUB-13,Feminino,Meio Médio,40.1,45,SUB-13 - Feminino - Meio Médio (40,1kg a 45kg)
+SUB-13,Feminino,Médio,45.1,50,SUB-13 - Feminino - Médio (45,1kg a 50kg)
+SUB-13,Feminino,Meio Pesado,50.1,58,SUB-13 - Feminino - Meio Pesado (50,1kg a 58kg)
+SUB-13,Feminino,Pesado,58.1,999,SUB-13 - Feminino - Pesado (acima de 58kg)
+
+SUB-15,Masculino,-40,0,40,SUB-15 - Masculino -40kg
+SUB-15,Masculino,-45,40.1,45,SUB-15 - Masculino -45kg
+SUB-15,Masculino,-50,45.1,50,SUB-15 - Masculino -50kg
+SUB-15,Masculino,-55,50.1,55,SUB-15 - Masculino -55kg
+SUB-15,Masculino,-60,55.1,60,SUB-15 - Masculino -60kg
+SUB-15,Masculino,-66,60.1,66,SUB-15 - Masculino -66kg
+SUB-15,Masculino,-73,66.1,73,SUB-15 - Masculino -73kg
+SUB-15,Masculino,+73,73.1,999,SUB-15 - Masculino +73kg
+
+SUB-15,Feminino,-40,0,40,SUB-15 - Feminino -40kg
+SUB-15,Feminino,-44,40.1,44,SUB-15 - Feminino -44kg
+SUB-15,Feminino,-48,44.1,48,SUB-15 - Feminino -48kg
+SUB-15,Feminino,-52,48.1,52,SUB-15 - Feminino -52kg
+SUB-15,Feminino,-57,52.1,57,SUB-15 - Feminino -57kg
+SUB-15,Feminino,-63,57.1,63,SUB-15 - Feminino -63kg
+SUB-15,Feminino,+63,63.1,999,SUB-15 - Feminino +63kg
+
+SÊNIOR,Masculino,-60,0,60,SÊNIOR - Masculino -60kg
+SÊNIOR,Masculino,-66,60.1,66,SÊNIOR - Masculino -66kg
+SÊNIOR,Masculino,-73,66.1,73,SÊNIOR - Masculino -73kg
+SÊNIOR,Masculino,-81,73.1,81,SÊNIOR - Masculino -81kg
+SÊNIOR,Masculino,-90,81.1,90,SÊNIOR - Masculino -90kg
+SÊNIOR,Masculino,-100,90.1,100,SÊNIOR - Masculino -100kg
+SÊNIOR,Masculino,+100,100.1,999,SÊNIOR - Masculino +100kg
+
+SÊNIOR,Feminino,-48,0,48,SÊNIOR - Feminino -48kg
+SÊNIOR,Feminino,-52,48.1,52,SÊNIOR - Feminino -52kg
+SÊNIOR,Feminino,-57,52.1,57,SÊNIOR - Feminino -57kg
+SÊNIOR,Feminino,-63,57.1,63,SÊNIOR - Feminino -63kg
+SÊNIOR,Feminino,-70,63.1,70,SÊNIOR - Feminino -70kg
+SÊNIOR,Feminino,-78,70.1,78,SÊNIOR - Feminino -78kg
+SÊNIOR,Feminino,+78,78.1,999,SÊNIOR - Feminino +78kg
+
+VETERANO,Masculino,-60,0,60,VETERANO - Masculino -60kg
+VETERANO,Masculino,-66,60.1,66,VETERANO - Masculino -66kg
+VETERANO,Masculino,-73,66.1,73,VETERANO - Masculino -73kg
+VETERANO,Masculino,-81,73.1,81,VETERANO - Masculino -81kg
+VETERANO,Masculino,-90,81.1,90,VETERANO - Masculino -90kg
+VETERANO,Masculino,-100,90.1,100,VETERANO - Masculino -100kg
+VETERANO,Masculino,+100,100.1,999,VETERANO - Masculino +100kg
+
+VETERANO,Feminino,-48,0,48,VETERANO - Feminino -48kg
+VETERANO,Feminino,-52,48.1,52,VETERANO - Feminino -52kg
+VETERANO,Feminino,-57,52.1,57,VETERANO - Feminino -57kg
+VETERANO,Feminino,-63,57.1,63,VETERANO - Feminino -63kg
+VETERANO,Feminino,-70,63.1,70,VETERANO - Feminino -70kg
+VETERANO,Feminino,-78,70.1,78,VETERANO - Feminino -78kg
+VETERANO,Feminino,+78,78.1,999,VETERANO - Feminino +78kg

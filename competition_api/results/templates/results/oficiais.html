@@ -1,0 +1,79 @@
+{% extends "matches/base_competition.html" %}
+{% block title %}Resultados Oficiais{% endblock %}
+
+{% block content %}
+    <h1 class="h3 fw-bold mb-2">Resultados Oficiais</h1>
+
+    {% if messages %}
+        {% for m in messages %}
+            <div class="alert {% if m.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} py-2">{{ m }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="shiai-card p-3 mb-3">
+        <form method="get">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-md-6">
+                    <label class="form-label mb-1">Event ID</label>
+                    <input class="form-control" type="text" name="event_id" value="{{ event_id }}" placeholder="UUID do evento" />
+                </div>
+                <div class="col-12 col-md-auto">
+                    <button type="submit" class="btn btn-outline-secondary w-100">Carregar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if event_id %}
+    <div class="shiai-card p-3 mb-3">
+        <p class="mb-2">
+            Gerar resultados oficiais para o evento <strong>{{ event_id }}</strong>.
+        </p>
+        {% if scheduled_count and scheduled_count > 0 %}
+            <div class="alert alert-warning py-2 mb-2">
+                Há <strong>{{ scheduled_count }}</strong> lutas <strong>SCHEDULED</strong>. Finalize todas antes de gerar.
+            </div>
+        {% else %}
+            <div class="text-muted mb-2">Nenhuma luta SCHEDULED encontrada.</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="event_id" value="{{ event_id }}">
+            <button type="submit" class="btn btn-primary">Gerar Resultados Oficiais</button>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if results %}
+    <div class="shiai-card p-3 mb-3">
+        <h3 class="h5 fw-bold">Resultados Oficiais</h3>
+        <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Categoria</th>
+                    <th>Atleta</th>
+                    <th>Academia/Org</th>
+                    <th>Colocação</th>
+                    <th>Pontos de Luta (total)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in results %}
+                <tr>
+                    <td>{{ r.category_code }}</td>
+                    <td>{{ r.athlete_id }}</td>
+                    <td>{{ r.organization_id|default:"-" }}</td>
+                    <td>{{ r.placement }}</td>
+                    <td>{{ r.fight_points_total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    {% elif event_id %}
+    <div class="shiai-card p-3 mb-3 text-muted">Nenhum resultado oficial gerado para este evento.</div>
+    {% endif %}
+{% endblock %}
+

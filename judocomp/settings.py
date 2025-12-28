@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 import mimetypes
-import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -82,6 +81,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'organizations.apps.OrganizationsConfig',
+    'accounts.apps.AccountsConfig',
+    'athletes.apps.AthletesConfig',
     'atletas.apps.AtletasConfig',   # ← ESTA É A ALTERAÇÃO QUE FALTAVA
 ]
 
@@ -123,26 +125,24 @@ WSGI_APPLICATION = 'judocomp.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if DATABASE_URL:
-    # Produção – Render → PostgreSQL
-    DATABASES = {
-        'default': dj_database_url.parse(
-            DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True
-        )
-    }
-else:
-    # Desenvolvimento local → SQLite
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
+        # Em produção usamos o schema 'core'. Em DEBUG (desenvolvimento local)
+        # alguns ambientes não têm o schema criado automaticamente; usar
+        # 'public' localmente evita o erro "no schema has been selected to create in".
+        'OPTIONS': {
+            'options': "-c search_path=core" if not (os.getenv('DEBUG', 'True') == 'True') else "-c search_path=public"
         }
     }
+}
+
+AUTH_USER_MODEL = 'accounts.User'
 
 
 # Password validation

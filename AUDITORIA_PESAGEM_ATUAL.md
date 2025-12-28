@@ -124,3 +124,9 @@ elif acao == 'desclassificar':
 - Geração de chaves já filtrando `bloqueado_chave` e status aptos em `utils.py`.
 
 
+
+
+
+
+
+

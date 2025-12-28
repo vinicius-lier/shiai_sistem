@@ -1,5 +1,5 @@
 
-{% extends 'atletas/base.html' %}
+{% extends 'atletas/layouts/base_operational.html' %}
 {% load static %}
 
 {% block title %}Campeonatos - Sistema de Gestão de Competições de Judô{% endblock %}
@@ -82,7 +82,7 @@
                     {% endif %}
                 </td>
                 <td style="text-align: right;">
-                    <div style="display: flex; gap: var(--spacing-2); justify-content: flex-end;">
+                    <div class="flex gap-2 justify-end">
                         <a href="{% url 'gerenciar_academias_campeonato' organizacao_slug=request.organizacao.slug campeonato_id=campeonato.id %}" class="btn btn-secondary btn-sm" title="Gerenciar academias do campeonato">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -366,4 +366,3 @@ function enviarWhatsAppConvite(nomeAcademia, login, senha, nomeCampeonato, telef
 }
 </script>
 {% endblock %}
-

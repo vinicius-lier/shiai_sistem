@@ -5,41 +5,33 @@ from .models import Atleta, Categoria, Chave, Luta, Academia, Campeonato, Academ
 import random
 
 
-def calcular_classe(ano_nasc):
-    """Calcula a classe do atleta baseado no ano de nascimento
-    
-    Regras:
-    - Festival: até 6 anos
-    - SUB 9: 7-8 anos
-    - SUB 11: 9-10 anos
-    - SUB 13: 11-12 anos
-    - SUB 15: 13-14 anos
-    - SUB 18: 15-17 anos
-    - SUB 21: 18-20 anos
-    - VETERANOS: 30 anos ou mais (ex: nascido em 1987 ou antes, considerando 2024)
-    - SÊNIOR: 21-29 anos
+def calcular_classe(ano_nasc, ano_evento=None):
+    """Calcula a classe do atleta baseado no ano do evento (somente o ano).
+
+    Regra: idade = ano_evento - ano_nascimento (sem considerar mês/dia).
     """
-    hoje = date.today()
-    idade = hoje.year - ano_nasc
-    
+    if not ano_nasc:
+        return None
+    ano_base = ano_evento or date.today().year
+    idade = int(ano_base) - int(ano_nasc)
+
     if idade <= 6:
-        return "Festival"
-    elif idade <= 8:
-        return "SUB 9"
-    elif idade <= 10:
-        return "SUB 11"
-    elif idade <= 12:
-        return "SUB 13"
-    elif idade <= 14:
-        return "SUB 15"
-    elif idade <= 17:
-        return "SUB 18"
-    elif idade <= 20:
-        return "SUB 21"
-    elif idade >= 30:
-        return "VETERANOS"
-    else:
+        return "FESTIVAL"
+    if 7 <= idade <= 8:
+        return "SUB-9"
+    if idade == 9:
+        return "SUB-10"
+    if idade == 10:
+        return "SUB-11"
+    if 11 <= idade <= 12:
+        return "SUB-13"
+    if 13 <= idade <= 14:
+        return "SUB-15"
+    if 15 <= idade <= 17:
+        return "SUB-18"
+    if 18 <= idade <= 29:
         return "SÊNIOR"
+    return "VETERANOS"
 
 
 def categorias_permitidas(classe_atleta, categorias_existentes=None):
@@ -58,13 +50,13 @@ def categorias_permitidas(classe_atleta, categorias_existentes=None):
         Lista de classes permitidas para inscrição
     """
     # Normalizar nome da classe
-    classe_normalizada = classe_atleta.upper().strip()
+    classe_normalizada = classe_atleta.upper().strip().replace("SUB ", "SUB-")
     
     # Regras especiais
-    if classe_normalizada == "VETERANOS":
+    if classe_normalizada in ("VETERANOS", "MASTER", "MASTERS"):
         classes_permitidas = ["VETERANOS", "SÊNIOR"]
-    elif classe_normalizada == "SUB 18" or classe_normalizada == "SUB18":
-        classes_permitidas = ["SUB 18", "SUB 21", "SÊNIOR"]
+    elif classe_normalizada in ("SUB-18", "SUB18", "SUB-21", "SUB21", "SÊNIOR", "SENIOR"):
+        classes_permitidas = ["SUB-18", "SUB-21", "SÊNIOR"]
     else:
         # Regra padrão: apenas sua própria classe
         classes_permitidas = [classe_atleta]
@@ -103,10 +95,10 @@ def validar_elegibilidade_categoria(classe_atleta, categoria_desejada, categoria
     classes_permitidas = categorias_permitidas(classe_atleta, categorias_existentes)
     
     # Normalizar categoria desejada
-    categoria_desejada_normalizada = categoria_desejada.upper().strip()
+    categoria_desejada_normalizada = categoria_desejada.upper().strip().replace("SUB ", "SUB-")
     
     # Verificar se a categoria desejada está na lista permitida
-    classes_permitidas_normalizadas = [c.upper().strip() for c in classes_permitidas]
+    classes_permitidas_normalizadas = [c.upper().strip().replace("SUB ", "SUB-") for c in classes_permitidas]
     
     if categoria_desejada_normalizada in classes_permitidas_normalizadas:
         return True, None

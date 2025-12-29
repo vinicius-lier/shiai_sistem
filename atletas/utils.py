@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from django.db.models import Q
 from .models import Atleta, Categoria, Chave, Luta, Academia, Campeonato, AcademiaPontuacao, Inscricao, Classe
 import random
@@ -71,48 +72,33 @@ def buscar_classe_no_banco(nome_classe):
     return None
 
 
-def calcular_classe(ano_nasc):
-    """Calcula a classe do atleta baseado no ano de nascimento
-    
-    Retorna nomes padronizados que correspondem ao banco de dados:
-    - Festival (0-6 anos)
-    - SUB-9 (7-8 anos)
-    - SUB-11 (9-10 anos)
-    - SUB-13 (11-12 anos)
-    - SUB-15 (13-14 anos)
-    - SUB-18 (15-17 anos)
-    - SUB-21 (18-20 anos)
-    - SÊNIOR/VET (21-29 anos)
-    - VETERANOS (30+ anos)
-    
-    IMPORTANTE: Os nomes retornados devem corresponder aos nomes no banco de dados.
-    Se o banco usar "SUB 9" (com espaço), retorna "SUB 9".
-    Se o banco usar "SUB-9" (com hífen), retorna "SUB-9".
-    
-    Para garantir compatibilidade, esta função retorna nomes com hífen (padrão mais comum).
-    A função buscar_classe_no_banco() faz a normalização para encontrar a classe correta.
+def calcular_classe(ano_nasc, ano_evento=None):
+    """Calcula a classe do atleta baseado no ano do evento (somente o ano).
+
+    Regra: idade = ano_evento - ano_nascimento (sem considerar mês/dia).
     """
-    hoje = date.today()
-    idade = hoje.year - ano_nasc
-    
+    if not ano_nasc:
+        return None
+    ano_base = ano_evento or date.today().year
+    idade = int(ano_base) - int(ano_nasc)
+
     if idade <= 6:
         return "FESTIVAL"
-    elif idade <= 8:
+    if 7 <= idade <= 8:
         return "SUB-9"
-    elif idade <= 10:
+    if idade == 9:
+        return "SUB-10"
+    if idade == 10:
         return "SUB-11"
-    elif idade <= 12:
+    if 11 <= idade <= 12:
         return "SUB-13"
-    elif idade <= 14:
+    if 13 <= idade <= 14:
         return "SUB-15"
-    elif idade <= 17:
+    if 15 <= idade <= 17:
         return "SUB-18"
-    elif idade <= 20:
-        return "SUB-21"
-    elif idade >= 30:
-        return "VETERANOS"
-    else:
-        return "SÊNIOR/VET"
+    if 18 <= idade <= 29:
+        return "SÊNIOR"
+    return "VETERANOS"
 
 
 def categorias_permitidas(classe_atleta, categorias_existentes=None):
@@ -135,56 +121,47 @@ def categorias_permitidas(classe_atleta, categorias_existentes=None):
     """
     # Normalizar nome da classe para comparação
     classe_normalizada = normalizar_nome_classe(classe_atleta)
-    
+
     # Buscar classe no banco para obter o nome exato
     classe_obj = buscar_classe_no_banco(classe_atleta)
     nome_classe_exato = classe_obj.nome if classe_obj else classe_atleta
-    
+
     # Determinar classes permitidas baseado na classe normalizada
     classes_permitidas_nomes = []
-    
+
     if classe_normalizada == "FESTIVAL":
-        # Festival: somente Festival
         classes_permitidas_nomes = ["FESTIVAL"]
     elif classe_normalizada in ["SUB9", "SUB-9", "SUB 9"]:
-        # SUB-9: somente sua própria classe
+        classes_permitidas_nomes = [nome_classe_exato]
+    elif classe_normalizada in ["SUB10", "SUB-10", "SUB 10"]:
         classes_permitidas_nomes = [nome_classe_exato]
     elif classe_normalizada in ["SUB11", "SUB-11", "SUB 11"]:
-        # SUB-11: somente sua própria classe
         classes_permitidas_nomes = [nome_classe_exato]
     elif classe_normalizada in ["SUB13", "SUB-13", "SUB 13"]:
-        # SUB-13: somente sua própria classe
         classes_permitidas_nomes = [nome_classe_exato]
     elif classe_normalizada in ["SUB15", "SUB-15", "SUB 15"]:
-        # SUB-15: somente sua própria classe
         classes_permitidas_nomes = [nome_classe_exato]
     elif classe_normalizada in ["SUB18", "SUB-18", "SUB 18"]:
-        # SUB-18: pode escolher SUB-18, SUB-21, SÊNIOR/VET
         classes_permitidas_nomes = [nome_classe_exato]
-        # Adicionar SUB-21 e SÊNIOR/VET se existirem
         sub21 = buscar_classe_no_banco("SUB-21")
         if sub21:
             classes_permitidas_nomes.append(sub21.nome)
-        senior = buscar_classe_no_banco("SÊNIOR/VET")
+        senior = buscar_classe_no_banco("SÊNIOR")
         if senior:
             classes_permitidas_nomes.append(senior.nome)
     elif classe_normalizada in ["SUB21", "SUB-21", "SUB 21"]:
-        # SUB-21: pode escolher SUB-21 ou SÊNIOR/VET
         classes_permitidas_nomes = [nome_classe_exato]
-        senior = buscar_classe_no_banco("SÊNIOR/VET")
+        senior = buscar_classe_no_banco("SÊNIOR")
         if senior:
             classes_permitidas_nomes.append(senior.nome)
-    elif classe_normalizada in ["SENIOR", "SÊNIOR", "SENIOR/VET", "SÊNIOR/VET"]:
-        # SÊNIOR/VET: pode escolher apenas SÊNIOR/VET
+    elif classe_normalizada in ["SENIOR", "SÊNIOR"]:
         classes_permitidas_nomes = [nome_classe_exato]
-    elif classe_normalizada in ["VETERANOS", "VETERANO"]:
-        # VETERANOS: pode escolher VETERANOS ou SÊNIOR/VET
+    elif classe_normalizada in ["VETERANOS", "VETERANO", "MASTER", "MASTERS"]:
         classes_permitidas_nomes = [nome_classe_exato]
-        senior = buscar_classe_no_banco("SÊNIOR/VET")
+        senior = buscar_classe_no_banco("SÊNIOR")
         if senior:
             classes_permitidas_nomes.append(senior.nome)
     else:
-        # Regra padrão: apenas sua própria classe
         classes_permitidas_nomes = [nome_classe_exato]
     
     # Filtrar apenas classes que existem no evento (se fornecido)
@@ -223,10 +200,10 @@ def validar_elegibilidade_categoria(classe_atleta, categoria_desejada, categoria
     classes_permitidas = categorias_permitidas(classe_atleta, categorias_existentes)
     
     # Normalizar categoria desejada
-    categoria_desejada_normalizada = categoria_desejada.upper().strip()
+    categoria_desejada_normalizada = categoria_desejada.upper().strip().replace("SUB ", "SUB-")
     
     # Verificar se a categoria desejada está na lista permitida
-    classes_permitidas_normalizadas = [c.upper().strip() for c in classes_permitidas]
+    classes_permitidas_normalizadas = [c.upper().strip().replace("SUB ", "SUB-") for c in classes_permitidas]
     
     if categoria_desejada_normalizada in classes_permitidas_normalizadas:
         return True, None
@@ -459,26 +436,81 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
         print(f"❌ ERRO: Campeonato não fornecido")
         raise ValueError("Campeonato é obrigatório para gerar chaves")
     
-    # Buscar inscrições aprovadas ou confirmadas do campeonato COM PESO CONFIRMADO
-    # Filtrar por classe_escolhida, sexo do atleta, e categoria (escolhida ou ajustada)
-    # Apenas atletas com peso registrado podem entrar na chave
     print(f"\n🔍 Buscando inscrições...")
-    inscricoes = Inscricao.objects.filter(
+    from django.db.models import Q
+
+    fields = {f.name for f in Inscricao._meta.get_fields()}
+    has_classe_real = 'classe_real' in fields
+    has_categoria_real = 'categoria_real' in fields
+    has_peso_real = 'peso_real' in fields
+    has_status_atual = 'status_atual' in fields
+
+    base_qs = Inscricao.objects.filter(
         campeonato=campeonato,
-        classe_escolhida=classe,
-        atleta__sexo=sexo,
-        status_inscricao__in=['aprovado', 'confirmado'],  # Aceita ambos os status
-        peso__isnull=False  # Peso deve estar registrado
-    ).exclude(
-        classe_escolhida='Festival'  # Festival não entra em chaves
-    ).exclude(
-        peso=0  # Peso zero não é válido
-    ).filter(
-        Q(categoria_escolhida=categoria_nome) | Q(categoria_ajustada=categoria_nome)
-    ).select_related('atleta', 'atleta__academia')
+        atleta__sexo=sexo
+    )
+
+    if has_classe_real:
+        base_qs = base_qs.filter(classe_real__nome=classe).exclude(
+            classe_real__nome__iexact='Festival'
+        )
+    else:
+        base_qs = base_qs.filter(classe_escolhida=classe).exclude(
+            classe_escolhida__iexact='Festival'
+        )
+
+    categoria_filter = Q()
+    if has_categoria_real:
+        categoria_filter |= Q(categoria_real__categoria_nome=categoria_nome)
+        categoria_filter |= Q(categoria_real__label=categoria_nome)
+    if 'categoria_escolhida' in fields:
+        categoria_filter |= Q(categoria_escolhida=categoria_nome)
+    if 'categoria_ajustada' in fields:
+        categoria_filter |= Q(categoria_ajustada=categoria_nome)
+    if categoria_filter:
+        base_qs = base_qs.filter(categoria_filter)
+
+    select_related = ['atleta', 'atleta__academia']
+    if has_classe_real:
+        select_related.append('classe_real')
+    if has_categoria_real:
+        select_related.append('categoria_real')
+    base_qs = base_qs.select_related(*select_related)
+
+    total_inscritos = base_qs.count()
+    bloqueados = base_qs.filter(bloqueado_chave=True).count()
+    sem_categoria = (
+        base_qs.filter(categoria_real__isnull=True).count()
+        if has_categoria_real
+        else base_qs.filter(Q(categoria_escolhida__isnull=True) | Q(categoria_escolhida='')).count()
+    )
+    if has_peso_real:
+        sem_peso = base_qs.filter(Q(peso_real__isnull=True) | Q(peso_real=0)).count()
+    else:
+        sem_peso = base_qs.filter(Q(peso__isnull=True) | Q(peso=0)).count()
+
+    status_filter = Q(status_inscricao__in=['aprovado', 'confirmado', 'ok', 'remanejado'])
+    if has_status_atual:
+        status_filter |= Q(status_atual__in=['pendente', 'inscrito', 'aprovado', 'remanejado'])
+
+    inscricoes = base_qs.filter(
+        status_filter,
+        bloqueado_chave=False,
+    )
+    if has_categoria_real:
+        inscricoes = inscricoes.filter(categoria_real__isnull=False)
+    if has_peso_real:
+        inscricoes = inscricoes.filter(peso_real__gt=Decimal('0.0'))
+    else:
+        inscricoes = inscricoes.filter(peso__gt=Decimal('0.0'))
     
     inscricoes_count = inscricoes.count()
-    print(f"   ✅ Encontradas {inscricoes_count} inscrições elegíveis")
+    print(f"   📊 Totais para {classe}/{sexo}/{categoria_nome}:")
+    print(f"      - Inscritos (classe/sexo): {total_inscritos}")
+    print(f"      - Bloqueados: {bloqueados}")
+    print(f"      - Sem categoria_real: {sem_categoria}")
+    print(f"      - Sem peso_real: {sem_peso}")
+    print(f"      - Aptos (status_inscricao aprovado/remanejado, desbloqueados, peso_real>0, categoria_real ok): {inscricoes_count}")
     
     if inscricoes_count == 0:
         print(f"   ⚠️  Nenhuma inscrição encontrada com os critérios:")
@@ -498,6 +530,14 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
         print(f"   📝 Atletas:")
         for idx, atleta in enumerate(atletas_list, 1):
             print(f"      {idx}. {atleta.nome} (ID: {atleta.id}, Academia: {atleta.academia.nome})")
+    else:
+        aviso = (
+            f"Nenhuma inscrição elegível para gerar chave "
+            f"({classe} / {sexo} / {categoria_nome}) no campeonato {campeonato.id}."
+        )
+        print(f"   ⚠️  {aviso}")
+        # Não gerar/atualizar chave vazia
+        raise ValueError(aviso)
     
     # Criar ou atualizar chave vinculada ao campeonato
     print(f"\n🔍 Criando/atualizando chave no banco...")

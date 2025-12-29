@@ -1,5 +1,5 @@
 
-{% extends 'atletas/base.html' %}
+{% extends 'atletas/layouts/base_operational.html' %}
 {% load static %}
 
 {% block title %}Ranking Global - Sistema de Gestão de Competições de Judô{% endblock %}
@@ -47,8 +47,8 @@
                     </select>
                 </div>
             </div>
-            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
-                <a href="{% url 'ranking_global' %}" class="btn btn-secondary">Limpar Filtros</a>
+            <div class="action-row">
+                <a href="{% url 'ranking_global' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Limpar Filtros</a>
                 <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
             </div>
         </form>
@@ -68,6 +68,13 @@
             <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
                 <div style="font-size: var(--font-size-4xl); font-weight: 700; margin-bottom: var(--spacing-2);">
                     {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% endif %}
+                </div>
+                <div class="ranking-avatar" style="margin: 0 auto var(--spacing-3);">
+                    {% if item.academia.foto_perfil %}
+                        <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}">
+                    {% else %}
+                        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI">
+                    {% endif %}
                 </div>
                 <div style="font-size: var(--font-size-2xl); font-weight: 600; margin-bottom: var(--spacing-2);">{{ item.academia.nome }}</div>
                 <div style="font-size: var(--font-size-sm); opacity: 0.9; margin-bottom: var(--spacing-4);">{{ item.academia.cidade }}, {{ item.academia.estado }}</div>
@@ -121,7 +128,16 @@
                             <strong style="font-size: var(--font-size-lg);">{{ forloop.counter }}</strong>
                         </td>
                         <td>
-                            <div style="font-weight: 500; color: var(--color-gray-900);">{{ item.academia.nome }}</div>
+                            <div style="display: flex; align-items: center; gap: var(--spacing-3);">
+                                <div class="ranking-avatar-small">
+                                    {% if item.academia.foto_perfil %}
+                                        <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}">
+                                    {% else %}
+                                        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI">
+                                    {% endif %}
+                                </div>
+                                <div style="font-weight: 500; color: var(--color-gray-900);">{{ item.academia.nome }}</div>
+                            </div>
                         </td>
                         <td style="text-align: center;">
                             {% if item.ouro > 0 %}<span class="badge" style="background: #FFD700; color: white;">{{ item.ouro }}</span>{% else %}-{% endif %}
@@ -173,6 +189,13 @@
             <div class="card-body" style="text-align: center; padding: var(--spacing-6);">
                 <div style="font-size: var(--font-size-4xl); font-weight: 700; margin-bottom: var(--spacing-2);">
                     {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% endif %}
+                </div>
+                <div class="ranking-avatar" style="margin: 0 auto var(--spacing-3);">
+                    {% if item.atleta.foto_perfil %}
+                        <img src="{{ item.atleta.foto_perfil.url }}" alt="{{ item.atleta.nome }}">
+                    {% else %}
+                        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI">
+                    {% endif %}
                 </div>
                 <div style="font-size: var(--font-size-2xl); font-weight: 600; margin-bottom: var(--spacing-2);">{{ item.atleta.nome }}</div>
                 <div style="font-size: var(--font-size-sm); opacity: 0.9; margin-bottom: var(--spacing-2);">{{ item.atleta.get_sexo_display }}</div>
@@ -227,7 +250,16 @@
                             <strong style="font-size: var(--font-size-lg);">{{ forloop.counter }}</strong>
                         </td>
                         <td>
-                            <div style="font-weight: 500; color: var(--color-gray-900);">{{ item.atleta.nome }}</div>
+                            <div style="display: flex; align-items: center; gap: var(--spacing-3);">
+                                <div class="ranking-avatar-small">
+                                    {% if item.atleta.foto_perfil %}
+                                        <img src="{{ item.atleta.foto_perfil.url }}" alt="{{ item.atleta.nome }}">
+                                    {% else %}
+                                        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI">
+                                    {% endif %}
+                                </div>
+                                <div style="font-weight: 500; color: var(--color-gray-900);">{{ item.atleta.nome }}</div>
+                            </div>
                         </td>
                         <td style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
                             {{ item.atleta.academia.nome }}
@@ -275,4 +307,3 @@
 </div>
 {% endif %}
 {% endblock %}
-

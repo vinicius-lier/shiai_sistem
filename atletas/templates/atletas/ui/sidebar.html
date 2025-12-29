@@ -1,0 +1,28 @@
+{% load static tenant_tags %}
+<div class="offcanvas offcanvas-start mobile-nav d-lg-none" tabindex="-1" id="mobileNav" aria-labelledby="mobileNavLabel">
+  <div class="offcanvas-header">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{% if request.organizacao %}{% url 'index' organizacao_slug=request.organizacao.slug %}{% else %}/{% endif %}">
+      <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI" class="navbar-logo">
+    </a>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
+  </div>
+  <div class="offcanvas-body">
+    {% if request.organizacao %}
+    <ul class="sidebar-menu" id="mobileSidebarAccordion">
+      {% include "atletas/ui/menu_items.html" with id_prefix="mobile" parent_id="mobileSidebarAccordion" dismiss="offcanvas" %}
+    </ul>
+    <div class="mobile-nav-divider"></div>
+    <ul class="navbar-nav mobile-nav-secondary">
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'index' organizacao_slug=request.organizacao.slug %}" data-bs-dismiss="offcanvas">Meu Perfil</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'ajuda_manual' %}active{% endif %}" href="{% url 'ajuda_manual' organizacao_slug=request.organizacao.slug %}" data-bs-dismiss="offcanvas">Ajuda / Manual</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-danger" href="{% url 'logout' %}" onclick="if(confirm('Deseja realmente sair do sistema?')) { localStorage.clear(); sessionStorage.clear(); return true; } return false;">Sair</a>
+      </li>
+    </ul>
+    {% endif %}
+  </div>
+</div>

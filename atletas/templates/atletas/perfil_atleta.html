@@ -1,5 +1,5 @@
 
-{% extends 'atletas/base.html' %}
+{% extends 'atletas/layouts/base_operational.html' %}
 {% load static %}
 
 {% block title %}{{ atleta.nome }} - Perfil{% endblock %}
@@ -66,7 +66,69 @@
                 <strong style="color: var(--color-gray-600); font-size: var(--font-size-sm);">Faixa</strong>
                 <div style="font-size: var(--font-size-lg); font-weight: 500; margin-top: var(--spacing-1);">
                     {% if atleta.faixa %}
-                        <span class="badge badge-primary" style="background: var(--color-primary); color: white; padding: var(--spacing-1) var(--spacing-2); border-radius: var(--border-radius-sm); font-weight: 500;">{{ atleta.get_faixa_display }}</span>
+                        {% with faixa=atleta.faixa %}
+                            {% if faixa == 'BRANCA' %}
+                                {% with bg='#ffffff' fg='#111827' %}
+                                    <span class="badge" style="background: {{ bg }}; color: {{ fg }}; padding: var(--spacing-1) var(--spacing-2); border-radius: var(--border-radius-sm); font-weight: 600;">
+                                        {{ atleta.get_faixa_display }}
+                                    </span>
+                                {% endwith %}
+                            {% elif faixa == 'CINZA' %}
+                                {% with bg='#d1d5db' fg='#111827' %}
+                                    <span class="badge" style="background: {{ bg }}; color: {{ fg }}; padding: var(--spacing-1) var(--spacing-2); border-radius: var(--border-radius-sm); font-weight: 600;">
+                                        {{ atleta.get_faixa_display }}
+                                    </span>
+                                {% endwith %}
+                            {% elif faixa == 'AZUL' %}
+                                {% with bg='#1d4ed8' fg='#ffffff' %}
+                                    <span class="badge" style="background: {{ bg }}; color: {{ fg }}; padding: var(--spacing-1) var(--spacing-2); border-radius: var(--border-radius-sm); font-weight: 600;">
+                                        {{ atleta.get_faixa_display }}
+                                    </span>
+                                {% endwith %}
+                            {% elif faixa == 'P.AMARELA' or faixa == 'AMARELA' %}
+                                {% with bg='#fbbf24' fg='#111827' %}
+                                    <span class="badge" style="background: {{ bg }}; color: {{ fg }}; padding: var(--spacing-1) var(--spacing-2); border-radius: var(--border-radius-sm); font-weight: 600;">
+                                        {{ atleta.get_faixa_display }}
+                                    </span>
+                                {% endwith %}
+                            {% elif faixa == 'P.LARANJA' or faixa == 'LARANJA' %}
+                                {% with bg='#fb923c' fg='#111827' %}
+                                    <span class="badge" style="background: {{ bg }}; color: {{ fg }}; padding: var(--spacing-1) var(--spacing-2); border-radius: var(--border-radius-sm); font-weight: 600;">
+                                        {{ atleta.get_faixa_display }}
+                                    </span>
+                                {% endwith %}
+                            {% elif faixa == 'VERDE' %}
+                                {% with bg='#22c55e' fg='#0f172a' %}
+                                    <span class="badge" style="background: {{ bg }}; color: {{ fg }}; padding: var(--spacing-1) var(--spacing-2); border-radius: var(--border-radius-sm); font-weight: 600;">
+                                        {{ atleta.get_faixa_display }}
+                                    </span>
+                                {% endwith %}
+                            {% elif faixa == 'ROXA' %}
+                                {% with bg='#7c3aed' fg='#ffffff' %}
+                                    <span class="badge" style="background: {{ bg }}; color: {{ fg }}; padding: var(--spacing-1) var(--spacing-2); border-radius: var(--border-radius-sm); font-weight: 600;">
+                                        {{ atleta.get_faixa_display }}
+                                    </span>
+                                {% endwith %}
+                            {% elif faixa == 'MARRON' %}
+                                {% with bg='#92400e' fg='#ffffff' %}
+                                    <span class="badge" style="background: {{ bg }}; color: {{ fg }}; padding: var(--spacing-1) var(--spacing-2); border-radius: var(--border-radius-sm); font-weight: 600;">
+                                        {{ atleta.get_faixa_display }}
+                                    </span>
+                                {% endwith %}
+                            {% elif faixa == 'PRETA' %}
+                                {% with bg='#111827' fg='#ffffff' %}
+                                    <span class="badge" style="background: {{ bg }}; color: {{ fg }}; padding: var(--spacing-1) var(--spacing-2); border-radius: var(--border-radius-sm); font-weight: 600;">
+                                        {{ atleta.get_faixa_display }}
+                                    </span>
+                                {% endwith %}
+                            {% else %}
+                                {% with bg='var(--color-primary)' fg='#ffffff' %}
+                                    <span class="badge" style="background: {{ bg }}; color: {{ fg }}; padding: var(--spacing-1) var(--spacing-2); border-radius: var(--border-radius-sm); font-weight: 600;">
+                                        {{ atleta.get_faixa_display }}
+                                    </span>
+                                {% endwith %}
+                            {% endif %}
+                        {% endwith %}
                     {% else %}
                         <span style="color: var(--color-gray-400);">Não informado</span>
                     {% endif %}
@@ -172,14 +234,13 @@
 </div>
 
 <div style="margin-top: var(--spacing-6);">
-    <a href="{% url 'lista_atletas' %}" class="btn btn-secondary">
+    <a href="{% url 'lista_atletas' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
         Voltar para Lista
     </a>
-    <a href="{% url 'editar_atleta' atleta.id %}" class="btn btn-primary">
+    <a href="{% url 'editar_atleta' organizacao_slug=request.organizacao.slug atleta_id=atleta.id %}" class="btn btn-primary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
         Editar Atleta
     </a>
 </div>
 {% endblock %}
-

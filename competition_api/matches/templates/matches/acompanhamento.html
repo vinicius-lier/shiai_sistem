@@ -1,0 +1,177 @@
+{% extends "matches/base_kiosk.html" %}
+<!--
+Shape esperado de um "match" (pode vir parcial do backend; template tem fallback):
+- id, event_id, bracket_id, round_number, match_number, class_code, sex, category_code, belt_group
+- blue_athlete_id / blue_name / blue_org (opcional)
+- white_athlete_id / white_name / white_org (opcional)
+- status ("SCHEDULED" | "FINISHED" | "WALKOVER" | ...)
+-->
+
+{% block title %}Acompanhamento da Competição{% endblock %}
+{% block kiosk_title %}Acompanhamento (TV){% endblock %}
+{% block kiosk_subtitle %}Luta atual, próximas e resultados (sem tempo real verdadeiro).{% endblock %}
+{% block body_class %}tv{% endblock %}
+{# Stepper desabilitado temporariamente (estava causando RecursionError em render). #}
+{% block kiosk_flow %}{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root { --blue:#1d4ed8; --red:#b91c1c; }
+  .board-card{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:14px; }
+  .meta{ display:flex; flex-wrap:wrap; gap:8px 12px; font-size:14px; color:#374151; }
+  .updated{ font-size:12px; color:#6b7280; text-align:right; }
+  .match-line{ width:100%; border:1px solid #e5e7eb; border-radius:10px; padding:12px; background:#fff; }
+  .section-title{ font-weight:800; margin:0 0 10px 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="acompanhamento-board">
+  <div class="d-flex justify-content-end mb-2">
+    <div class="updated">
+      <span id="updating-indicator" style="display:none;">Atualizando...</span>
+      <span id="last-updated">Atualizado às {{ now_time|default:"--:--:--" }}</span>
+    </div>
+  </div>
+
+  <div class="shiai-card p-3 mb-3">
+    {% include "matches/_filters.html" %}
+  </div>
+
+  {% if current_match %}
+  <div class="board-card mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="section-title">Luta Atual</div>
+      <span class="badge text-bg-primary">EM ANDAMENTO</span>
+    </div>
+    {% include "matches/components/match_card.html" with match=current_match show_status=True show_bracket=True %}
+  </div>
+  {% endif %}
+
+  <div class="board-card mb-3 shiai-card">
+    <div class="section-title">Próximas Lutas</div>
+    <div class="d-flex flex-column gap-2">
+      {% for match in next_matches %}
+      <div class="match-line"
+           data-match-id="{{ match.id|default:'' }}"
+           data-status="{{ match.status|default:'' }}"
+           data-round="{{ match.round_number|default:'' }}"
+           data-number="{{ match.match_number|default:'' }}"
+           data-bracket="{{ match.bracket_id|default:'' }}"
+           data-blue-display="{{ match.blue_display|default:match.blue_name|default:match.blue_athlete_id|default:'' }}"
+           data-blue-org="{{ match.blue_org|default:match.blue_academy|default:'' }}"
+           data-white-display="{{ match.white_display|default:match.white_name|default:match.white_athlete_id|default:'' }}"
+           data-white-org="{{ match.white_org|default:match.white_academy|default:'' }}">
+        {% include "matches/partials/match_row.html" with match=match show_bracket=True %}
+      </div>
+      {% empty %}
+      <div class="text-muted">Nenhuma luta agendada.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="board-card mb-3 shiai-card">
+    <div class="section-title">Resultados Recentes</div>
+    <div class="d-flex flex-column gap-2">
+      {% for match in recent_matches %}
+      <div class="match-line"
+           data-match-id="{{ match.id|default:'' }}"
+           data-status="{{ match.status|default:'' }}"
+           data-round="{{ match.round_number|default:'' }}"
+           data-number="{{ match.match_number|default:'' }}"
+           data-bracket="{{ match.bracket_id|default:'' }}"
+           data-blue-display="{{ match.blue_display|default:match.blue_name|default:match.blue_athlete_id|default:'' }}"
+           data-blue-org="{{ match.blue_org|default:match.blue_academy|default:'' }}"
+           data-white-display="{{ match.white_display|default:match.white_name|default:match.white_athlete_id|default:'' }}"
+           data-white-org="{{ match.white_org|default:match.white_academy|default:'' }}"
+           data-win-method="{{ match.win_method|default:'' }}"
+           data-winner-side="{{ match.winner_side|default:'' }}">
+        {% include "matches/components/match_card.html" with match=match show_status=True show_method=True show_winner_star=True %}
+      </div>
+      {% empty %}
+      <div class="text-muted">Sem resultados recentes.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Estado local simples (futuro: HTMX/WebSocket pode atualizar este state e re-renderizar DOM)
+(function() {
+  window.ShiaiUIState = window.ShiaiUIState || { matchesById: {}, filtersAtivos: {}, lastUpdateAt: null };
+
+  function hydrateFromBoard() {
+    const state = window.ShiaiUIState;
+    state.matchesById = {};
+    const sp = new URLSearchParams(window.location.search);
+    state.filtersAtivos = {
+      event_id: sp.get("event_id") || "",
+      class_code: sp.get("class_code") || "",
+      sex: sp.get("sex") || "",
+      category_code: sp.get("category_code") || "",
+      belt_group: sp.get("belt_group") || "",
+      bracket_id: sp.get("bracket_id") || "",
+    };
+    document.querySelectorAll("#acompanhamento-board [data-match-id]").forEach(el => {
+      const id = el.dataset.matchId;
+      if (!id) return;
+      state.matchesById[id] = {
+        id,
+        bracket_id: el.dataset.bracket || "",
+        round_number: el.dataset.round || "",
+        match_number: el.dataset.number || "",
+        blue_display: el.dataset.blueDisplay || "",
+        blue_org: el.dataset.blueOrg || "",
+        white_display: el.dataset.whiteDisplay || "",
+        white_org: el.dataset.whiteOrg || "",
+        status: el.dataset.status || "",
+        win_method: el.dataset.winMethod || "",
+        winner_side: el.dataset.winnerSide || "",
+      };
+    });
+    state.lastUpdateAt = new Date().toISOString();
+  }
+
+  function setTimestampNow() {
+    const el = document.getElementById("last-updated");
+    if (!el) return;
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, "0");
+    const mm = String(now.getMinutes()).padStart(2, "0");
+    const ss = String(now.getSeconds()).padStart(2, "0");
+    el.textContent = `Atualizado às ${hh}:${mm}:${ss}`;
+  }
+
+  async function refreshBoard() {
+    const indicator = document.getElementById("updating-indicator");
+    if (indicator) indicator.style.display = "inline";
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(window.location.href, { method: "GET", headers: { "X-Requested-With": "ShiaiUI" }, signal: controller.signal, cache: "no-store" });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const newBoard = doc.querySelector("#acompanhamento-board");
+      const currentBoard = document.querySelector("#acompanhamento-board");
+      if (!newBoard || !currentBoard) throw new Error("Board não encontrado");
+      currentBoard.innerHTML = newBoard.innerHTML;
+      hydrateFromBoard();
+      setTimestampNow();
+    } catch (e) {
+      window.location.reload();
+    } finally {
+      const indicator2 = document.getElementById("updating-indicator");
+      if (indicator2) indicator2.style.display = "none";
+    }
+  }
+
+  hydrateFromBoard();
+  setInterval(refreshBoard, 15000);
+})();
+</script>
+{% endblock %}
+

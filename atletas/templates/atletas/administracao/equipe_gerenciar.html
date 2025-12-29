@@ -15,10 +15,10 @@
             </p>
         </div>
         <div class="flex gap-3" style="flex-wrap: wrap;">
-            <a href="{% url 'administracao_equipe_pessoas_lista' %}" class="btn btn-secondary">
+            <a href="{% url 'administracao_equipe_pessoas_lista' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">
                 Gerenciar Lista de Pessoas
             </a>
-            <a href="{% url 'administracao_equipe' %}" class="btn btn-secondary">
+            <a href="{% url 'administracao_equipe' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">
                 Voltar
             </a>
         </div>
@@ -47,7 +47,7 @@
                         </select>
                         {% if not pessoas_disponiveis %}
                         <small style="color: var(--color-warning); display: block; margin-top: var(--spacing-1);">
-                            Nenhuma pessoa disponível. <a href="{% url 'administracao_equipe_pessoas_lista' %}" style="color: var(--color-primary); text-decoration: underline;">Cadastre pessoas na lista fixa</a>.
+                            Nenhuma pessoa disponível. <a href="{% url 'administracao_equipe_pessoas_lista' organizacao_slug=request.organizacao.slug %}" style="color: var(--color-primary); text-decoration: underline;">Cadastre pessoas na lista fixa</a>.
                         </small>
                         {% endif %}
                     </div>

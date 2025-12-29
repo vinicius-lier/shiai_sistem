@@ -137,7 +137,7 @@
     </style>
 </head>
 <body>
-    <a href="{% url 'chave_mobile' luta.chave.id %}" class="link-voltar">← Voltar para Chave</a>
+    <a href="{% url 'chave_mobile' organizacao_slug=request.organizacao.slug chave_id=luta.chave.id %}" class="link-voltar">← Voltar para Chave</a>
     
     <div class="header">
         <h1>🥋 Luta - Round {{ luta.round }}</h1>
@@ -157,7 +157,7 @@
         </div>
         {% endif %}
         {% if proxima_luta %}
-        <a href="{% url 'luta_mobile' proxima_luta.id %}" class="link-proxima">➡️ Próxima Luta</a>
+        <a href="{% url 'luta_mobile' organizacao_slug=request.organizacao.slug luta_id=proxima_luta.id %}" class="link-proxima">➡️ Próxima Luta</a>
         {% else %}
         <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; font-size: 18px; font-weight: bold; color: #28a745;">
             🏆 Chave Finalizada!
@@ -170,16 +170,13 @@
             <div class="atleta-info">🏫 {{ luta.atleta_a.academia.nome }}</div>
             <div class="atleta-info">{{ luta.atleta_a.classe }} - {{ luta.atleta_a.categoria_ajustada|default:luta.atleta_a.categoria_nome }}</div>
             
-            <form method="post" action="{% url 'registrar_vencedor' luta.id %}" style="margin-top: 20px;">
+            <form method="post" action="{% url 'registrar_vencedor' organizacao_slug=request.organizacao.slug luta_id=luta.id %}" style="margin-top: 20px;">
                 {% csrf_token %}
                 <input type="hidden" name="vencedor" value="{{ luta.atleta_a.id }}">
                 <select name="tipo_vitoria" required style="width: 100%; padding: 15px; font-size: 16px; margin-bottom: 10px; border-radius: 10px; border: 2px solid #667eea;">
                     <option value="IPPON">Ippon (10 pontos)</option>
                     <option value="WAZARI">Wazari (7 pontos)</option>
-<<<<<<< HEAD
-=======
                     <option value="WAZARI_WAZARI">Wazari-Wazari (7 pontos)</option>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                     <option value="YUKO">Yuko (1 ponto)</option>
                 </select>
                 <button type="submit" class="btn-vencedor btn-vencedor-a">
@@ -199,16 +196,13 @@
             <div class="atleta-info">🏫 {{ luta.atleta_b.academia.nome }}</div>
             <div class="atleta-info">{{ luta.atleta_b.classe }} - {{ luta.atleta_b.categoria_ajustada|default:luta.atleta_b.categoria_nome }}</div>
             
-            <form method="post" action="{% url 'registrar_vencedor' luta.id %}" style="margin-top: 20px;">
+            <form method="post" action="{% url 'registrar_vencedor' organizacao_slug=request.organizacao.slug luta_id=luta.id %}" style="margin-top: 20px;">
                 {% csrf_token %}
                 <input type="hidden" name="vencedor" value="{{ luta.atleta_b.id }}">
                 <select name="tipo_vitoria" required style="width: 100%; padding: 15px; font-size: 16px; margin-bottom: 10px; border-radius: 10px; border: 2px solid #667eea;">
                     <option value="IPPON">Ippon (10 pontos)</option>
                     <option value="WAZARI">Wazari (7 pontos)</option>
-<<<<<<< HEAD
-=======
                     <option value="WAZARI_WAZARI">Wazari-Wazari (7 pontos)</option>
->>>>>>> dd494c57289dd9cfb039519c18e2065bb3b48a17
                     <option value="YUKO">Yuko (1 ponto)</option>
                 </select>
                 <button type="submit" class="btn-vencedor btn-vencedor-b">
@@ -221,6 +215,6 @@
         {% endif %}
     {% endif %}
 
-    <a href="{% url 'chave_mobile' luta.chave.id %}" class="link-voltar">📋 Ver Todas as Lutas</a>
+    <a href="{% url 'chave_mobile' organizacao_slug=request.organizacao.slug chave_id=luta.chave.id %}" class="link-voltar">📋 Ver Todas as Lutas</a>
 </body>
 </html>

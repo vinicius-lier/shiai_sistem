@@ -1,5 +1,5 @@
 
-{% extends 'atletas/base.html' %}
+{% extends 'atletas/layouts/base_operational.html' %}
 {% load static %}
 
 {% block title %}Campeonatos - Sistema de Gestão de Competições de Judô{% endblock %}
@@ -39,7 +39,7 @@
         <h1 class="page-title">Campeonatos</h1>
         <p class="page-description">Gerencie os campeonatos e defina qual está ativo</p>
     </div>
-    <a href="{% url 'cadastrar_campeonato' %}" class="btn btn-primary">
+    <a href="{% url 'cadastrar_campeonato' organizacao_slug=request.organizacao.slug %}" class="btn btn-primary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         Novo Campeonato
     </a>
@@ -82,8 +82,8 @@
                     {% endif %}
                 </td>
                 <td style="text-align: right;">
-                    <div style="display: flex; gap: var(--spacing-2); justify-content: flex-end;">
-                        <a href="{% url 'gerenciar_academias_campeonato' campeonato.id %}" class="btn btn-secondary btn-sm" title="Gerenciar academias do campeonato">
+                    <div class="flex gap-2 justify-end">
+                        <a href="{% url 'gerenciar_academias_campeonato' organizacao_slug=request.organizacao.slug campeonato_id=campeonato.id %}" class="btn btn-secondary btn-sm" title="Gerenciar academias do campeonato">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="9" cy="7" r="4"></circle>
@@ -92,19 +92,19 @@
                             </svg>
                             Academias
                         </a>
-                        <a href="{% url 'gerenciar_senhas_campeonato' campeonato.id %}" class="btn btn-secondary btn-sm" title="Ver e reenviar senhas das academias">
+                        <a href="{% url 'gerenciar_senhas_campeonato' organizacao_slug=request.organizacao.slug campeonato_id=campeonato.id %}" class="btn btn-secondary btn-sm" title="Ver e reenviar senhas das academias">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                             </svg>
                             Senhas
                         </a>
-                        <a href="{% url 'editar_campeonato' campeonato.id %}" class="btn btn-primary btn-sm">
+                        <a href="{% url 'editar_campeonato' organizacao_slug=request.organizacao.slug campeonato_id=campeonato.id %}" class="btn btn-primary btn-sm">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                             Editar
                         </a>
                         {% if not campeonato.ativo %}
-                        <a href="{% url 'definir_campeonato_ativo' campeonato.id %}" class="btn btn-secondary btn-sm">
+                        <a href="{% url 'definir_campeonato_ativo' organizacao_slug=request.organizacao.slug campeonato_id=campeonato.id %}" class="btn btn-secondary btn-sm">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             Ativar
                         </a>
@@ -129,7 +129,7 @@
         </svg>
         <div class="empty-state-title">Nenhum campeonato cadastrado</div>
         <div class="empty-state-description">Comece criando seu primeiro campeonato</div>
-        <a href="{% url 'cadastrar_campeonato' %}" class="btn btn-primary">Criar Campeonato</a>
+        <a href="{% url 'cadastrar_campeonato' organizacao_slug=request.organizacao.slug %}" class="btn btn-primary">Criar Campeonato</a>
     </div>
 </div>
 {% endif %}
@@ -370,4 +370,3 @@ function enviarWhatsAppConvite(nomeAcademia, login, senha, nomeCampeonato, telef
 }
 </script>
 {% endblock %}
-

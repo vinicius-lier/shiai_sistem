@@ -66,7 +66,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{% url 'conferencia_pagamentos_detalhe' item.academia.id campeonato_selecionado.id %}" class="btn btn-sm btn-primary">Conferir</a>
+                                <a href="{% url 'conferencia_pagamentos_detalhe' organizacao_slug=request.organizacao.slug academia_id=item.academia.id campeonato_id=campeonato_selecionado.id %}" class="btn btn-sm btn-primary">Conferir</a>
                             </td>
                         </tr>
                         {% endfor %}

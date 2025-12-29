@@ -1,0 +1,29 @@
+{% extends "atletas/layouts/base_auth.html" %}
+{% block title %}Selecionar Organização{% endblock %}
+{% block auth_content %}
+<div class="stack" style="align-items:center;">
+  <div style="font-weight:800; font-size: var(--font-size-lg);">Selecionar Organização</div>
+  <div style="color: var(--muted);">Escolha uma organização para entrar como superuser.</div>
+</div>
+
+{% if organizacoes %}
+  <form method="post" class="stack" style="margin-top: var(--space-4); gap: var(--space-3);">
+    {% csrf_token %}
+    <div class="stack" style="gap: var(--space-2);">
+      <label for="organizacao_slug" style="font-weight:600;">Organização</label>
+      <select name="organizacao_slug" id="organizacao_slug" required>
+        <option value="">Selecione...</option>
+        {% for org in organizacoes %}
+          <option value="{{ org.slug }}">{{ org.nome }} (slug: {{ org.slug }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary" style="width:100%;">Entrar</button>
+  </form>
+{% else %}
+  <div class="alert alert-warning" style="margin-top: var(--space-3);">
+    Nenhuma organização encontrada. Crie uma organização primeiro.
+  </div>
+{% endif %}
+{% endblock %}
+

@@ -18,6 +18,18 @@ import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# STATIC
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# MEDIA
+MEDIA_URL = '/media/'
+
+if os.environ.get('RENDER'):
+    MEDIA_ROOT = '/var/data/media'
+else:
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Carregar variáveis de ambiente
 RESET_ADMIN_PASSWORD = os.environ.get('RESET_ADMIN_PASSWORD')
 
@@ -70,8 +82,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'atletas',
+    'organizations.apps.OrganizationsConfig',
+    'accounts.apps.AccountsConfig',
+    'athletes.apps.AthletesConfig',
+    'atletas.apps.AtletasConfig',   # ← ESTA É A ALTERAÇÃO QUE FALTAVA
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -82,6 +98,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'atletas.middleware.MobileRedirectMiddleware',  # Detecção automática mobile/desktop
+    'atletas.middleware.OrganizacaoMiddleware',     # Resolve organização pelo slug na URL
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -110,22 +127,35 @@ WSGI_APPLICATION = 'judocomp.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
+        # Em produção usamos o schema 'core'. Em DEBUG (desenvolvimento local)
+        # alguns ambientes não têm o schema criado automaticamente; usar
+        # 'public' localmente evita o erro "no schema has been selected to create in".
+        'OPTIONS': {
+            'options': "-c search_path=core" if not (os.getenv('DEBUG', 'True') == 'True') else "-c search_path=public"
+        }
+    }
+}
+
+AUTH_USER_MODEL = 'accounts.User'
 
 # PostgreSQL em produção (Render) via DATABASE_URL
-# SQLite apenas em desenvolvimento local quando DATABASE_URL não estiver configurado
 DATABASE_URL = os.getenv("DATABASE_URL")
-
 if DATABASE_URL:
-    # Produção (Render): usar PostgreSQL
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
-    }
-else:
-    # Desenvolvimento local: usar SQLite
+    DATABASES['default'] = dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+elif not os.getenv('DB_NAME'):
+    # Desenvolvimento local: fallback para SQLite quando não há configuração de Postgres
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -211,13 +241,13 @@ STATICFILES_DIRS = [
 # CompressedManifestStaticFilesStorage pode causar problemas com manifest.json
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
-# Media files (uploads) – corrigido para Render
-MEDIA_URL = '/media/'
+# Media files (uploads)
+MEDIA_URL = "/media/"
 
 if os.environ.get("RENDER"):
-    MEDIA_ROOT = '/var/data/media'
+    MEDIA_ROOT = "/var/data/media"
 else:
-    MEDIA_ROOT = BASE_DIR / 'media'
+    MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

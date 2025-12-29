@@ -1,0 +1,55 @@
+{% load static tenant_tags %}
+<nav class="navbar navbar-expand-lg navbar-light navbar-shiai">
+  <div class="container-fluid navbar-container">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{% if request.organizacao %}{% url 'index' organizacao_slug=request.organizacao.slug %}{% else %}/{% endif %}">
+      <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI" class="navbar-logo">
+    </a>
+    <button class="btn btn-ghost navbar-hamburger d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-controls="mobileNav" aria-label="Abrir menu">
+      <span class="navbar-hamburger-icon"></span>
+    </button>
+    <div class="navbar-desktop d-none d-lg-flex">
+      {% if request.organizacao %}
+      <ul class="navbar-nav navbar-primary">
+        {% include "atletas/partials/_navbar_items.html" %}
+      </ul>
+      {% endif %}
+      <div class="navbar-actions">
+        <form class="navbar-search" role="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="search" placeholder="Buscar no sistema..." aria-label="Buscar">
+        </form>
+        <button class="navbar-icon-button" type="button" aria-label="Notificacoes">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+        </button>
+        <div class="navbar-user dropdown">
+        <a class="navbar-user-trigger dropdown-toggle" href="#" id="perfilDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <div class="navbar-avatar">
+            {% if user.is_authenticated %}{{ user.first_name|default:user.get_username|default:user.email|slice:":1"|upper }}{% else %}U{% endif %}
+          </div>
+          <span class="navbar-username">{% if user.is_authenticated %}{{ user.first_name|default:user.get_username|default:user.email }}{% else %}Usuario{% endif %}</span>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="perfilDropdown">
+          {% if request.organizacao %}
+          <li><a class="dropdown-item" href="{% url 'index' organizacao_slug=request.organizacao.slug %}">Meu Perfil</a></li>
+          <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ajuda_manual' %}active{% endif %}" href="{% url 'ajuda_manual' organizacao_slug=request.organizacao.slug %}">Ajuda / Manual</a></li>
+          {% endif %}
+          <li><hr class="dropdown-divider"></li>
+          {% if request.organizacao %}
+          <li><a class="dropdown-item" href="#" onclick="abrirModalReset(); return false;">Resetar Campeonato</a></li>
+          <li><hr class="dropdown-divider"></li>
+          {% endif %}
+          <li>
+            <a class="dropdown-item text-danger" href="{% url 'logout' %}" onclick="if(confirm('Deseja realmente sair do sistema?')) { localStorage.clear(); sessionStorage.clear(); return true; } return false;">Sair</a>
+          </li>
+        </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>

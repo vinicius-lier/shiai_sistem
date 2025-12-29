@@ -1,4 +1,4 @@
-{% extends 'atletas/base.html' %}
+{% extends 'atletas/layouts/base_operational.html' %}
 {% load static %}
 
 {% block title %}Ajuda / Manual do Sistema - SHIAI SISTEM{% endblock %}
@@ -36,7 +36,7 @@
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <a href="{% url 'ajuda_manual_web' 'operacional' %}" class="btn btn-outline flex-1">
+                            <a href="{% url 'ajuda_manual_web' organizacao_slug=request.organizacao.slug tipo='operacional' %}" class="btn btn-outline flex-1">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                                     <polyline points="15 3 21 3 21 9"></polyline>
@@ -74,7 +74,7 @@
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <a href="{% url 'ajuda_manual_web' 'academia' %}" class="btn btn-outline flex-1">
+                            <a href="{% url 'ajuda_manual_web' organizacao_slug=request.organizacao.slug tipo='academia' %}" class="btn btn-outline flex-1">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                                     <polyline points="15 3 21 3 21 9"></polyline>
@@ -105,7 +105,7 @@
         </div>
         <div class="card-body">
             <div class="grid grid-auto-fit gap-4">
-                <a href="{% url 'ajuda_manual_web' 'operacional' %}" class="card flex items-center gap-4" style="text-decoration: none; border: 1px solid var(--color-gray-200); transition: all 0.2s; padding: var(--spacing-4);">
+                <a href="{% url 'ajuda_manual_web' organizacao_slug=request.organizacao.slug tipo='operacional' %}" class="card flex items-center gap-4" style="text-decoration: none; border: 1px solid var(--color-gray-200); transition: all 0.2s; padding: var(--spacing-4);">
                     <div style="width: 48px; height: 48px; border-radius: var(--border-radius-lg); background: var(--color-primary-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; stroke: var(--color-primary);">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -121,7 +121,7 @@
                     </svg>
                 </a>
                 
-                <a href="{% url 'ajuda_manual_web' 'academia' %}" class="card flex items-center gap-4" style="text-decoration: none; border: 1px solid var(--color-gray-200); transition: all 0.2s; padding: var(--spacing-4);">
+                <a href="{% url 'ajuda_manual_web' organizacao_slug=request.organizacao.slug tipo='academia' %}" class="card flex items-center gap-4" style="text-decoration: none; border: 1px solid var(--color-gray-200); transition: all 0.2s; padding: var(--spacing-4);">
                     <div style="width: 48px; height: 48px; border-radius: var(--border-radius-lg); background: var(--color-secondary-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; stroke: var(--color-secondary);">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -194,7 +194,7 @@
                     </div>
                 </div>
             </div>
-            <a href="{% url 'ajuda_documentacao_tecnica' %}" class="btn btn-outline w-full">
+            <a href="{% url 'ajuda_documentacao_tecnica' organizacao_slug=request.organizacao.slug %}" class="btn btn-outline w-full">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                     <polyline points="14 2 14 8 20 8"></polyline>
@@ -279,7 +279,7 @@
         </div>
         <div class="card-body">
             <div class="grid grid-auto-fit gap-3">
-                <a href="{% url 'index' %}" class="btn btn-ghost w-full justify-start">
+                <a href="{% url 'index' organizacao_slug=request.organizacao.slug %}" class="btn btn-ghost w-full justify-start">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -287,7 +287,7 @@
                     Dashboard
                 </a>
                 {% if campeonato_ativo %}
-                <a href="{% url 'pesagem' %}" class="btn btn-ghost w-full justify-start">
+                <a href="{% url 'pesagem' organizacao_slug=request.organizacao.slug %}" class="btn btn-ghost w-full justify-start">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                         <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                         <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -295,7 +295,7 @@
                     </svg>
                     Pesagem
                 </a>
-                <a href="{% url 'lista_chaves' %}" class="btn btn-ghost w-full justify-start">
+                <a href="{% url 'lista_chaves' organizacao_slug=request.organizacao.slug %}" class="btn btn-ghost w-full justify-start">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                         <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
@@ -303,7 +303,7 @@
                     </svg>
                     Chaves
                 </a>
-                <a href="{% url 'ranking_academias' %}" class="btn btn-ghost w-full justify-start">
+                <a href="{% url 'ranking_academias' organizacao_slug=request.organizacao.slug %}" class="btn btn-ghost w-full justify-start">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                         <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
                         <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
@@ -315,7 +315,7 @@
                     Ranking
                 </a>
                 {% endif %}
-                <a href="{% url 'administracao_financeiro' %}" class="btn btn-ghost w-full justify-start">
+                <a href="{% url 'administracao_financeiro' organizacao_slug=request.organizacao.slug %}" class="btn btn-ghost w-full justify-start">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"></path>
                     </svg>
@@ -326,4 +326,3 @@
     </section>
 </div>
 {% endblock %}
-

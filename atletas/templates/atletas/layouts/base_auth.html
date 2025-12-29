@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <link rel="icon" type="image/png" href="{% static 'atletas/images/logo_black.png' %}">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SHIAI — Acesso{% endblock %}</title>
+  {% include "atletas/ui/_reset.html" %}
+  {% include "atletas/ui/_tokens.html" %}
+  {% include "atletas/ui/_helpers.html" %}
+  {% include "atletas/ui/_components.html" %}
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <main class="section" style="min-height: 100vh; display:flex; align-items:center; justify-content:center; background: var(--bg);">
+    <div class="card" style="width: min(520px, 94vw);">
+      <div class="card-body">
+        {% block auth_content %}{% endblock %}
+      </div>
+    </div>
+  </main>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
+
+

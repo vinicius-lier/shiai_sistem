@@ -1,5 +1,5 @@
 
-{% extends 'atletas/base.html' %}
+{% extends 'atletas/layouts/base_operational.html' %}
 {% load static %}
 
 {% block title %}Cadastrar Campeonato - Sistema de Gestão de Competições de Judô{% endblock %}
@@ -155,8 +155,8 @@
                 </div>
             </div>
             
-            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end; margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
-                <a href="{% url 'lista_campeonatos' %}" class="btn btn-secondary">Cancelar</a>
+            <div class="form-actions">
+                <a href="{% url 'lista_campeonatos' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Cancelar</a>
                 <button type="submit" class="btn btn-primary">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                     Cadastrar Campeonato
@@ -259,4 +259,3 @@ Os tempos de luta serão definidos conforme a classe e categoria, de acordo com 
 }
 </script>
 {% endblock %}
-

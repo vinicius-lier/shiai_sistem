@@ -1,0 +1,157 @@
+{% load tenant_tags %}
+{% with id_prefix=id_prefix|default:"sidebar" parent_id=parent_id|default:"sidebarAccordion" %}
+<li class="sidebar-item">
+  <a class="sidebar-toggle {% if request.resolver_match.url_name == 'index' %}is-active{% endif %}" href=".{{ id_prefix }}-dashboard" data-bs-toggle="collapse" data-bs-target=".{{ id_prefix }}-dashboard" role="button" aria-expanded="{% if request.resolver_match.url_name == 'index' %}true{% else %}false{% endif %}" aria-controls="{{ id_prefix }}-dashboard">
+    <span class="sidebar-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+    </span>
+    <span>Dashboard</span>
+  </a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-dashboard {% if request.resolver_match.url_name == 'index' %}show{% endif %}" id="{{ id_prefix }}-dashboard" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Visao geral</a>
+</li>
+
+<li class="sidebar-item">
+  <a class="sidebar-toggle {% if 'campeonato' in request.resolver_match.url_name or request.resolver_match.url_name == 'inscrever_atletas' or request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' or 'categoria' in request.resolver_match.url_name or 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name or request.resolver_match.url_name == 'metricas_evento' %}is-active{% endif %}" href=".{{ id_prefix }}-eventos" data-bs-toggle="collapse" data-bs-target=".{{ id_prefix }}-eventos" role="button" aria-expanded="{% if 'campeonato' in request.resolver_match.url_name or request.resolver_match.url_name == 'inscrever_atletas' or request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' or 'categoria' in request.resolver_match.url_name or 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name or request.resolver_match.url_name == 'metricas_evento' %}true{% else %}false{% endif %}" aria-controls="{{ id_prefix }}-eventos">
+    <span class="sidebar-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M12 6v6l4 2"></path>
+      </svg>
+    </span>
+    <span>Eventos</span>
+  </a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-eventos {% if 'campeonato' in request.resolver_match.url_name or request.resolver_match.url_name == 'inscrever_atletas' or request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' or 'categoria' in request.resolver_match.url_name or 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name or request.resolver_match.url_name == 'metricas_evento' %}show{% endif %}" id="{{ id_prefix }}-eventos" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'lista_campeonatos' %}active{% endif %}" href="{% url 'lista_campeonatos' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Listar eventos</a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-eventos {% if 'campeonato' in request.resolver_match.url_name or request.resolver_match.url_name == 'inscrever_atletas' or request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' or 'categoria' in request.resolver_match.url_name or 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name or request.resolver_match.url_name == 'metricas_evento' %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'cadastrar_campeonato' %}active{% endif %}" href="{% url 'cadastrar_campeonato' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Criar evento</a>
+</li>
+{% if campeonato_ativo %}
+<li class="sidebar-divider collapse {{ id_prefix }}-eventos {% if 'campeonato' in request.resolver_match.url_name or request.resolver_match.url_name == 'inscrever_atletas' or request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' or 'categoria' in request.resolver_match.url_name or 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name or request.resolver_match.url_name == 'metricas_evento' %}show{% endif %}" data-bs-parent="#{{ parent_id }}"></li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-eventos {% if 'campeonato' in request.resolver_match.url_name or request.resolver_match.url_name == 'inscrever_atletas' or request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' or 'categoria' in request.resolver_match.url_name or 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name or request.resolver_match.url_name == 'metricas_evento' %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'inscrever_atletas' %}active{% endif %}" href="{% url 'inscrever_atletas' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Inscricoes</a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-eventos {% if 'campeonato' in request.resolver_match.url_name or request.resolver_match.url_name == 'inscrever_atletas' or request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' %}active{% endif %}" href="{% url 'pesagem' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Pesagem</a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-eventos {% if 'categoria' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_categorias' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Categorias</a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-eventos {% if 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_chaves' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Chaves</a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-eventos {% if request.resolver_match.url_name == 'metricas_evento' %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'metricas_evento' %}active{% endif %}" href="{% url 'metricas_evento' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Metricas</a>
+</li>
+{% endif %}
+
+<li class="sidebar-item">
+  <a class="sidebar-toggle {% if 'atleta' in request.resolver_match.url_name and request.resolver_match.url_name != 'inscrever_atletas' %}is-active{% endif %}" href=".{{ id_prefix }}-atletas" data-bs-toggle="collapse" data-bs-target=".{{ id_prefix }}-atletas" role="button" aria-expanded="{% if 'atleta' in request.resolver_match.url_name and request.resolver_match.url_name != 'inscrever_atletas' %}true{% else %}false{% endif %}" aria-controls="{{ id_prefix }}-atletas">
+    <span class="sidebar-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </svg>
+    </span>
+    <span>Atletas</span>
+  </a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-atletas {% if 'atleta' in request.resolver_match.url_name and request.resolver_match.url_name != 'inscrever_atletas' %}show{% endif %}" id="{{ id_prefix }}-atletas" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'lista_atletas' %}active{% endif %}" href="{% url 'lista_atletas' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Lista de atletas</a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-atletas {% if 'atleta' in request.resolver_match.url_name and request.resolver_match.url_name != 'inscrever_atletas' %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'cadastrar_atleta' %}active{% endif %}" href="{% url 'cadastrar_atleta' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Cadastrar atleta</a>
+</li>
+
+<li class="sidebar-item">
+  <a class="sidebar-toggle {% if 'academia' in request.resolver_match.url_name %}is-active{% endif %}" href=".{{ id_prefix }}-academias" data-bs-toggle="collapse" data-bs-target=".{{ id_prefix }}-academias" role="button" aria-expanded="{% if 'academia' in request.resolver_match.url_name %}true{% else %}false{% endif %}" aria-controls="{{ id_prefix }}-academias">
+    <span class="sidebar-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+    </span>
+    <span>Academias</span>
+  </a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-academias {% if 'academia' in request.resolver_match.url_name %}show{% endif %}" id="{{ id_prefix }}-academias" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'lista_academias' %}active{% endif %}" href="{% url 'lista_academias' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Lista de academias</a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-academias {% if 'academia' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'cadastrar_academia' %}active{% endif %}" href="{% url 'cadastrar_academia' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Cadastrar academia</a>
+</li>
+
+<li class="sidebar-item">
+  <a class="sidebar-toggle {% if request.resolver_match.url_name == 'ranking_global' or request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}is-active{% endif %}" href=".{{ id_prefix }}-rankings" data-bs-toggle="collapse" data-bs-target=".{{ id_prefix }}-rankings" role="button" aria-expanded="{% if request.resolver_match.url_name == 'ranking_global' or request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}true{% else %}false{% endif %}" aria-controls="{{ id_prefix }}-rankings">
+    <span class="sidebar-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="20" x2="12" y2="10"></line>
+        <line x1="18" y1="20" x2="18" y2="4"></line>
+        <line x1="6" y1="20" x2="6" y2="16"></line>
+      </svg>
+    </span>
+    <span>Rankings</span>
+  </a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-rankings {% if request.resolver_match.url_name == 'ranking_global' or request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}show{% endif %}" id="{{ id_prefix }}-rankings" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'ranking_global' %}active{% endif %}" href="{% url 'ranking_global' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Ranking global</a>
+</li>
+{% if campeonato_ativo %}
+<li class="sidebar-subitem collapse {{ id_prefix }}-rankings {% if request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}active{% endif %}" href="{% url 'ranking_academias' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Ranking do evento</a>
+</li>
+{% endif %}
+
+<li class="sidebar-item">
+  <a class="sidebar-toggle {% if 'administracao' in request.resolver_match.url_name %}is-active{% endif %}" href=".{{ id_prefix }}-admin" data-bs-toggle="collapse" data-bs-target=".{{ id_prefix }}-admin" role="button" aria-expanded="{% if 'administracao' in request.resolver_match.url_name %}true{% else %}false{% endif %}" aria-controls="{{ id_prefix }}-admin">
+    <span class="sidebar-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="9" y1="3" x2="9" y2="21"></line>
+        <line x1="3" y1="9" x2="21" y2="9"></line>
+      </svg>
+    </span>
+    <span>Administracao</span>
+  </a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-admin {% if 'administracao' in request.resolver_match.url_name %}show{% endif %}" id="{{ id_prefix }}-admin" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'administracao_financeiro' %}active{% endif %}" href="{% url 'administracao_financeiro' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Financeiro</a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-admin {% if 'administracao' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'administracao_despesas' %}active{% endif %}" href="{% url 'administracao_despesas' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Despesas e receitas</a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-admin {% if 'administracao' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'administracao_equipe' %}active{% endif %}" href="{% url 'administracao_equipe' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Equipe tecnica</a>
+</li>
+<li class="sidebar-divider collapse {{ id_prefix }}-admin {% if 'administracao' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}"></li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-admin {% if 'administracao' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'conferencia_pagamentos_lista' or request.resolver_match.url_name == 'conferencia_pagamentos_detalhe' %}active{% endif %}" href="{% url 'conferencia_pagamentos_lista' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Conferencia de pagamentos</a>
+</li>
+<li class="sidebar-divider collapse {{ id_prefix }}-admin {% if 'administracao' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}"></li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-admin {% if 'administracao' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'ocorrencias_lista' or request.resolver_match.url_name == 'ocorrencias_criar' or request.resolver_match.url_name == 'ocorrencias_detalhe' %}active{% endif %}" href="{% url 'ocorrencias_lista' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Ocorrencias</a>
+</li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-admin {% if 'administracao' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'ocorrencias_historico' %}active{% endif %}" href="{% url 'ocorrencias_historico' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Historico do sistema</a>
+</li>
+<li class="sidebar-divider collapse {{ id_prefix }}-admin {% if 'administracao' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}"></li>
+<li class="sidebar-subitem collapse {{ id_prefix }}-admin {% if 'administracao' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}" href="{% url 'administracao_relatorios' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Relatorios</a>
+</li>
+{% if user.is_authenticated %}
+  {% if user|pode_gerenciar_usuarios %}
+  <li class="sidebar-divider collapse {{ id_prefix }}-admin {% if 'administracao' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}"></li>
+  <li class="sidebar-subitem collapse {{ id_prefix }}-admin {% if 'administracao' in request.resolver_match.url_name %}show{% endif %}" data-bs-parent="#{{ parent_id }}">
+    <a class="sidebar-link {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}" href="{% url 'gerenciar_usuarios_operacionais' organizacao_slug=request.organizacao.slug %}" {% if dismiss %}data-bs-dismiss="{{ dismiss }}"{% endif %}>Usuarios operacionais</a>
+  </li>
+  {% endif %}
+{% endif %}
+{% endwith %}

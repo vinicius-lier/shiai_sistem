@@ -1,0 +1,16 @@
+{% extends 'base_public.html' %}
+{% block title %}Entrar — SHIAI{% endblock %}
+{% block content %}
+  <section style="padding:40px 0">
+    <div class="container center">
+      <div class="card" style="max-width:420px;width:100%">
+        <h3>Login</h3>
+        <form class="stack" onsubmit="event.preventDefault();alert('Login demo — use backend existente')">
+          <div class="form-row"><label class="muted">Usuário</label><input class="form-input" type="text"></div>
+          <div class="form-row"><label class="muted">Senha</label><input class="form-input" type="password"></div>
+          <div><button class="btn btn-primary">Entrar</button></div>
+        </form>
+      </div>
+    </div>
+  </section>
+{% endblock %}

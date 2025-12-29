@@ -1,0 +1,100 @@
+{% load tenant_tags %}
+<li class="nav-item">
+    <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' organizacao_slug=request.organizacao.slug %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Dashboard
+    </a>
+</li>
+
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle {% if 'campeonato' in request.resolver_match.url_name or request.resolver_match.url_name == 'inscrever_atletas' or request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' or 'categoria' in request.resolver_match.url_name or 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name or request.resolver_match.url_name == 'metricas_evento' %}active{% endif %}" href="#" id="eventosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+        </svg>
+        Eventos
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="eventosDropdown">
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'lista_campeonatos' %}active{% endif %}" href="{% url 'lista_campeonatos' organizacao_slug=request.organizacao.slug %}">Listar Eventos</a></li>
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'cadastrar_campeonato' %}active{% endif %}" href="{% url 'cadastrar_campeonato' organizacao_slug=request.organizacao.slug %}">Criar Evento</a></li>
+        {% if campeonato_ativo %}
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'inscrever_atletas' %}active{% endif %}" href="{% url 'inscrever_atletas' organizacao_slug=request.organizacao.slug %}">Inscrições</a></li>
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' %}active{% endif %}" href="{% url 'pesagem' organizacao_slug=request.organizacao.slug %}">Pesagem</a></li>
+        <li><a class="dropdown-item {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_categorias' organizacao_slug=request.organizacao.slug %}">Categorias</a></li>
+        <li><a class="dropdown-item {% if 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_chaves' organizacao_slug=request.organizacao.slug %}">Chaves</a></li>
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'metricas_evento' %}active{% endif %}" href="{% url 'metricas_evento' organizacao_slug=request.organizacao.slug %}">Métricas</a></li>
+        {% endif %}
+    </ul>
+</li>
+
+<li class="nav-item">
+    <a class="nav-link {% if 'atleta' in request.resolver_match.url_name and request.resolver_match.url_name != 'inscrever_atletas' %}active{% endif %}" href="{% url 'lista_atletas' organizacao_slug=request.organizacao.slug %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        Atletas
+    </a>
+</li>
+
+<li class="nav-item">
+    <a class="nav-link {% if 'academia' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_academias' organizacao_slug=request.organizacao.slug %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Academias
+    </a>
+</li>
+
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'ranking_global' or request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}active{% endif %}" href="#" id="rankingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="20" x2="12" y2="10"></line>
+            <line x1="18" y1="20" x2="18" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="16"></line>
+        </svg>
+        Rankings
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="rankingsDropdown">
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ranking_global' %}active{% endif %}" href="{% url 'ranking_global' organizacao_slug=request.organizacao.slug %}">Ranking Global</a></li>
+        {% if campeonato_ativo %}
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}active{% endif %}" href="{% url 'ranking_academias' organizacao_slug=request.organizacao.slug %}">Ranking do Evento</a></li>
+        {% endif %}
+    </ul>
+</li>
+
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle {% if 'administracao' in request.resolver_match.url_name %}active{% endif %}" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+        </svg>
+        Administração
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_financeiro' %}active{% endif %}" href="{% url 'administracao_financeiro' organizacao_slug=request.organizacao.slug %}">Financeiro</a></li>
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_despesas' %}active{% endif %}" href="{% url 'administracao_despesas' organizacao_slug=request.organizacao.slug %}">Despesas e Receitas</a></li>
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_equipe' %}active{% endif %}" href="{% url 'administracao_equipe' organizacao_slug=request.organizacao.slug %}">Equipe Técnica</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'conferencia_pagamentos_lista' or request.resolver_match.url_name == 'conferencia_pagamentos_detalhe' %}active{% endif %}" href="{% url 'conferencia_pagamentos_lista' organizacao_slug=request.organizacao.slug %}">Conferência de Pagamentos</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ocorrencias_lista' or request.resolver_match.url_name == 'ocorrencias_criar' or request.resolver_match.url_name == 'ocorrencias_detalhe' %}active{% endif %}" href="{% url 'ocorrencias_lista' organizacao_slug=request.organizacao.slug %}">Ocorrências</a></li>
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ocorrencias_historico' %}active{% endif %}" href="{% url 'ocorrencias_historico' organizacao_slug=request.organizacao.slug %}">Histórico do Sistema</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}" href="{% url 'administracao_relatorios' organizacao_slug=request.organizacao.slug %}">Relatórios</a></li>
+        {% if user.is_authenticated %}
+            {% if user|pode_gerenciar_usuarios %}
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}" href="{% url 'gerenciar_usuarios_operacionais' organizacao_slug=request.organizacao.slug %}">Usuários Operacionais</a></li>
+            {% endif %}
+        {% endif %}
+    </ul>
+</li>

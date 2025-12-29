@@ -1,29 +1,25 @@
 
-{% extends 'atletas/base.html' %}
+{% extends "atletas/layouts/base_operational.html" %}
 {% load static %}
 
 {% block title %}Lista de Chaves{% endblock %}
 
 {% block content %}
-<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
-    <div>
-        <h1 class="page-title">Chaves</h1>
-        <p class="page-description">Gerencie todas as chaves da competição</p>
-    </div>
-    <div style="display: flex; gap: var(--spacing-3); flex-wrap: wrap;">
-        <a href="{% url 'gerar_todas_chaves' %}" class="btn btn-primary" onclick="return confirm('Deseja gerar todas as chaves possíveis de uma única vez? Isso pode levar alguns instantes.');" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-            Gerar Todas as Chaves
-        </a>
-        <a href="{% url 'gerar_chave_view' %}" class="btn btn-secondary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Gerar Nova Chave
-        </a>
-        <a href="{% url 'gerar_chave_manual' %}" class="btn btn-success">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-            Lutas Casadas
-        </a>
-    </div>
+{% include "atletas/ui/_page_head.html" with title="Chaves" subtitle="Gerencie todas as chaves da competição" %}
+
+<div class="action-row action-row--spaced">
+  <a href="{% url 'gerar_todas_chaves' organizacao_slug=request.organizacao.slug %}" class="btn btn-primary" onclick="return confirm('Deseja gerar todas as chaves possíveis de uma única vez? Isso pode levar alguns instantes.');">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+    Gerar Todas as Chaves
+  </a>
+  <a href="{% url 'gerar_chave_view' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    Gerar Nova Chave
+  </a>
+  <a href="{% url 'gerar_chave_manual' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+    Lutas Casadas
+  </a>
 </div>
 
 {% if total_chaves %}
@@ -71,8 +67,8 @@
                     </select>
                 </div>
             </div>
-            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end;">
-                <a href="{% url 'lista_chaves' %}" class="btn btn-secondary">Limpar Filtros</a>
+            <div class="action-row">
+                <a href="{% url 'lista_chaves' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Limpar Filtros</a>
                 <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
             </div>
         </form>
@@ -120,7 +116,7 @@
                     {{ chave.estrutura.tipo|default:"-" }}
                 </td>
                 <td style="text-align: right;">
-                    <a href="{% url 'detalhe_chave' chave.id %}" class="btn btn-primary btn-sm">
+                    <a href="{% url 'detalhe_chave' organizacao_slug=request.organizacao.slug chave_id=chave.id %}" class="btn btn-primary btn-sm">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                         Ver Detalhes
                     </a>
@@ -142,9 +138,9 @@
         </svg>
         <div class="empty-state-title">Nenhuma chave gerada</div>
         <div class="empty-state-description">Comece gerando sua primeira chave</div>
-        <div style="display: flex; gap: var(--spacing-3); justify-content: center; margin-top: var(--spacing-4);">
-            <a href="{% url 'gerar_chave_view' %}" class="btn btn-primary">Gerar Nova Chave</a>
-            <a href="{% url 'gerar_chave_manual' %}" class="btn btn-success">Lutas Casadas</a>
+        <div class="action-row justify-center mt-4">
+            <a href="{% url 'gerar_chave_view' organizacao_slug=request.organizacao.slug %}" class="btn btn-primary">Gerar Nova Chave</a>
+            <a href="{% url 'gerar_chave_manual' organizacao_slug=request.organizacao.slug %}" class="btn btn-success">Lutas Casadas</a>
         </div>
     </div>
 </div>

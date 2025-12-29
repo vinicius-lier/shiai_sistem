@@ -1,23 +1,20 @@
-
-{% extends 'atletas/base.html' %}
+{% extends 'atletas/layouts/base_operational.html' %}
 {% load static %}
 
 {% block title %}Gerenciar Academias - {{ campeonato.nome }} - SHIAI SISTEM{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4);">
-        <div>
-            <h1 class="page-title">Gerenciar Academias do Campeonato</h1>
-            <p class="page-description">{{ campeonato.nome }}</p>
-        </div>
-        <a href="{% url 'lista_campeonatos' %}" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: var(--spacing-2);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
-                <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-            Voltar para Campeonatos
-        </a>
+    <div>
+        <h1 class="page-title">Gerenciar Academias do Campeonato</h1>
+        <p class="page-description">{{ campeonato.nome }}</p>
     </div>
+    <a href="{% url 'lista_campeonatos' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">
+        <svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Voltar para Campeonatos
+    </a>
 </div>
 
 <!-- Resumo -->
@@ -26,18 +23,18 @@
         <h3 class="card-title">Resumo</h3>
     </div>
     <div class="card-body">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+        <div class="grid-auto-fit-200">
             <div>
-                <p style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: var(--spacing-1);">Total Vinculadas</p>
-                <p style="font-size: var(--font-size-2xl); font-weight: 600; color: var(--color-gray-900);">{{ academias_vinculadas|length }}</p>
+                <p class="summary-label">Total Vinculadas</p>
+                <p class="summary-value">{{ academias_vinculadas|length }}</p>
             </div>
             <div>
-                <p style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: var(--spacing-1);">Permitidas</p>
-                <p style="font-size: var(--font-size-2xl); font-weight: 600; color: var(--color-success);">{{ total_permitidas }}</p>
+                <p class="summary-label">Permitidas</p>
+                <p class="summary-value summary-value--success">{{ total_permitidas }}</p>
             </div>
             <div>
-                <p style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: var(--spacing-1);">Bloqueadas</p>
-                <p style="font-size: var(--font-size-2xl); font-weight: 600; color: var(--color-danger);">{{ total_bloqueadas }}</p>
+                <p class="summary-label">Bloqueadas</p>
+                <p class="summary-value summary-value--danger">{{ total_bloqueadas }}</p>
             </div>
         </div>
     </div>
@@ -65,16 +62,16 @@
                     {% for item in academias_vinculadas %}
                     <tr>
                         <td>
-                            <div style="font-weight: 500; color: var(--color-gray-900);">{{ item.academia.nome }}</div>
+                            <div class="font-medium text-gray-900">{{ item.academia.nome }}</div>
                             {% if item.academia.telefone %}
-                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-500); margin-top: var(--spacing-1);">
+                            <div class="text-xs text-gray-500 mt-1">
                                 {{ item.academia.telefone }}
                             </div>
                             {% endif %}
                         </td>
                         <td>
                             <div>{{ item.academia.cidade }}</div>
-                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">{{ item.academia.estado }}</div>
+                            <div class="text-xs text-gray-500">{{ item.academia.estado }}</div>
                         </td>
                         <td>{{ item.academia.responsavel|default:"—" }}</td>
                         <td>
@@ -85,21 +82,21 @@
                             {% endif %}
                         </td>
                         <td>
-                            <form method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja {% if item.permitido %}bloquear{% else %}permitir{% endif %} esta academia?');">
+                            <form method="post" class="inline-form" onsubmit="return confirm('Tem certeza que deseja {% if item.permitido %}bloquear{% else %}permitir{% endif %} esta academia?');">
                                 {% csrf_token %}
                                 <input type="hidden" name="acao" value="toggle_permissao">
                                 <input type="hidden" name="academia_id" value="{{ item.academia.id }}">
                                 <input type="hidden" name="permitido" value="{% if item.permitido %}false{% else %}true{% endif %}">
-                                <button type="submit" class="btn {% if item.permitido %}btn-danger{% else %}btn-success{% endif %}" style="padding: var(--spacing-1) var(--spacing-3); font-size: var(--font-size-sm);">
+                                <button type="submit" class="btn {% if item.permitido %}btn-danger{% else %}btn-success{% endif %} btn-xs">
                                     {% if item.permitido %}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;">
+                                    <svg class="icon-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <line x1="15" y1="9" x2="9" y2="15"></line>
                                         <line x1="9" y1="9" x2="15" y2="15"></line>
                                     </svg>
                                     Bloquear
                                     {% else %}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;">
+                                    <svg class="icon-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <polyline points="20 6 9 17 4 12"></polyline>
                                     </svg>
                                     Permitir
@@ -142,25 +139,25 @@
                     {% for academia in academias_nao_vinculadas %}
                     <tr>
                         <td>
-                            <div style="font-weight: 500; color: var(--color-gray-900);">{{ academia.nome }}</div>
+                            <div class="font-medium text-gray-900">{{ academia.nome }}</div>
                             {% if academia.telefone %}
-                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-500); margin-top: var(--spacing-1);">
+                            <div class="text-xs text-gray-500 mt-1">
                                 {{ academia.telefone }}
                             </div>
                             {% endif %}
                         </td>
                         <td>
                             <div>{{ academia.cidade }}</div>
-                            <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">{{ academia.estado }}</div>
+                            <div class="text-xs text-gray-500">{{ academia.estado }}</div>
                         </td>
                         <td>{{ academia.responsavel|default:"—" }}</td>
                         <td>
-                            <form method="post" style="display: inline;">
+                            <form method="post" class="inline-form">
                                 {% csrf_token %}
                                 <input type="hidden" name="acao" value="adicionar_academia">
                                 <input type="hidden" name="academia_id" value="{{ academia.id }}">
-                                <button type="submit" class="btn btn-primary" style="padding: var(--spacing-1) var(--spacing-3); font-size: var(--font-size-sm);">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;">
+                                <button type="submit" class="btn btn-primary btn-xs">
+                                    <svg class="icon-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <line x1="12" y1="5" x2="12" y2="19"></line>
                                         <line x1="5" y1="12" x2="19" y2="12"></line>
                                     </svg>
@@ -177,9 +174,9 @@
 </div>
 {% endif %}
 
-<div style="margin-top: var(--spacing-6); padding: var(--spacing-4); background: var(--color-gray-50); border-radius: var(--border-radius-md);">
-    <h4 style="font-size: var(--font-size-sm); font-weight: 600; color: var(--color-gray-900); margin-bottom: var(--spacing-2);">ℹ️ Informações</h4>
-    <ul style="margin: 0; padding-left: var(--spacing-6); color: var(--color-gray-600); font-size: var(--font-size-sm); line-height: 1.6;">
+<div class="info-panel">
+    <h4 class="info-panel-title">ℹ️ Informações</h4>
+    <ul class="info-panel-list">
         <li>Academias <strong>permitidas</strong> podem inscrever atletas e aparecem no ranking.</li>
         <li>Academias <strong>bloqueadas</strong> não podem inscrever atletas e não aparecem no ranking.</li>
         <li>Academias bloqueadas continuam cadastradas no sistema, apenas não participam deste campeonato.</li>
@@ -187,6 +184,3 @@
     </ul>
 </div>
 {% endblock %}
-
-
-

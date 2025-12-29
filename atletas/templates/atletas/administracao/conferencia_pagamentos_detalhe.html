@@ -13,7 +13,7 @@
                 <h2 class="card-title m-0">{{ academia.nome }}</h2>
                 <p class="text-muted mb-0 mt-1">{{ campeonato.nome }}</p>
             </div>
-            <a href="{% url 'conferencia_pagamentos_lista' %}?campeonato_id={{ campeonato.id }}" class="btn btn-secondary">Voltar</a>
+            <a href="{% url 'conferencia_pagamentos_lista' organizacao_slug=request.organizacao.slug %}?campeonato_id={{ campeonato.id }}" class="btn btn-secondary">Voltar</a>
         </div>
         <div class="card-body">
             <!-- Resumo Financeiro -->
@@ -112,7 +112,7 @@
 
             <!-- Formulário de Conferência -->
             <h4 class="mb-3">Conferir Pagamento</h4>
-            <form method="post" action="{% url 'conferencia_pagamentos_salvar' academia.id campeonato.id %}">
+            <form method="post" action="{% url 'conferencia_pagamentos_salvar' organizacao_slug=request.organizacao.slug academia_id=academia.id campeonato_id=campeonato.id %}">
                 {% csrf_token %}
                 <div class="row g-3">
                     <div class="col-md-4">
@@ -150,7 +150,7 @@
                     </div>
                     <div class="col-12">
                         <button type="submit" class="btn btn-primary">Salvar Conferência</button>
-                        <a href="{% url 'conferencia_pagamentos_lista' %}?campeonato_id={{ campeonato.id }}" class="btn btn-secondary">Cancelar</a>
+                        <a href="{% url 'conferencia_pagamentos_lista' organizacao_slug=request.organizacao.slug %}?campeonato_id={{ campeonato.id }}" class="btn btn-secondary">Cancelar</a>
                     </div>
                 </div>
             </form>
@@ -158,7 +158,7 @@
             {% if conferencia and conferencia.conferido_por %}
             <div class="mt-4 p-3 bg-light rounded">
                 <small class="text-muted">
-                    <strong>Última conferência:</strong> {{ conferencia.data_conferencia|date:"d/m/Y H:i" }} por {{ conferencia.conferido_por.first_name|default:conferencia.conferido_por.username }}
+                    <strong>Última conferência:</strong> {{ conferencia.data_conferencia|date:"d/m/Y H:i" }} por {{ conferencia.conferido_por.first_name|default:conferencia.conferido_por.email }}
                 </small>
             </div>
             {% endif %}
@@ -173,7 +173,7 @@ function gerarMensagemWhatsApp() {
     const valorRecebido = document.querySelector('input[name="valor_recebido"]').value;
     
     // Construir URL com parâmetros
-    let url = '{% url "gerar_mensagem_whatsapp" academia.id campeonato.id %}?status=' + encodeURIComponent(status);
+    let url = '{% url "gerar_mensagem_whatsapp" organizacao_slug=request.organizacao.slug academia_id=academia.id campeonato_id=campeonato.id %}?status=' + encodeURIComponent(status);
     if (valorRecebido) {
         url += '&valor_recebido=' + encodeURIComponent(valorRecebido);
     }
@@ -194,4 +194,3 @@ function gerarMensagemWhatsApp() {
 }
 </script>
 {% endblock %}
-

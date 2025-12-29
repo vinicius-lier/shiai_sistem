@@ -35,7 +35,7 @@
                 </p>
             </div>
             <div style="display:flex; gap: var(--spacing-3); flex-wrap: wrap;">
-                <form method="post" action="{% url 'administracao_confirmar_inscricoes' %}" style="display: inline;">
+                <form method="post" action="{% url 'administracao_confirmar_inscricoes' organizacao_slug=request.organizacao.slug %}" style="display: inline;">
                     {% csrf_token %}
                     <input type="hidden" name="academia_id" value="{{ data.academia.id }}">
                     <input type="hidden" name="campeonato_id" value="{{ campeonato.id }}">

@@ -1,0 +1,20 @@
+{# Uso:
+   {% include "matches/components/athlete_name.html" with match=match side="blue" %}
+   {% include "matches/components/athlete_name.html" with match=match side="white" %}
+#}
+{% if side == "blue" %}
+  <div>
+    <div class="athlete-blue">
+      {{ match.blue_display|default:match.blue_name|default:match.blue_athlete_id|default:"-" }}
+    </div>
+    {% if match.blue_academy %}<div class="athlete-sub">{{ match.blue_academy }}</div>{% endif %}
+  </div>
+{% else %}
+  <div>
+    <div class="athlete-red">
+      {{ match.white_display|default:match.white_name|default:match.white_athlete_id|default:"-" }}
+    </div>
+    {% if match.white_academy %}<div class="athlete-sub">{{ match.white_academy }}</div>{% endif %}
+  </div>
+{% endif %}
+

@@ -1,0 +1,363 @@
+{% extends "matches/base_kiosk.html" %}
+<!--
+Shape esperado de um "match" (pode vir parcial do backend; template tem fallback):
+- id, event_id, bracket_id, round_number, match_number, class_code, sex, category_code, belt_group
+- blue_athlete_id / blue_name / blue_org (opcional)
+- white_athlete_id / white_name / white_org (opcional)
+- status ("SCHEDULED" | "FINISHED" | "WALKOVER" | ...)
+-->
+
+{% block title %}Mesa de Combates{% endblock %}
+
+{% block kiosk_title %}Mesa de Combates{% endblock %}
+{% block kiosk_subtitle %}Próxima luta → registrar resultado → TV atualiza.{% endblock %}
+{% block kiosk_flow %}{% include "matches/partials/flow_stepper.html" with current="LUTAS" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .blue { color: #1d4ed8; font-weight: 600; }
+  .white { color: #b91c1c; font-weight: 600; }
+  .readonly-row { opacity: 0.65; }
+  .mesa-mode { margin: 10px 0 16px 0; padding: 10px; border-radius: 8px; background: #eef2ff; border: 1px solid #c7d2fe; }
+  .mesa-title { font-weight: 700; color: #312e81; }
+  .match-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; background:#fff; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; background: #e0f2fe; color: #075985; font-size: 12px; border: 1px solid #38bdf8; }
+  .hidden { display: none; }
+
+  /* Modal simples */
+  .modal {
+    display:none;
+    position:fixed; inset:0;
+    background: rgba(0,0,0,0.45);
+    align-items:center; justify-content:center;
+    z-index: 2000;
+  }
+  .modal-content {
+    background:#fff;
+    border-radius:12px;
+    padding:16px;
+    width:min(520px, 92vw);
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div id="mesa-mode-banner" class="mesa-mode hidden">
+  <div class="mesa-title" id="mesa-mode-title"></div>
+  <div class="text-muted">Mostrando apenas lutas atribuídas a esta mesa (fila local do navegador).</div>
+</div>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert {% if m.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} py-2">{{ m }}</div>
+  {% endfor %}
+{% endif %}
+
+{# FUTURO: este bloco pode virar HTMX (partial refresh) ou websocket, sem mudar o backend #}
+<div class="shiai-card p-3 mb-3">
+  <div class="card-body">
+    {% include "matches/_filters.html" %}
+  </div>
+</div>
+
+<div id="matches-table" class="shiai-card">
+  <div class="p-3 table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Evento</th>
+          <th>Bracket</th>
+          <th>Round</th>
+          <th>Match nº</th>
+          <th>Azul</th>
+          <th>Branco</th>
+          <th>Status</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for match in matches %}
+        <tr {% if match.status != "SCHEDULED" %}class="readonly-row"{% endif %}
+            data-match-id="{{ match.id }}"
+            data-blue="{{ match.blue_athlete_id }}"
+            data-white="{{ match.white_athlete_id }}"
+            data-blue-display="{% if match.blue_display %}{{ match.blue_display }}{% elif match.blue_name %}{{ match.blue_name }}{% else %}{{ match.blue_athlete_id }}{% endif %}"
+            data-white-display="{% if match.white_display %}{{ match.white_display }}{% elif match.white_name %}{{ match.white_name }}{% else %}{{ match.white_athlete_id }}{% endif %}"
+            data-event="{{ match.bracket.event_id }}"
+            data-bracket="{{ match.bracket_id }}"
+            data-round="{{ match.round_number }}"
+            data-number="{{ match.match_number }}"
+            data-class="{{ match.bracket.class_code|default:'' }}"
+            data-sex="{{ match.bracket.sex|default:'' }}"
+            data-category="{{ match.bracket.category_code|default:'' }}"
+            data-belt="{{ match.bracket.belt_group|default:'' }}"
+            data-blue-name="{{ match.blue_name|default:match.blue_athlete_id }}"
+            data-blue-org="{{ match.blue_org|default:match.blue_academy|default:'' }}"
+            data-blue-academy="{{ match.blue_academy|default:'' }}"
+            data-white-name="{{ match.white_name|default:match.white_athlete_id }}"
+            data-white-org="{{ match.white_org|default:match.white_academy|default:'' }}"
+            data-white-academy="{{ match.white_academy|default:'' }}"
+            data-status="{{ match.status }}">
+          <td class="text-muted small"><span class="id-chip" title="{{ match.bracket.event_id }}">{{ match.bracket.event_id|slice:":8" }}</span></td>
+          <td class="text-muted small"><span class="id-chip" title="{{ match.bracket_id }}">{{ match.bracket_id|slice:":8" }}</span></td>
+          <td>{{ match.round_number }}</td>
+          <td>{{ match.match_number }}</td>
+          {% include "matches/partials/match_row.html" with match=match layout="table_cells" %}
+          <td>
+            {% if match.status == "SCHEDULED" %}
+              <button type="button" class="btn btn-primary btn-sm open-modal">Registrar Resultado</button>
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-muted">Nenhuma luta agendada.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3 class="h5 m-0" id="modal-title">Registrar Resultado</h3>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="cancel-modal">Fechar</button>
+    </div>
+    <p class="text-muted mb-2" id="modal-info"></p>
+    <div id="modal-athletes" class="mb-3"></div>
+
+    <form id="modal-form" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="match_id" id="match_id">
+      <div class="mb-2">
+        <label class="me-3"><input type="radio" name="winner_side" value="blue"> Azul (A)</label>
+        <label><input type="radio" name="winner_side" value="white"> Branco (B)</label>
+      </div>
+      <div class="mb-2">
+        <select name="win_method" id="win_method" class="form-select" required>
+          <option value="">Método</option>
+          {% for wm in win_methods %}
+            <option value="{{ wm.value }}">{{ wm.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <textarea name="notes" id="notes" class="form-control" placeholder="Observações (opcional)" rows="3"></textarea>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" id="confirm-btn" class="btn btn-primary">Confirmar</button>
+        <button type="button" class="btn btn-outline-secondary" id="cancel-modal-2">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  // Estado local simples (futuro: HTMX/WebSocket pode atualizar este state e re-renderizar DOM)
+  window.ShiaiUIState = window.ShiaiUIState || { matchesById:{}, filtersAtivos:{}, lastUpdateAt:null };
+
+  // UX-only: respeitar papel do usuário se o backend injetar window.USER_ROLE.
+  // NÃO é segurança. O backend continua sendo a fonte de verdade.
+  const USER_ROLE = (window.USER_ROLE || "").toString();
+
+  const modal = document.getElementById('modal');
+  const form = document.getElementById('modal-form');
+  const title = document.getElementById('modal-title');
+  const info = document.getElementById('modal-info');
+  const ath = document.getElementById('modal-athletes');
+  const matchIdInput = document.getElementById('match_id');
+  const confirmBtn = document.getElementById('confirm-btn');
+  const matchesTable = document.getElementById('matches-table');
+
+  function matchFromRow(tr) {
+    return {
+      id: tr.dataset.matchId,
+      event_id: tr.dataset.event,
+      bracket_id: tr.dataset.bracket,
+      round_number: tr.dataset.round,
+      match_number: tr.dataset.number,
+      class_code: tr.dataset.class || "",
+      sex: tr.dataset.sex || "",
+      category_code: tr.dataset.category || "",
+      belt_group: tr.dataset.belt || "",
+      blue_athlete_id: tr.dataset.blue || "",
+      blue_name: tr.dataset.blueName || "",
+      blue_display: tr.dataset.blueDisplay || tr.dataset.blueName || tr.dataset.blue || "-",
+      blue_org: tr.dataset.blueOrg || tr.dataset.blueAcademy || "",
+      white_athlete_id: tr.dataset.white || "",
+      white_name: tr.dataset.whiteName || "",
+      white_display: tr.dataset.whiteDisplay || tr.dataset.whiteName || tr.dataset.white || "-",
+      white_org: tr.dataset.whiteOrg || tr.dataset.whiteAcademy || "",
+      status: tr.dataset.status || "",
+    };
+  }
+
+  function hydrateStateFromDom() {
+    const state = window.ShiaiUIState;
+    const sp = new URLSearchParams(window.location.search);
+    state.filtersAtivos = {
+      event_id: sp.get("event_id") || "",
+      class_code: sp.get("class_code") || "",
+      sex: sp.get("sex") || "",
+      category_code: sp.get("category_code") || "",
+      belt_group: sp.get("belt_group") || "",
+      bracket_id: sp.get("bracket_id") || "",
+      mesa: sp.get("mesa") || "",
+    };
+    const rows = Array.from(matchesTable.querySelectorAll('tbody tr[data-match-id]'));
+    rows.forEach(tr => {
+      const m = matchFromRow(tr);
+      if (m && m.id) state.matchesById[m.id] = m;
+    });
+    state.lastUpdateAt = new Date().toISOString();
+  }
+
+  function openModal(tr) {
+    const m = window.ShiaiUIState.matchesById[tr.dataset.matchId] || matchFromRow(tr);
+    matchIdInput.value = m.id;
+    title.textContent = `Registrar Resultado - Match ${m.match_number}`;
+    info.textContent = `Evento ${m.event_id} | Bracket ${m.bracket_id} | Round ${m.round_number} | Classe ${m.class_code} | Sexo ${m.sex} | Categoria ${m.category_code} | Grupo ${m.belt_group}`;
+    ath.innerHTML = `
+      <div class="blue">Azul: ${m.blue_display}${m.blue_org ? ' · ' + m.blue_org : ''}</div>
+      <div class="white">Branco: ${m.white_display}${m.white_org ? ' · ' + m.white_org : ''}</div>
+    `;
+    form.reset();
+    confirmBtn.disabled = false;
+    modal.style.display = 'flex';
+  }
+
+  function closeModal() { modal.style.display = 'none'; }
+
+  hydrateStateFromDom();
+
+  const actionButtons = Array.from(matchesTable.querySelectorAll('.open-modal'));
+  if (USER_ROLE && USER_ROLE !== "TABLE_OFFICIAL") {
+    actionButtons.forEach(btn => (btn.style.display = "none"));
+  }
+  actionButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tr = btn.closest('tr');
+      if (tr.dataset.status !== 'SCHEDULED') return;
+      if (USER_ROLE && USER_ROLE !== "TABLE_OFFICIAL") return;
+      openModal(tr);
+    });
+  });
+
+  document.getElementById('cancel-modal').addEventListener('click', closeModal);
+  document.getElementById('cancel-modal-2').addEventListener('click', closeModal);
+  window.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  document.addEventListener('keydown', (e) => {
+    if (modal.style.display !== 'flex') return;
+    if (e.key === 'a' || e.key === 'A') document.querySelector('input[name="winner_side"][value="blue"]').checked = true;
+    if (e.key === 'b' || e.key === 'B') document.querySelector('input[name="winner_side"][value="white"]').checked = true;
+    if (e.key === 'Escape') closeModal();
+  });
+
+  form.addEventListener('submit', (e) => {
+    const winner = document.querySelector('input[name="winner_side"]:checked');
+    if (!winner) { e.preventDefault(); alert('Selecione o vencedor (Azul ou Branco).'); return; }
+    if (!confirm('Confirmar resultado?')) { e.preventDefault(); return; }
+    confirmBtn.disabled = true;
+  });
+
+  // Modo Mesa (filtra por ?mesa=1|2|3 usando localStorage da organização de mesas)
+  const mesaParam = new URLSearchParams(window.location.search).get("mesa");
+  const mesaBanner = document.getElementById("mesa-mode-banner");
+  const mesaTitle = document.getElementById("mesa-mode-title");
+  function getMesaState() {
+    try { const raw = localStorage.getItem("shiai_mesas_state"); return raw ? JSON.parse(raw) : null; } catch(e){ return null; }
+  }
+
+  function renderMesaFiltered() {
+    if (!["1","2","3"].includes(mesaParam)) return;
+    const state = getMesaState();
+    if (!state) return;
+    const ids = state[mesaParam] || [];
+    mesaBanner.classList.remove("hidden");
+    mesaTitle.textContent = `Modo Mesa ${mesaParam}`;
+
+    document.querySelector('.filters')?.classList.add('hidden');
+
+    const rows = Array.from(matchesTable.querySelectorAll('tbody tr'));
+    const queue = [];
+    rows.forEach(tr => {
+      const id = tr.dataset.matchId;
+      if (!ids.includes(id)) { tr.classList.add('hidden'); return; }
+      const m = window.ShiaiUIState.matchesById[id] || matchFromRow(tr);
+      queue.push({
+        id: m.id,
+        round: m.round_number || "-",
+        number: m.match_number || "-",
+        blue: m.blue_display || "-",
+        blueAcademy: m.blue_org || "",
+        white: m.white_display || "-",
+        whiteAcademy: m.white_org || "",
+        status: m.status || "",
+      });
+    });
+
+    const container = document.createElement("div");
+    container.className = "card border-0 shadow-sm mb-3";
+    container.innerHTML = `<div class="card-body"><h5 class="fw-bold">Luta Atual</h5><div id="mesa-current-block"></div><h5 class="fw-bold mt-3">Próximas</h5><div id="mesa-next-block"></div></div>`;
+    matchesTable.before(container);
+
+    const currentBlock = container.querySelector("#mesa-current-block");
+    const nextBlock = container.querySelector("#mesa-next-block");
+    if (queue.length === 0) {
+      currentBlock.innerHTML = '<div class="text-muted">Nenhuma luta atribuída a esta mesa.</div>';
+      nextBlock.innerHTML = '<div class="text-muted">Fila vazia.</div>';
+      return;
+    }
+    const current = queue[0];
+    currentBlock.innerHTML = `
+      <div class="match-row">
+        <div>
+          <div class="text-muted small">Round ${current.round} • Match ${current.number}</div>
+          <div class="blue">${current.blue}</div>
+          ${current.blueAcademy ? `<div class="text-muted small">${current.blueAcademy}</div>` : ""}
+        </div>
+        <div>
+          <div class="text-muted small">Status</div>
+          <div class="pill">${current.status || 'SCHEDULED'}</div>
+          <div class="white mt-2">${current.white}</div>
+          ${current.whiteAcademy ? `<div class="text-muted small">${current.whiteAcademy}</div>` : ""}
+        </div>
+      </div>
+    `;
+    if (queue.length > 1) {
+      nextBlock.innerHTML = "";
+      queue.slice(1).forEach(item => {
+        const div = document.createElement("div");
+        div.className = "match-row mt-2";
+        div.innerHTML = `
+          <div>
+            <div class="text-muted small">Round ${item.round} • Match ${item.number}</div>
+            <div class="blue">${item.blue}</div>
+            ${item.blueAcademy ? `<div class="text-muted small">${item.blueAcademy}</div>` : ""}
+          </div>
+          <div>
+            <div class="white">${item.white}</div>
+            ${item.whiteAcademy ? `<div class="text-muted small">${item.whiteAcademy}</div>` : ""}
+          </div>
+        `;
+        nextBlock.appendChild(div);
+      });
+    } else {
+      nextBlock.innerHTML = '<div class="text-muted">Sem próximas lutas na fila.</div>';
+    }
+  }
+
+  renderMesaFiltered();
+})();
+</script>
+{% endblock %}
+

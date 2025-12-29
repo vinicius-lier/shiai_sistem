@@ -388,6 +388,44 @@
 </div>
 {% endif %}
 
+<div class="card mb-6">
+    <div class="card-header">
+        <h2 class="card-title">Dados para Pagamento</h2>
+    </div>
+    <div class="card-body">
+        {% if chave_pix or titular_pix or formas_pagamento %}
+        <div style="display: grid; gap: var(--spacing-4);">
+            {% if chave_pix %}
+            <div>
+                <div style="font-size: var(--font-size-xs); color: var(--color-gray-500); text-transform: uppercase; letter-spacing: 0.04em;">Chave PIX</div>
+                <div style="font-size: var(--font-size-sm); font-weight: 600; color: var(--color-gray-900);">{{ chave_pix }}</div>
+            </div>
+            {% endif %}
+            {% if titular_pix %}
+            <div>
+                <div style="font-size: var(--font-size-xs); color: var(--color-gray-500); text-transform: uppercase; letter-spacing: 0.04em;">Titular</div>
+                <div style="font-size: var(--font-size-sm); font-weight: 600; color: var(--color-gray-900);">{{ titular_pix }}</div>
+            </div>
+            {% endif %}
+            {% if formas_pagamento %}
+            <div>
+                <div style="font-size: var(--font-size-xs); color: var(--color-gray-500); text-transform: uppercase; letter-spacing: 0.04em;">Formas aceitas</div>
+                <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-2); margin-top: var(--spacing-2);">
+                    {% for forma in formas_pagamento %}
+                    <span class="badge badge-success">{{ forma.get_tipo_display }}{% if forma.nome %} - {{ forma.nome }}{% endif %}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
+            Os dados bancários ainda não foram informados pela organização do evento.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 <!-- Filtros -->
 <div class="card mb-6">
     <div class="card-header">

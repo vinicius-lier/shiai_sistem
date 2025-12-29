@@ -92,7 +92,7 @@
                 {% for item in usuarios_operacionais %}
                 <tr>
                     <td>
-                        <strong>{{ item.user.username }}</strong>
+                        <strong>{{ item.user.get_username|default:item.user.email }}</strong>
                         {% if item.pode_resetar_campeonato %}
                         <span class="badge badge-primary" style="margin-left: var(--spacing-2);">Principal</span>
                         {% endif %}

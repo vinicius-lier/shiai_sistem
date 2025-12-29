@@ -1,0 +1,11 @@
+{# Uso: {% include "matches/components/status_badge.html" with status=match.status %} #}
+{% if status == "SCHEDULED" %}
+  <span class="status-badge status-scheduled">SCHEDULED</span>
+{% elif status == "FINISHED" %}
+  <span class="status-badge status-finished">FINISHED</span>
+{% elif status == "WALKOVER" %}
+  <span class="status-badge status-walkover">WALKOVER</span>
+{% else %}
+  <span class="status-badge status-other">{{ status|default:"-" }}</span>
+{% endif %}
+

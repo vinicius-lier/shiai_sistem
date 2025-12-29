@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="56" viewBox="0 0 260 56" fill="none" role="img" aria-label="SHIAI — Gestão de Competições">
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1">
+      <stop offset="0" stop-color="#1D4ED8"/>
+      <stop offset="1" stop-color="#B91C1C"/>
+    </linearGradient>
+  </defs>
+  <!-- Emblem (belt-inspired arcs) -->
+  <g transform="translate(8,6)">
+    <rect width="44" height="44" rx="8" fill="#0B0F14" stroke="#1f2533"/>
+    <circle cx="22" cy="22" r="12" fill="#121826" stroke="rgba(255,255,255,0.02)"/>
+    <path d="M8 30 C16 22, 28 22, 36 30" stroke="url(#g1)" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M10 24 C16 18, 28 18, 34 24" stroke="#F5C451" stroke-width="1.2" fill="none" opacity="0.9"/>
+  </g>
+  <!-- Text -->
+  <g transform="translate(64,20)">
+    <text x="0" y="-2" fill="#E5E7EB" font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial" font-size="20" font-weight="700">SHIAI</text>
+    <text x="0" y="14" fill="#9CA3AF" font-family="Inter, system-ui, sans-serif" font-size="12">Gestão de Competições de Judô</text>
+  </g>
+</svg>

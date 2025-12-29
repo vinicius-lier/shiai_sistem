@@ -1,0 +1,29 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <link rel="icon" type="image/png" href="{% static 'atletas/images/logo_black.png' %}">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SHIAI — Pesagem{% endblock %}</title>
+  {% include "atletas/ui/_reset.html" %}
+  {% include "atletas/ui/_tokens.html" %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  {% include "atletas/ui/_helpers.html" %}
+  {% include "atletas/ui/_components.html" %}
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="kiosk">
+  {% include "atletas/ui/navbar.html" %}
+  {% include "atletas/ui/sidebar.html" %}
+  <header style="padding: var(--space-3) var(--space-4); border-bottom: var(--border-width) solid var(--border); background: var(--surface);">
+    {% block topbar_weighing %}{% endblock %}
+  </header>
+  <main class="page-main">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

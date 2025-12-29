@@ -1,0 +1,29 @@
+{# Alertas padronizados via Django messages.
+   Não cria dependência de contexto novo: 'messages' é padrão do Django. #}
+{% if messages %}
+  <div class="stack" style="margin-bottom: 12px;">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<style>
+  body[data-shiai-ui="1"] .alert{
+    border-radius: var(--shiai-radius-sm);
+    padding: 10px 12px;
+    border: 1px solid var(--shiai-border);
+    background: var(--shiai-surface);
+    box-shadow: var(--shiai-shadow);
+    font-weight: 600;
+  }
+  body[data-shiai-ui="1"] .alert-success{ border-color: rgba(22,163,74,0.35); background: #ECFDF3; color: #166534; }
+  body[data-shiai-ui="1"] .alert-error,
+  body[data-shiai-ui="1"] .alert-danger{ border-color: rgba(220,38,38,0.35); background: #FEF2F2; color: #991B1B; }
+  body[data-shiai-ui="1"] .alert-warning{ border-color: rgba(217,119,6,0.35); background: #FFF7ED; color: #9A3412; }
+  body[data-shiai-ui="1"] .alert-info{ border-color: rgba(37,99,235,0.25); background: #EFF6FF; color: #1E3A8A; }
+</style>
+
+

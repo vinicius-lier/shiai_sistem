@@ -1,0 +1,68 @@
+{% extends 'atletas/layouts/base_operational.html' %}
+
+{% block title %}Painel de Organizações{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;gap:16px;">
+    <div>
+        <h1 class="page-title">Organizações</h1>
+        <p class="page-description">Selecione uma organização para entrar no painel operacional.</p>
+    </div>
+</div>
+
+{% if organizacoes %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>Telefone</th>
+                        <th>Slug</th>
+                        <th>Status</th>
+                        <th style="width:220px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for org in organizacoes %}
+                    <tr>
+                        <td>{{ org.nome }}</td>
+                        <td>{{ org.email }}</td>
+                        <td>{{ org.telefone }}</td>
+                        <td><code>{{ org.slug }}</code></td>
+                        <td>
+                            {% if org.ativo %}
+                                <span class="badge badge-success">Ativa</span>
+                            {% else %}
+                                <span class="badge badge-danger">Inativa</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                {% if org.ativo and org.slug %}
+                                <a href="/{{ org.slug }}/dashboard/" class="btn btn-primary btn-sm">
+                                    Entrar
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning" role="alert">
+    Nenhuma organização cadastrada. Crie um organizador no admin do Django para começar.
+    <br>
+    <a href="/admin/atletas/organizador/" class="btn btn-primary btn-sm" style="margin-top:8px;">Abrir Admin de Organizadores</a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+

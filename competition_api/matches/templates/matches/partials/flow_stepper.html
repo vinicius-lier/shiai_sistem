@@ -1,0 +1,14 @@
+{# 
+Stepper visual do fluxo do evento (somente UX; sem cálculo de status).
+Uso:
+  {% include "matches/partials/flow_stepper.html" with current="LUTAS" %}
+Valores esperados: INSCRICOES, PESAGEM, CHAVES, LUTAS, RESULTADOS
+#}
+<div class="shiai-stepper">
+  {% include "matches/partials/flow_stepper_item.html" with code="INSCRICOES" label="Inscrições" current=current %}
+  {% include "matches/partials/flow_stepper_item.html" with code="PESAGEM" label="Pesagem" current=current %}
+  {% include "matches/partials/flow_stepper_item.html" with code="CHAVES" label="Chaves" current=current %}
+  {% include "matches/partials/flow_stepper_item.html" with code="LUTAS" label="Lutas" current=current %}
+  {% include "matches/partials/flow_stepper_item.html" with code="RESULTADOS" label="Resultados" current=current %}
+</div>
+

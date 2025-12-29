@@ -1,0 +1,48 @@
+{# 
+Partial reutilizável para renderizar um Match (somente visual, sem ações).
+
+Uso:
+- Tabela (células): {% include "matches/partials/match_row.html" with match=match layout="table_cells" %}
+- Bloco completo: {% include "matches/partials/match_row.html" with match=match %}
+- Bloco compacto (sem round/match): {% include "matches/partials/match_row.html" with match=match layout="block_compact" %}
+
+Params:
+- match (obrigatório)
+- layout: "block" (default) | "block_compact" | "table_cells"
+- show_bracket: True/False (apenas em layout block)
+#}
+
+{% if layout == "table_cells" %}
+  <td>
+    {% include "matches/components/athlete_name.html" with match=match side="blue" %}
+  </td>
+  <td>
+    {% include "matches/components/athlete_name.html" with match=match side="white" %}
+  </td>
+  <td>
+    {% include "matches/components/status_badge.html" with status=match.status %}
+  </td>
+{% else %}
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;">
+    {% if layout != "block_compact" %}
+      <div style="min-width:170px;">
+        <div style="font-size:12px;color:#6b7280;">
+          Round {{ match.round_number }} • Match {{ match.match_number }}
+        </div>
+        {% if show_bracket %}
+          <div style="font-size:12px;color:#6b7280;">Bracket {{ match.bracket_id }}</div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <div style="flex:1;min-width:260px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      {% include "matches/components/athlete_name.html" with match=match side="blue" %}
+      {% include "matches/components/athlete_name.html" with match=match side="white" %}
+    </div>
+
+    <div style="min-width:110px;text-align:right;">
+      {% include "matches/components/status_badge.html" with status=match.status %}
+    </div>
+  </div>
+{% endif %}
+

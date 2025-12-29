@@ -1,5 +1,5 @@
 
-{% extends 'atletas/base.html' %}
+{% extends 'atletas/layouts/base_operational.html' %}
 {% load static %}
 
 {% block title %}Importar Atletas{% endblock %}
@@ -55,7 +55,7 @@
     <button type="submit" class="btn" style="margin-top: 10px;">Importar Atletas</button>
 </form>
 
-<a href="{% url 'lista_atletas' %}" class="btn" style="margin-top: 10px;">Voltar para Lista</a>
+<a href="{% url 'lista_atletas' organizacao_slug=request.organizacao.slug %}" class="btn" style="margin-top: 10px;">Voltar para Lista</a>
 
 <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 5px;">
     <h3>Notas Importantes:</h3>
@@ -69,4 +69,3 @@
     </ul>
 </div>
 {% endblock %}
-

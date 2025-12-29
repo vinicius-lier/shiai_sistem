@@ -1,7 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from datetime import date, timedelta
 from django.utils import timezone
+from django.utils.text import slugify
 
 
 def documento_upload_path(instance, filename):
@@ -45,14 +46,30 @@ def logo_organizador_upload_path(instance, filename):
 class Organizador(models.Model):
     """Organizador de eventos - Multi-tenant principal"""
     nome = models.CharField(max_length=255, verbose_name="Nome do Organizador")
-    email = models.EmailField(verbose_name="E-mail")
+    email = models.EmailField(verbose_name="E-mail", blank=True, null=True)
     telefone = models.CharField(max_length=30, blank=True, verbose_name="Telefone")
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="organizadores_dono",
+        verbose_name="Dono (superuser)"
+    )
     logo = models.ImageField(
         upload_to=logo_organizador_upload_path,
         blank=True,
         null=True,
         verbose_name="Logo",
         help_text="Logo do organizador (JPG, PNG)"
+    )
+    slug = models.SlugField(
+        max_length=80,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name="Slug",
+        help_text="Identificador único usado nas URLs."
     )
     data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
     ativo = models.BooleanField(default=True, verbose_name="Ativo")
@@ -64,10 +81,31 @@ class Organizador(models.Model):
 
     def __str__(self):
         return self.nome
+    
+    def save(self, *args, **kwargs):
+        # Gera slug automaticamente se não estiver preenchido
+        if not self.slug and self.nome:
+            base_slug = slugify(self.nome)[:60] or "organizacao"  # reserva caracteres para sufixo
+            slug_candidate = base_slug
+            counter = 1
+            while Organizador.objects.filter(slug=slug_candidate).exclude(pk=self.pk).exists():
+                slug_candidate = f"{base_slug[:50]}-{counter}"
+                counter += 1
+            self.slug = slug_candidate
+        super().save(*args, **kwargs)
+
+
+class GrupoFaixa(models.Model):
+    nome = models.CharField(max_length=60)
+    faixa_ordem_min = models.PositiveSmallIntegerField()
+    faixa_ordem_max = models.PositiveSmallIntegerField()
+
+    def __str__(self):
+        return self.nome
 
 
 class Academia(models.Model):
-    organizador = models.ForeignKey(Organizador, on_delete=models.CASCADE, related_name='academias', verbose_name="Organizador", null=True, blank=True)
+    organizador = models.ForeignKey(Organizador, on_delete=models.CASCADE, related_name='academias', verbose_name="Organização", null=True, blank=True)
     nome = models.CharField(max_length=200)
     cidade = models.CharField(max_length=100)
     estado = models.CharField(max_length=2)
@@ -129,6 +167,30 @@ class Classe(models.Model):
 
     def __str__(self):
         return self.nome
+
+
+class ClasseElegivel(models.Model):
+    """Mapa de elegibilidade entre classes (origem -> destino)."""
+    classe_origem = models.ForeignKey(
+        Classe,
+        on_delete=models.CASCADE,
+        related_name="elegiveis_origem",
+        verbose_name="Classe de Origem"
+    )
+    classe_destino = models.ForeignKey(
+        Classe,
+        on_delete=models.CASCADE,
+        related_name="elegiveis_destino",
+        verbose_name="Classe de Destino"
+    )
+
+    class Meta:
+        verbose_name = "Classe Elegível"
+        verbose_name_plural = "Classes Elegíveis"
+        unique_together = ("classe_origem", "classe_destino")
+
+    def __str__(self):
+        return f"{self.classe_origem} -> {self.classe_destino}"
 
 
 class Categoria(models.Model):
@@ -241,9 +303,9 @@ class Atleta(models.Model):
         """Verifica se o atleta tem documento oficial cadastrado"""
         return bool(self.documento_oficial)
     
-    def get_classe_atual(self):
-        """Calcula a classe atual baseada na data de nascimento
-        
+    def get_classe_atual(self, ano_evento=None):
+        """Calcula a classe atual baseada no ano do evento (somente o ano).
+
         Retorna o nome exato da classe como está no banco de dados.
         Usa normalização flexível para encontrar a classe correta mesmo se houver
         variações de nomenclatura (espaço vs hífen).
@@ -252,7 +314,7 @@ class Atleta(models.Model):
             from .utils import calcular_classe, buscar_classe_no_banco
             ano = self.get_ano_nasc()
             if ano:
-                classe_calculada = calcular_classe(ano)
+                classe_calculada = calcular_classe(ano, ano_evento=ano_evento)
                 if classe_calculada:
                     # Buscar classe no banco para obter nome exato
                     classe_obj = buscar_classe_no_banco(classe_calculada)
@@ -390,7 +452,7 @@ class Campeonato(models.Model):
     data_competicao = models.DateField(null=True, blank=True, help_text="Data da competição")
     data_limite_inscricao = models.DateField(null=True, blank=True, help_text="Data limite para inscrições")
     data_limite_inscricao_academia = models.DateField(null=True, blank=True, verbose_name="Data Limite para Inscrições por Academia", help_text="Após esta data, academias não poderão mais inscrever ou editar atletas. Apenas a equipe operacional poderá fazer inscrições.")
-    ativo = models.BooleanField(default=True)
+    ativo = models.BooleanField(default=False, help_text="Apenas um campeonato pode estar ativo por vez")
     regulamento = models.TextField(blank=True, help_text="Regulamento do campeonato")
     valor_inscricao_federado = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Valor da inscrição para atletas federados")
     valor_inscricao_nao_federado = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Valor da inscrição para atletas não federados")
@@ -407,11 +469,70 @@ class Campeonato(models.Model):
 
     def __str__(self):
         return self.nome
+    
+    def save(self, *args, **kwargs):
+        """Garante que apenas um campeonato pode estar ativo por vez"""
+        # Se este campeonato está sendo ativado, desativar TODOS os outros primeiro
+        if self.ativo:
+            # Desativar todos, incluindo este (se já existir) para garantir limpeza
+            Campeonato.objects.all().update(ativo=False)
+            # Depois salvar este como ativo
+        super().save(*args, **kwargs)
+        # Garantir novamente após salvar (caso o save não tenha funcionado corretamente)
+        if self.ativo:
+            Campeonato.objects.exclude(id=self.id).update(ativo=False)
+    
+    def clean(self):
+        """Validação adicional"""
+        from django.core.exceptions import ValidationError
+        from django.utils import timezone
+        
+        # Validar datas
+        hoje = timezone.now().date()
+        
+        if self.data_inicio and self.data_limite_inscricao:
+            if self.data_limite_inscricao < self.data_inicio:
+                raise ValidationError('A data limite de inscrição não pode ser anterior à data de início.')
+        
+        if self.data_limite_inscricao_academia and self.data_limite_inscricao:
+            if self.data_limite_inscricao_academia > self.data_limite_inscricao:
+                raise ValidationError('A data limite para inscrições por academia não pode ser posterior à data limite geral de inscrições.')
+        
+        if self.data_competicao and self.data_limite_inscricao:
+            if self.data_competicao < self.data_limite_inscricao:
+                raise ValidationError('A data da competição não pode ser anterior à data limite de inscrições.')
+    
+    @property
+    def permite_inscricao_academia(self):
+        """Verifica se ainda permite inscrições por academia"""
+        from django.utils import timezone
+        hoje = timezone.now().date()
+        
+        if not self.ativo:
+            return False
+        
+        if self.data_limite_inscricao_academia:
+            return hoje <= self.data_limite_inscricao_academia
+        
+        if self.data_limite_inscricao:
+            return hoje <= self.data_limite_inscricao
+        
+        return True
+    
+    @property
+    def permite_cadastro_atleta(self):
+        """Verifica se ainda permite cadastro de novos atletas"""
+        return self.permite_inscricao_academia
 
 
 class Inscricao(models.Model):
     """Inscrição de um atleta em um campeonato específico"""
     STATUS_CHOICES = [
+        ('pendente_pesagem', 'Pendente de Pesagem'),
+        ('ok', 'OK'),
+        ('remanejado', 'Remanejado'),
+        ('desclassificado', 'Desclassificado'),
+        # Compatibilidade
         ('pendente', 'Pendente'),
         ('confirmado', 'Confirmado'),
         ('aprovado', 'Aprovado'),
@@ -421,21 +542,79 @@ class Inscricao(models.Model):
     atleta = models.ForeignKey(Atleta, on_delete=models.CASCADE, related_name='inscricoes', verbose_name="Atleta")
     campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='inscricoes', verbose_name="Campeonato")
     
-    # Classe e categoria escolhidas na inscrição
+    # Classe e categoria calculadas/escolhidas na inscrição (legado)
     classe_escolhida = models.CharField(max_length=20, verbose_name="Classe Escolhida")
+    categoria_calculada = models.CharField(max_length=100, verbose_name="Categoria Calculada", blank=True)
     categoria_escolhida = models.CharField(max_length=100, verbose_name="Categoria Escolhida", blank=True)
+
+    # Campos novos normalizados (FK / Decimal / status)
+    classe_real = models.ForeignKey(
+        Classe,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="inscricoes_classe_real",
+        verbose_name="Classe Real"
+    )
+    categoria_real = models.ForeignKey(
+        Categoria,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="inscricoes_categoria_real",
+        verbose_name="Categoria Real"
+    )
+    peso_real = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Peso Real (kg)"
+    )
+    STATUS_ATUAL_CHOICES = [
+        ('pendente', 'Pendente'),
+        ('inscrito', 'Inscrito'),
+        ('aprovado', 'Aprovado'),
+        ('remanejado', 'Remanejado'),
+        ('desclassificado', 'Desclassificado'),
+    ]
+    status_atual = models.CharField(
+        max_length=20,
+        choices=STATUS_ATUAL_CHOICES,
+        default='pendente',
+        verbose_name="Status Atual",
+        db_index=True
+    )
+    STATUS_WORKFLOW_CHOICES = [
+        ('RASCUNHO', 'Rascunho'),
+        ('CONFIRMADA', 'Confirmada'),
+        ('PESADA', 'Pesada'),
+        ('BLOQUEADA', 'Bloqueada'),
+        ('CANCELADA', 'Cancelada'),
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_WORKFLOW_CHOICES,
+        default='RASCUNHO',
+        verbose_name="Status (Workflow)",
+        db_index=False
+    )
+    
+    # Peso informado na inscrição
+    peso_informado = models.DecimalField(max_digits=6, decimal_places=1, null=True, blank=True, verbose_name="Peso Informado (kg)")
     
     # Dados da pesagem (preenchidos após pesagem)
-    peso = models.FloatField(null=True, blank=True, verbose_name="Peso Oficial (kg)")
+    peso = models.DecimalField(max_digits=6, decimal_places=1, null=True, blank=True, verbose_name="Peso Oficial (kg)")
     categoria_ajustada = models.CharField(max_length=100, blank=True, verbose_name="Categoria Ajustada")
     motivo_ajuste = models.TextField(blank=True, verbose_name="Motivo do Ajuste")
     remanejado = models.BooleanField(default=False, verbose_name="Remanejado")
+    bloqueado_chave = models.BooleanField(default=False, verbose_name="Bloqueado para chaveamento")
     
-    # Status da inscrição
+    # Status da inscrição (legado)
     status_inscricao = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='pendente',
+        default='pendente_pesagem',
         verbose_name="Status da Inscrição"
     )
     
@@ -455,18 +634,28 @@ class Inscricao(models.Model):
     
     def pode_gerar_chave(self):
         """Verifica se a inscrição está apta para gerar chave"""
-        return self.status_inscricao in ['aprovado', 'confirmado'] and self.peso is not None
+        return (
+            self.status_inscricao in ['aprovado', 'confirmado', 'ok', 'remanejado']
+            and not self.bloqueado_chave
+            and self.peso is not None
+        )
+
+    def eh_apto_chave(self):
+        return self.pode_gerar_chave()
+
+    def eh_desclassificado(self):
+        return self.status_inscricao == 'desclassificado' or self.bloqueado_chave
 
 
 class PesagemHistorico(models.Model):
     """Histórico de pesagens por evento - registra todas as pesagens realizadas"""
     inscricao = models.ForeignKey(Inscricao, on_delete=models.CASCADE, related_name='historico_pesagens', verbose_name="Inscrição")
     campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='pesagens_historico', verbose_name="Campeonato")
-    peso_registrado = models.FloatField(verbose_name="Peso Registrado (kg)")
+    peso_registrado = models.DecimalField(max_digits=6, decimal_places=1, verbose_name="Peso Registrado (kg)")
     categoria_ajustada = models.CharField(max_length=100, blank=True, verbose_name="Categoria Ajustada")
     motivo_ajuste = models.TextField(blank=True, verbose_name="Motivo do Ajuste")
     observacoes = models.TextField(blank=True, verbose_name="Observações")
-    pesado_por = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='pesagens_realizadas', verbose_name="Pesado por")
+    pesado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='pesagens_realizadas', verbose_name="Pesado por")
     data_hora = models.DateTimeField(auto_now_add=True, verbose_name="Data e Hora da Pesagem")
     
     class Meta:
@@ -480,6 +669,28 @@ class PesagemHistorico(models.Model):
     
     def __str__(self):
         return f"{self.inscricao.atleta.nome} - {self.peso_registrado}kg - {self.data_hora.strftime('%d/%m/%Y %H:%M')}"
+
+
+class OcorrenciaAtleta(models.Model):
+    """Ocorrências automáticas em pesagem/remanejamento/desclassificação"""
+    TIPO_CHOICES = [
+        ('REMANEJAMENTO', 'Remanejamento'),
+        ('DESCLASSIFICACAO', 'Desclassificação'),
+    ]
+    atleta = models.ForeignKey(Atleta, on_delete=models.CASCADE, related_name='ocorrencias_pesagem', verbose_name="Atleta")
+    campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='ocorrencias_pesagem', verbose_name="Campeonato")
+    tipo = models.CharField(max_length=30, choices=TIPO_CHOICES, verbose_name="Tipo")
+    motivo = models.CharField(max_length=255, blank=True, verbose_name="Motivo")
+    detalhes_json = models.JSONField(default=dict, blank=True, verbose_name="Detalhes")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+    
+    class Meta:
+        verbose_name = "Ocorrência de Atleta"
+        verbose_name_plural = "Ocorrências de Atletas"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.atleta.nome} - {self.get_tipo_display()} - {self.campeonato.nome}"
 
 
 class AcademiaCampeonato(models.Model):
@@ -670,27 +881,50 @@ class CadastroOperacional(models.Model):
 
 
 class UserProfile(models.Model):
-    """Perfil do usuário com organizador (multi-tenant)"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name="Usuário")
-    organizador = models.ForeignKey(Organizador, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios', verbose_name="Organizador", help_text="Organizador ao qual o usuário pertence")
+    """Perfil de usuário multi-tenant completo"""
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
+    
+    # Organização (superior)
+    organizador = models.ForeignKey(
+        Organizador,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='usuarios'
+    )
+
+    # NOVO CAMPO – ACADEMIA
+    academia = models.ForeignKey(
+        Academia,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='usuarios_academia'
+    )
 
     class Meta:
         verbose_name = "Perfil de Usuário"
         verbose_name_plural = "Perfis de Usuário"
 
     def __str__(self):
+        # AUTH_USER_MODEL usa email como login (não existe "username" no User custom)
+        texto = [getattr(self.user, "get_username", lambda: "")() or getattr(self.user, "email", "") or str(self.user)]
         if self.organizador:
-            return f"{self.user.username} - {self.organizador.nome}"
-        return f"{self.user.username} - Sem organizador"
+            texto.append(f"Org: {self.organizador.nome}")
+        if self.academia:
+            texto.append(f"Acad: {self.academia.nome}")
+        return " | ".join(texto)
+
+
 
 
 class UsuarioOperacional(models.Model):
     """Perfil de usuário operacional com permissões e expiração"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil_operacional', verbose_name="Usuário")
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='perfil_operacional', verbose_name="Usuário")
     pode_resetar_campeonato = models.BooleanField(default=False, verbose_name="Pode Resetar Campeonato", help_text="Permissão para resetar campeonato (apenas usuário principal)")
     pode_criar_usuarios = models.BooleanField(default=False, verbose_name="Pode Criar Usuários", help_text="Permissão para criar novos usuários operacionais (apenas usuário principal)")
     data_expiracao = models.DateTimeField(null=True, blank=True, verbose_name="Data de Expiração", help_text="Data de expiração do acesso (null = vitalício)")
-    criado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios_criados', verbose_name="Criado Por")
+    criado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios_criados', verbose_name="Criado Por")
     data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
     ativo = models.BooleanField(default=True, verbose_name="Ativo")
     senha_alterada = models.BooleanField(default=False, verbose_name="Senha Alterada", help_text="Indica se o usuário já alterou a senha no primeiro acesso")
@@ -701,10 +935,11 @@ class UsuarioOperacional(models.Model):
         ordering = ['-data_criacao']
     
     def __str__(self):
+        identificador = getattr(self.user, "get_username", lambda: "")() or getattr(self.user, "email", "") or str(self.user)
         if not self.data_expiracao:
-            return f"{self.user.username} - Vitalício"
+            return f"{identificador} - Vitalício"
         else:
-            return f"{self.user.username} - Expira em {self.data_expiracao.strftime('%d/%m/%Y')}"
+            return f"{identificador} - Expira em {self.data_expiracao.strftime('%d/%m/%Y')}"
     
     @property
     def esta_expirado(self):
@@ -720,6 +955,17 @@ class UsuarioOperacional(models.Model):
             return None  # Vitalício
         delta = self.data_expiracao - timezone.now()
         return max(0, delta.days)
+
+    @property
+    def organizacao(self):
+        """Retorna a organização associada ao usuário operacional."""
+        try:
+            perfil = self.user.profile
+            if perfil and perfil.organizador:
+                return perfil.organizador
+        except Exception:
+            pass
+        return None
 
 
 class PessoaEquipeTecnica(models.Model):
@@ -923,7 +1169,7 @@ class Pagamento(models.Model):
     )
     motivo_rejeicao = models.TextField(blank=True, verbose_name="Motivo da Rejeição", help_text="Motivo da rejeição do pagamento (preenchido pelo operador)")
     validado_por = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -969,7 +1215,7 @@ class ConferenciaPagamento(models.Model):
         help_text="Comprovante de pagamento enviado pela academia (JPG, PNG, PDF ou HEIC)"
     )
     conferido_por = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -1011,7 +1257,7 @@ class HistoricoSistema(models.Model):
     tipo_acao = models.CharField(max_length=50, choices=TIPO_ACAO_CHOICES, verbose_name="Tipo de Ação")
     descricao = models.TextField(verbose_name="Descrição")
     usuario = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -1127,7 +1373,7 @@ class Ocorrencia(models.Model):
     
     # Responsáveis
     registrado_por = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -1135,7 +1381,7 @@ class Ocorrencia(models.Model):
         verbose_name="Registrado por"
     )
     responsavel_resolucao = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

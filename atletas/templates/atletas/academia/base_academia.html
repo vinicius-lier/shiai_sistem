@@ -2,8 +2,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <link rel="icon" type="image/png" href="{% static 'atletas/images/logo_black.png' %}">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>{% block title %}SHIAI SISTEM - Academia{% endblock %}</title>
@@ -350,10 +348,8 @@
         }
 
         .badge-success {
-            background: #DCFCE7;
-            color: #166534 !important;
-            font-weight: 700;
-            border: 1px solid #34D399;
+            background: var(--color-success-light);
+            color: #065F46;
         }
 
         .badge-danger {
@@ -362,17 +358,13 @@
         }
 
         .badge-warning {
-            background: #FDE68A;
-            color: #92400E !important;
-            font-weight: 600;
-            border: 1px solid #F59E0B;
+            background: var(--color-warning-light);
+            color: #92400E;
         }
 
         .badge-info {
-            background: #BFDBFE;
-            color: #0F172A !important;
-            font-weight: 700;
-            border: 1px solid #60A5FA;
+            background: var(--color-primary-light);
+            color: #1E40AF;
         }
 
         /* Alerts */
@@ -785,78 +777,107 @@
                 display: none;
             }
         }
-
-        .academy-shell {
-            min-height: 100vh;
-            background: var(--color-gray-50);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .academy-content {
-            flex: 1;
-            padding: var(--spacing-4);
-            padding-bottom: calc(var(--spacing-4) + 72px);
-        }
-
-        @media (min-width: 768px) {
-            .academy-content {
-                padding: var(--spacing-6);
-                padding-bottom: calc(var(--spacing-6) + 72px);
-            }
-        }
-
-        .academy-bottom-nav {
-            position: fixed;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--color-white);
-            border-top: 1px solid var(--color-gray-200);
-            padding: var(--spacing-2) var(--spacing-4);
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: var(--spacing-2);
-            z-index: 1100;
-        }
-
-        .academy-bottom-link {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: var(--spacing-1);
-            text-decoration: none;
-            color: var(--color-gray-600);
-            font-size: var(--font-size-xs);
-            font-weight: 600;
-            padding: var(--spacing-1);
-            border-radius: var(--border-radius-md);
-        }
-
-        .academy-bottom-link svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        .academy-bottom-link.is-active {
-            color: var(--color-primary);
-            background: var(--color-gray-100);
-        }
-
-        @media (min-width: 1024px) {
-            .academy-bottom-nav {
-                left: 50%;
-                transform: translateX(-50%);
-                max-width: 720px;
-                border-radius: var(--border-radius-xl);
-                margin-bottom: var(--spacing-4);
-                box-shadow: var(--shadow-md);
-            }
-        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    {% block navbar %}
+    <!-- Navbar Responsiva -->
+    <nav class="navbar navbar-expand-lg navbar-shiai">
+        <div class="container-fluid" style="max-width: 100%; padding: 0 var(--spacing-4);">
+            <a class="navbar-brand" href="{% url 'academia_painel' %}">
+                <img src="{% static 'img/logo_white.png' %}" alt="SHIAI SISTEM">
+            </a>
+            
+            <!-- Botão Hambúrguer (Mobile) -->
+            <button class="navbar-toggler-shiai" type="button" id="sidebarToggle" aria-label="Toggle navigation">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            
+            <!-- Menu Desktop -->
+            <ul class="navbar-nav-desktop">
+                <li><a href="{% url 'academia_painel' %}" class="nav-link">Painel</a></li>
+                {% if campeonato_ativo %}
+                <li><a href="{% url 'academia_evento' campeonato_ativo.id %}" class="nav-link">Evento Ativo</a></li>
+                {% endif %}
+                <li><a href="{% url 'academia_lista_atletas' %}" class="nav-link">Atletas</a></li>
+                <li><a href="{% url 'academia_logout' %}" class="nav-link">Sair</a></li>
+            </ul>
+        </div>
+    </nav>
+    {% endblock %}
+
+    {% block sidebar %}
+    <!-- Dark Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Mobile -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <img src="{% static 'img/logo_white.png' %}" alt="SHIAI SISTEM">
+            </div>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Fechar menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <nav>
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="{% url 'academia_painel' %}" class="nav-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        <span>Painel</span>
+                    </a>
+                </li>
+                {% if campeonato_ativo %}
+                <li class="nav-item">
+                    <a href="{% url 'academia_evento' campeonato_ativo.id %}" class="nav-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>Evento Ativo</span>
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a href="{% url 'academia_lista_atletas' %}" class="nav-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Atletas</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'academia_logout' %}" class="nav-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        <span>Sair</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+    {% endblock %}
+
     {% if messages %}
         <div style="position: fixed; top: var(--spacing-4); left: var(--spacing-4); right: var(--spacing-4); z-index: 1050; max-width: 600px; margin: 0 auto;">
             {% for message in messages %}
@@ -867,44 +888,9 @@
         </div>
     {% endif %}
 
-    <div class="academy-shell">
-        <div class="academy-content">
-            {% block content %}{% endblock %}
-        </div>
+    <div class="container">
+        {% block content %}{% endblock %}
     </div>
-
-    <nav class="academy-bottom-nav">
-        <a href="{% url 'academia_painel' %}" class="academy-bottom-link {% if request.resolver_match.url_name == 'academia_painel' %}is-active{% endif %}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                <polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
-            Painel
-        </a>
-        <a href="{% url 'academia_lista_atletas' %}" class="academy-bottom-link {% if request.resolver_match.url_name == 'academia_lista_atletas' %}is-active{% endif %}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-            Atletas
-        </a>
-        <a href="{% if campeonato_ativo %}{% url 'academia_evento' campeonato_ativo.id %}{% else %}{% url 'academia_painel' %}{% endif %}" class="academy-bottom-link {% if request.resolver_match.url_name == 'academia_evento' %}is-active{% endif %}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 6v6l4 2"></path>
-            </svg>
-            Eventos
-        </a>
-        <a href="{% if campeonato_ativo %}{% url 'academia_inscrever_atletas' campeonato_ativo.id %}{% else %}{% url 'academia_painel' %}{% endif %}" class="academy-bottom-link {% if request.resolver_match.url_name == 'academia_inscrever_atletas' %}is-active{% endif %}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-                <path d="M9 12l2 2 4-4"></path>
-            </svg>
-            Inscrições
-        </a>
-    </nav>
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
@@ -918,6 +904,71 @@
                 setTimeout(() => alert.remove(), 300);
             });
         }, 5000);
+
+        // ============================================
+        // SIDEBAR MOBILE - CONTROLE DE ABERTURA/FECHAMENTO
+        // ============================================
+        (function() {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarClose = document.getElementById('sidebarClose');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            
+            if (!sidebar || !sidebarToggle) return;
+            
+            function openSidebar() {
+                sidebar.classList.add('open');
+                sidebarOverlay.classList.add('active');
+                document.body.classList.add('sidebar-open');
+            }
+            
+            function closeSidebar() {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('active');
+                document.body.classList.remove('sidebar-open');
+            }
+            
+            function toggleSidebar() {
+                if (sidebar.classList.contains('open')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            }
+            
+            // Event listeners
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', toggleSidebar);
+            }
+            
+            if (sidebarClose) {
+                sidebarClose.addEventListener('click', closeSidebar);
+            }
+            
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', closeSidebar);
+            }
+            
+            // Fechar sidebar ao clicar em link (mobile)
+            const sidebarLinks = sidebar.querySelectorAll('.nav-link');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    // Pequeno delay para permitir navegação
+                    setTimeout(closeSidebar, 100);
+                });
+            });
+            
+            // Fechar sidebar ao redimensionar para desktop
+            let resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    if (window.innerWidth >= 992) {
+                        closeSidebar();
+                    }
+                }, 100);
+            });
+        })();
     </script>
     {% block extra_js %}{% endblock %}
 </body>

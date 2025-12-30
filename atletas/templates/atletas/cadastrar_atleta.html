@@ -1,69 +1,71 @@
-{% extends 'atletas/layouts/base_operational.html' %}
+{% extends 'atletas/base.html' %}
 {% load static %}
 
-{% block title %}Cadastrar Atleta{% endblock %}
+{% block title %}Cadastrar Atleta - Sistema de Gestão de Competições de Judô{% endblock %}
 
 {% block content %}
-<div class="page-header" style="display: flex; flex-direction: column; gap: 8px;">
-    <div>
-        <h1 class="page-title">Cadastrar Atleta</h1>
-        <p class="page-description">Equipe operacional pode cadastrar atletas para qualquer academia cadastrada.</p>
-    </div>
-    <a href="{% url 'lista_atletas' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary" style="align-self: flex-start;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 12H5"></path><polyline points="12 5 5 12 12 19"></polyline></svg>
-        Voltar para lista
-    </a>
+<div class="page-header">
+    <h1 class="page-title">Cadastrar Atleta</h1>
+    <p class="page-description">Adicione um novo atleta ao sistema</p>
 </div>
 
-{% if not academias %}
-<div class="alert alert-warning" role="alert" style="margin-top: 16px;">
-    Nenhuma academia ativa encontrada. Cadastre uma academia antes de adicionar atletas.
-</div>
-{% endif %}
-
-<div class="card" style="margin-top: 16px;">
+<div class="card">
     <div class="card-header">
-        <h3 class="card-title">Dados do atleta</h3>
+        <h3 class="card-title">Informações do Atleta</h3>
     </div>
     <div class="card-body">
         <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+    {% csrf_token %}
+    
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
                 <div class="form-group">
-                    <label class="form-label" for="nome">Nome completo <span style="color: #d32f2f;">*</span></label>
-                    <input type="text" id="nome" name="nome" class="form-input" placeholder="Digite o nome do atleta" required>
+                    <label class="form-label" for="nome">
+                        Nome completo
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="text" id="nome" name="nome" class="form-input" required placeholder="Digite o nome do atleta">
                 </div>
-
+    
                 <div class="form-group">
-                    <label class="form-label" for="data_nascimento">Data de nascimento <span style="color: #d32f2f;">*</span></label>
+                    <label class="form-label" for="data_nascimento">
+                        Data de Nascimento
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
                     <input type="date" id="data_nascimento" name="data_nascimento" class="form-input" required>
-                    <small class="form-hint">A classe é calculada automaticamente pelo sistema.</small>
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">A classe será calculada automaticamente</small>
                 </div>
-
+                
                 <div class="form-group">
-                    <label class="form-label" for="sexo">Sexo <span style="color: #d32f2f;">*</span></label>
+                    <label class="form-label" for="sexo">
+                        Sexo
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
                     <select id="sexo" name="sexo" class="form-select" required>
-                        <option value="">Selecione</option>
-                        <option value="M">Masculino</option>
-                        <option value="F">Feminino</option>
-                    </select>
+        <option value="">Selecione</option>
+        <option value="M">Masculino</option>
+        <option value="F">Feminino</option>
+    </select>
                 </div>
-
+                
                 <div class="form-group">
-                    <label class="form-label" for="academia">Academia <span style="color: #d32f2f;">*</span></label>
+                    <label class="form-label" for="academia">
+                        Academia
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
                     <select id="academia" name="academia" class="form-select" required>
                         <option value="">Selecione uma academia</option>
-                        {% for academia in academias %}
-                        <option value="{{ academia.id }}">{{ academia.nome }}</option>
-                        {% endfor %}
-                    </select>
+        {% for academia in academias %}
+        <option value="{{ academia.id }}">{{ academia.nome }}</option>
+        {% endfor %}
+    </select>
                 </div>
-
+                
                 <div class="form-group">
-                    <label class="form-label" for="faixa">Faixa</label>
+                    <label class="form-label" for="faixa">
+                        Faixa
+                    </label>
                     <select id="faixa" name="faixa" class="form-select">
-                        <option value="">Sem informação</option>
+                        <option value="">Selecione a faixa</option>
                         <option value="BRANCA">Branca</option>
                         <option value="P.CINZA">P. Cinza</option>
                         <option value="CINZA">Cinza</option>
@@ -79,73 +81,118 @@
                         <option value="PRETA">Preta</option>
                     </select>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="telefone">Telefone</label>
-                    <input type="text" id="telefone" name="telefone" class="form-input" placeholder="(00) 00000-0000">
-                    <small class="form-hint">Contato para conveniência.</small>
-                </div>
-
+                
                 <div class="form-group" style="grid-column: 1 / -1;">
-                    <label class="form-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" id="federado" name="federado" onchange="toggleZempoField()">
-                        <span>Atleta federado</span>
+                    <label class="form-label" for="foto_perfil">
+                        Foto de Perfil
+                    </label>
+                    <input type="file" id="foto_perfil" name="foto_perfil" class="form-input" accept=".jpg,.jpeg,.png,.heic" onchange="previewFoto(this, 'foto-preview')">
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Formatos aceitos: JPG, PNG, HEIC (máximo 2MB)</small>
+                    <div id="foto-preview" style="margin-top: var(--spacing-3); display: none;">
+                        <img id="foto-preview-img" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: var(--border-radius-md); border: 2px solid var(--color-gray-300);">
+                    </div>
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label class="form-label" for="documento_oficial">
+                        Documento Oficial (RG, CPF ou Certidão)
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="file" id="documento_oficial" name="documento_oficial" class="form-input" accept=".jpg,.jpeg,.png,.pdf,.heic" required>
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Formatos aceitos: JPG, PNG, PDF ou HEIC (máximo 5MB)</small>
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label style="display: flex; align-items: center; gap: var(--spacing-2); cursor: pointer; padding: var(--spacing-3); border: 1px solid var(--color-gray-300); border-radius: var(--border-radius-md); transition: all var(--transition-base);">
+                        <input type="checkbox" id="federado" name="federado" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;" onchange="toggleZempoField()">
+                        <div>
+                            <span style="font-size: var(--font-size-sm); font-weight: 500; color: var(--color-gray-700);">
+                                Atleta Federado
+                            </span>
+                            <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-weight: normal;">
+                                Marque se o atleta possui registro na federação
+                            </small>
+                        </div>
                     </label>
                 </div>
-
+                
                 <div class="form-group" id="zempo-group" style="display: none;">
-                    <label class="form-label" for="numero_zempo">Número Zempo</label>
-                    <input type="text" id="numero_zempo" name="numero_zempo" class="form-input" placeholder="Número Zempo">
-                    <small class="form-hint">Obrigatório para atletas federados.</small>
+                    <label class="form-label" for="numero_zempo">
+                        Número Zempo
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="text" id="numero_zempo" name="numero_zempo" class="form-input" placeholder="Digite o número Zempo do atleta">
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Obrigatório para atletas federados</small>
                 </div>
-
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label class="form-label" for="documento_oficial">Documento oficial</label>
-                    <input type="file" id="documento_oficial" name="documento_oficial" class="form-input" accept=".jpg,.jpeg,.png,.pdf,.heic">
-                    <small class="form-hint">Formatos aceitos: JPG, PNG, PDF ou HEIC (máx. 5MB).</small>
-                </div>
-
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label class="form-label" for="foto_perfil">Foto de perfil</label>
-                    <input type="file" id="foto_perfil" name="foto_perfil" class="form-input" accept=".jpg,.jpeg,.png,.heic" onchange="previewFoto(this, 'foto-preview')">
-                    <div id="foto-preview" style="margin-top: 12px; display: none;">
-                        <img id="foto-preview-img" src="" alt="Preview" style="width: 120px; height: 120px; border-radius: 8px; object-fit: cover; border: 1px solid #ccc;">
+            </div>
+            
+            <!-- Seção Equipe Técnica -->
+            <div style="margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 2px solid var(--color-gray-300);">
+                <h3 style="font-size: var(--font-size-lg); font-weight: 600; color: var(--color-gray-900); margin-bottom: var(--spacing-4);">Equipe Técnica</h3>
+                <p style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: var(--spacing-4);">Marque se esta pessoa pode fazer parte da equipe técnica em eventos (árbitros, mesários, etc.)</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label style="display: flex; align-items: center; gap: var(--spacing-2); cursor: pointer; padding: var(--spacing-3); border: 1px solid var(--color-gray-300); border-radius: var(--border-radius-md); transition: all var(--transition-base);">
+                            <input type="checkbox" id="pode_ser_equipe_tecnica" name="pode_ser_equipe_tecnica" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;" onchange="toggleEquipeTecnicaFields()">
+                            <div>
+                                <span style="font-size: var(--font-size-sm); font-weight: 500; color: var(--color-gray-700);">
+                                    Pode Fazer Parte da Equipe Técnica
+                                </span>
+                                <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-weight: normal;">
+                                    Marque se esta pessoa pode ser selecionada para compor a equipe técnica em eventos
+                                </small>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group" id="equipe-tecnica-group" style="display: none; grid-column: 1 / -1;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-4);">
+                            <div class="form-group">
+                                <label class="form-label" for="funcao_equipe_tecnica">Função/Cargo na Equipe Técnica</label>
+                                <input type="text" id="funcao_equipe_tecnica" name="funcao_equipe_tecnica" class="form-input" placeholder="Ex: Árbitro, Mesário, Coordenador">
+                                <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Função padrão na equipe técnica</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="telefone">
+                                    Telefone
+                                </label>
+                                <input type="text" id="telefone" name="telefone" class="form-input" placeholder="(00) 00000-0000">
+                                <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Telefone de contato</small>
+                            </div>
+                            
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label class="form-label" for="chave_pix">
+                                    Chave PIX
+                                    <span style="color: var(--color-danger);">*</span>
+                                </label>
+                                <input type="text" id="chave_pix" name="chave_pix" class="form-input" placeholder="CPF, CNPJ, Email, Telefone ou Chave Aleatória">
+                                <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Obrigatório para pagamento da equipe técnica</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--color-gray-200);">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" id="pode_ser_equipe_tecnica" name="pode_ser_equipe_tecnica" onchange="toggleEquipeTecnicaFields()">
-                    <span>Pode fazer parte da equipe técnica</span>
-                </label>
-                <div id="equipe-tecnica-group" style="display: none; margin-top: 16px;">
-                    <div class="form-group">
-                        <label class="form-label" for="funcao_equipe_tecnica">Função / Cargo</label>
-                        <input type="text" id="funcao_equipe_tecnica" name="funcao_equipe_tecnica" class="form-input" placeholder="Ex: Árbitro, Mesário">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="chave_pix">Chave PIX</label>
-                        <input type="text" id="chave_pix" name="chave_pix" class="form-input" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória">
-                        <small class="form-hint">Obrigatório para pagamento da equipe técnica.</small>
-                    </div>
-                </div>
+            
+            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end; margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
+                <a href="{% url 'lista_atletas' %}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Cadastrar Atleta
+                </button>
             </div>
-
-            <div class="form-actions">
-                <a href="{% url 'lista_atletas' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-primary">Cadastrar atleta</button>
-            </div>
-        </form>
+</form>
     </div>
 </div>
 
 <script>
 function toggleZempoField() {
-    const federado = document.getElementById('federado').checked;
+    const federadoCheck = document.getElementById('federado');
     const zempoGroup = document.getElementById('zempo-group');
     const zempoInput = document.getElementById('numero_zempo');
-    if (federado) {
+    
+    if (federadoCheck.checked) {
         zempoGroup.style.display = 'block';
         zempoInput.required = true;
     } else {
@@ -155,35 +202,62 @@ function toggleZempoField() {
     }
 }
 
-function toggleEquipeTecnicaFields() {
-    const habilitado = document.getElementById('pode_ser_equipe_tecnica').checked;
-    const grupo = document.getElementById('equipe-tecnica-group');
-    const chavePix = document.getElementById('chave_pix');
-    if (habilitado) {
-        grupo.style.display = 'block';
-        chavePix.required = true;
-    } else {
-        grupo.style.display = 'none';
-        chavePix.required = false;
-        chavePix.value = '';
-        document.getElementById('funcao_equipe_tecnica').value = '';
-    }
-}
-
+// Preview de foto
 function previewFoto(input, previewId) {
     const preview = document.getElementById(previewId);
     const previewImg = document.getElementById(previewId + '-img');
-    if (!input.files || !input.files[0]) {
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+    } else {
         preview.style.display = 'none';
-        return;
     }
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        previewImg.src = e.target.result;
-        preview.style.display = 'block';
-    };
-    reader.readAsDataURL(input.files[0]);
 }
-</script>
 
+function toggleEquipeTecnicaFields() {
+    const podeSerEquipeTecnica = document.getElementById('pode_ser_equipe_tecnica');
+    const equipeTecnicaGroup = document.getElementById('equipe-tecnica-group');
+    const chavePix = document.getElementById('chave_pix');
+    
+    if (podeSerEquipeTecnica.checked) {
+        equipeTecnicaGroup.style.display = 'block';
+        chavePix.required = true;
+    } else {
+        equipeTecnicaGroup.style.display = 'none';
+        chavePix.required = false;
+        chavePix.value = '';
+        document.getElementById('funcao_equipe_tecnica').value = '';
+        document.getElementById('telefone').value = '';
+    }
+}
+
+// Validar antes de enviar
+document.querySelector('form').addEventListener('submit', function(e) {
+    const federado = document.getElementById('federado').checked;
+    const numeroZempo = document.getElementById('numero_zempo').value.trim();
+    const podeSerEquipeTecnica = document.getElementById('pode_ser_equipe_tecnica').checked;
+    const chavePix = document.getElementById('chave_pix').value.trim();
+        
+    if (federado && !numeroZempo) {
+        e.preventDefault();
+        alert('Por favor, informe o número Zempo para atletas federados.');
+        document.getElementById('numero_zempo').focus();
+        return false;
+    }
+    
+    if (podeSerEquipeTecnica && !chavePix) {
+        e.preventDefault();
+        alert('Por favor, informe a Chave PIX para pessoas que podem fazer parte da equipe técnica.');
+        document.getElementById('chave_pix').focus();
+        return false;
+    }
+});
+</script>
 {% endblock %}

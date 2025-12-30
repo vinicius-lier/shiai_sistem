@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 import mimetypes
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -91,6 +92,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Servir arquivos estáticos em produção
+    'atletas.middleware.create_media_directory',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',  # Middleware de localização (deve vir após SessionMiddleware)
     'django.middleware.common.CommonMiddleware',
@@ -143,6 +145,23 @@ DATABASES = {
 }
 
 AUTH_USER_MODEL = 'accounts.User'
+
+# PostgreSQL em produção (Render) via DATABASE_URL
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    DATABASES['default'] = dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+elif not os.getenv('DB_NAME'):
+    # Desenvolvimento local: fallback para SQLite quando não há configuração de Postgres
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -226,14 +245,9 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 MEDIA_URL = "/media/"
 
 if os.environ.get("RENDER"):
-    # Caminho correto no Render
-    MEDIA_ROOT = "/opt/render/project/src/media"
+    MEDIA_ROOT = "/var/data/media"
 else:
     MEDIA_ROOT = BASE_DIR / "media"
-
-
-MEDIA_URL = "/media/"
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

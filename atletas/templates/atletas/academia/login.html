@@ -1,35 +1,52 @@
-{% extends "atletas/layouts/base_auth.html" %}
+{% extends 'atletas/academia/base_academia.html' %}
 {% load static %}
 
 {% block title %}Login de Academia - SHIAI SISTEM{% endblock %}
 
-{% block auth_content %}
-<div class="stack" style="align-items:center;">
-  <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI SISTEM" style="width:120px; height:120px; object-fit:contain;">
-  <div class="stack" style="gap: var(--space-1); text-align:center;">
-    <div style="font-weight:800; font-size: var(--font-size-lg);">Login da Academia</div>
-    <div style="color: var(--muted);">Acesse com login e senha da sua academia</div>
-  </div>
-</div>
+{% block navbar %}{% endblock %}
+{% block sidebar %}{% endblock %}
 
-<form method="post" class="stack" style="margin-top: var(--space-4); gap: var(--space-3);">
-  {% csrf_token %}
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="text-center mb-8">
+            <img src="{% static 'img/logo_black.png' %}" alt="SHIAI SISTEM" style="max-width: 150px; margin-bottom: var(--spacing-6);">
+            <p class="page-description">Acesse com login e senha da sua academia</p>
+        </div>
 
-  <div class="stack" style="gap: var(--space-2);">
-    <label for="login" style="font-weight:600;">Login da Academia</label>
-    <input type="text" id="login" name="login" required placeholder="Digite seu login" autocomplete="username" autofocus>
-  </div>
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="login">Login da Academia</label>
+                        <input type="text" id="login" name="login" class="form-input" required placeholder="Digite seu login" autocomplete="username">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="senha">Senha</label>
+                        <input type="password" id="senha" name="senha" class="form-input" required placeholder="Digite sua senha" autocomplete="current-password">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-full">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                            <polyline points="10 17 15 12 10 7"></polyline>
+                            <line x1="15" y1="12" x2="3" y2="12"></line>
+                        </svg>
+                        Entrar
+                    </button>
+                </form>
+            </div>
+        </div>
 
-  <div class="stack" style="gap: var(--space-2);">
-    <label for="senha" style="font-weight:600;">Senha</label>
-    <input type="password" id="senha" name="senha" required placeholder="Digite sua senha" autocomplete="current-password">
-  </div>
-
-  <button type="submit" class="btn btn-primary" style="width:100%;">Entrar</button>
-</form>
-
-<div class="stack" style="margin-top: var(--space-3); gap: var(--space-2); text-align:center;">
-  <a href="{% url 'landing_publica' %}" style="color: var(--muted); text-decoration:none;">← Voltar</a>
+        <div class="text-center mt-6">
+            <a href="{% url 'selecionar_tipo_login' %}" class="text-primary" style="text-decoration: none; font-size: var(--font-size-sm);">
+                ← Voltar para seleção de login
+            </a>
+        </div>
+    </div>
 </div>
 {% endblock %}
 

@@ -304,23 +304,45 @@ class Atleta(models.Model):
         return bool(self.documento_oficial)
     
     def get_classe_atual(self, ano_evento=None):
-        """Calcula a classe atual baseada no ano do evento (somente o ano)."""
+        """Calcula a classe atual baseada no ano do evento (somente o ano).
+
+        Retorna o nome exato da classe como está no banco de dados.
+        Usa normalização flexível para encontrar a classe correta mesmo se houver
+        variações de nomenclatura (espaço vs hífen).
+        """
         try:
-            from .utils import calcular_classe
+            from .utils import calcular_classe, buscar_classe_no_banco
             ano = self.get_ano_nasc()
             if ano:
-                classe = calcular_classe(ano, ano_evento=ano_evento)
-                if classe:
-                    return classe
+                classe_calculada = calcular_classe(ano, ano_evento=ano_evento)
+                if classe_calculada:
+                    # Buscar classe no banco para obter nome exato
+                    classe_obj = buscar_classe_no_banco(classe_calculada)
+                    if classe_obj:
+                        return classe_obj.nome
+                    # Se não encontrou no banco, retornar o calculado
+                    return classe_calculada
             # Fallback para classe_inicial ou padrão
             if self.classe_inicial:
+                # Tentar buscar no banco também
+                from .utils import buscar_classe_no_banco
+                classe_obj = buscar_classe_no_banco(self.classe_inicial)
+                if classe_obj:
+                    return classe_obj.nome
                 return self.classe_inicial
-            return "SÊNIOR"  # Padrão se não houver dados
+            return "SÊNIOR/VET"  # Padrão se não houver dados
         except Exception as e:
             # Em caso de erro, retornar classe_inicial ou padrão
             if self.classe_inicial:
+                try:
+                    from .utils import buscar_classe_no_banco
+                    classe_obj = buscar_classe_no_banco(self.classe_inicial)
+                    if classe_obj:
+                        return classe_obj.nome
+                except:
+                    pass
                 return self.classe_inicial
-            return "SÊNIOR"  # Padrão se não houver dados
+            return "SÊNIOR/VET"  # Padrão se não houver dados
 
     def __str__(self):
         return f"{self.nome} ({self.academia.nome})"
@@ -352,6 +374,11 @@ class Luta(models.Model):
         ("YUKO", "Yuko"),
     ]
     
+    LADO_CHOICES = [
+        ('BRANCO', 'Branco'),
+        ('AZUL', 'Azul'),
+    ]
+    
     chave = models.ForeignKey(Chave, on_delete=models.CASCADE, related_name='lutas')
     atleta_a = models.ForeignKey(Atleta, on_delete=models.CASCADE, related_name='lutas_como_a', null=True, blank=True)
     atleta_b = models.ForeignKey(Atleta, on_delete=models.CASCADE, related_name='lutas_como_b', null=True, blank=True)
@@ -365,6 +392,10 @@ class Luta(models.Model):
     ippon_count = models.IntegerField(default=0)
     wazari_count = models.IntegerField(default=0)
     yuko_count = models.IntegerField(default=0)
+    
+    # Lados do kimono (alternância automática)
+    lado_atleta_a = models.CharField(max_length=10, choices=LADO_CHOICES, default='BRANCO', verbose_name="Lado Atleta A")
+    lado_atleta_b = models.CharField(max_length=10, choices=LADO_CHOICES, default='AZUL', verbose_name="Lado Atleta B")
 
     class Meta:
         verbose_name = "Luta"
@@ -603,7 +634,11 @@ class Inscricao(models.Model):
     
     def pode_gerar_chave(self):
         """Verifica se a inscrição está apta para gerar chave"""
-        return self.status_inscricao in ['ok', 'remanejado', 'aprovado'] and not self.bloqueado_chave and self.peso is not None
+        return (
+            self.status_inscricao in ['aprovado', 'confirmado', 'ok', 'remanejado']
+            and not self.bloqueado_chave
+            and self.peso is not None
+        )
 
     def eh_apto_chave(self):
         return self.pode_gerar_chave()

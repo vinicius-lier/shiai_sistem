@@ -4,8 +4,11 @@ from atletas.views_ajuda import ajuda_manual, ajuda_manual_web, ajuda_documentac
 # Importar todas as views principais de um arquivo separado
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse, Http404
+from django.conf import settings
+import os
 from django.views.decorators.http import require_http_methods
 from django.db.models import Q, Sum, Count, F
 from django.utils import timezone
@@ -835,11 +838,78 @@ def lista_categorias(request, organizacao_slug=None, *args, **kwargs):
     
     return render(request, 'atletas/lista_categorias.html', context)
 
+@operacional_required
+@organizacao_required
 def cadastrar_categoria(request, organizacao_slug=None, *args, **kwargs):
+    """Cadastrar nova categoria manualmente"""
     if "organizacao_slug" in kwargs:
         kwargs.pop("organizacao_slug")
     organizacao = getattr(request, "organizacao", None)
-    return render(request, 'atletas/cadastrar_categoria.html')
+
+    # Buscar classes existentes para sugestões (usado tanto em GET quanto POST)
+    classes = Classe.objects.all().order_by('idade_min')
+
+    if request.method == 'POST':
+        try:
+            from decimal import Decimal, InvalidOperation
+
+            classe_nome = request.POST.get('classe', '').strip()
+            sexo = request.POST.get('sexo', '').strip()
+            categoria_nome = request.POST.get('categoria_nome', '').strip()
+            limite_min_str = request.POST.get('limite_min', '').strip()
+            limite_max_str = request.POST.get('limite_max', '').strip()
+            label = request.POST.get('label', '').strip()
+
+            if not classe_nome or not sexo or not categoria_nome or not limite_min_str:
+                messages.error(request, 'Preencha todos os campos obrigatórios.')
+            elif sexo not in ['M', 'F']:
+                messages.error(request, 'Sexo deve ser Masculino (M) ou Feminino (F).')
+            else:
+                try:
+                    limite_min = Decimal(limite_min_str)
+                    limite_max = Decimal(limite_max_str) if limite_max_str else None
+
+                    classe_obj, _ = Classe.objects.get_or_create(
+                        nome=classe_nome,
+                        defaults={'idade_min': 0, 'idade_max': 99}
+                    )
+
+                    if not label:
+                        sexo_display = "Masculino" if sexo == "M" else "Feminino"
+                        if limite_max:
+                            label = f"{classe_nome} - {sexo_display} - {categoria_nome} ({limite_min}-{limite_max}kg)"
+                        else:
+                            label = f"{classe_nome} - {sexo_display} - {categoria_nome} (+{limite_min}kg)"
+
+                    categoria_existente = Categoria.objects.filter(
+                        classe=classe_obj,
+                        sexo=sexo,
+                        categoria_nome=categoria_nome,
+                        limite_min=limite_min,
+                        limite_max=limite_max
+                    ).first()
+
+                    if categoria_existente:
+                        messages.warning(request, f'Categoria já existe: {categoria_existente.label}')
+                    else:
+                        categoria = Categoria.objects.create(
+                            classe=classe_obj,
+                            sexo=sexo,
+                            categoria_nome=categoria_nome,
+                            limite_min=limite_min,
+                            limite_max=limite_max,
+                            label=label
+                        )
+                        messages.success(request, f'Categoria "{categoria.label}" cadastrada com sucesso!')
+                        return redirect('lista_categorias', organizacao_slug=organizacao.slug)
+                except (ValueError, InvalidOperation):
+                    messages.error(request, 'Valores de peso inválidos. Use números válidos.')
+                except Exception as e:
+                    messages.error(request, f'Erro ao cadastrar categoria: {str(e)}')
+        except Exception as e:
+            messages.error(request, f'Erro ao processar formulário: {str(e)}')
+
+    return render(request, 'atletas/cadastrar_categoria.html', {'classes': classes})
 
 @operacional_required
 @organizacao_required
@@ -1170,10 +1240,24 @@ def _montar_contexto_pesagem(request):
         status='CONFIRMADO'
     ).values_list('academia_id', flat=True))
 
+    fields = {f.name for f in Inscricao._meta.get_fields()}
+    has_classe_real = 'classe_real' in fields
+    has_categoria_real = 'categoria_real' in fields
+    has_status_atual = 'status_atual' in fields
+
+    status_filter = Q(status_inscricao__in=['aprovado', 'confirmado', 'ok', 'remanejado'])
+    if has_status_atual:
+        status_filter |= Q(status_atual__in=['pendente', 'inscrito', 'aprovado', 'remanejado', 'desclassificado'])
+
+    select_related = ['atleta', 'atleta__academia']
+    if has_classe_real:
+        select_related.append('classe_real')
+    if has_categoria_real:
+        select_related.append('categoria_real')
+
     inscricoes = Inscricao.objects.filter(
         campeonato=campeonato_selecionado,
-        status_atual__in=['pendente', 'inscrito', 'aprovado', 'remanejado', 'desclassificado']
-    ).select_related('atleta', 'atleta__academia', 'classe_real', 'categoria_real')
+    ).filter(status_filter).select_related(*select_related)
     
     # Mostrar apenas academias permitidas no campeonato
     if academias_permitidas_ids:
@@ -1189,11 +1273,17 @@ def _montar_contexto_pesagem(request):
     categoria_filtro = request.GET.get('categoria', '').strip()
     
     if classe_filtro:
-        inscricoes = inscricoes.filter(classe_real__nome=classe_filtro)
+        if has_classe_real:
+            inscricoes = inscricoes.filter(classe_real__nome=classe_filtro)
+        else:
+            inscricoes = inscricoes.filter(classe_escolhida=classe_filtro)
     if sexo_filtro:
         inscricoes = inscricoes.filter(atleta__sexo=sexo_filtro)
     if categoria_filtro:
-        inscricoes = inscricoes.filter(categoria_real__categoria_nome=categoria_filtro)
+        if has_categoria_real:
+            inscricoes = inscricoes.filter(categoria_real__categoria_nome=categoria_filtro)
+        else:
+            inscricoes = inscricoes.filter(categoria_escolhida=categoria_filtro)
     
     inscricoes = inscricoes.order_by('atleta__nome')
 
@@ -2746,8 +2836,21 @@ def lista_campeonatos(request, organizacao_slug=None, *args, **kwargs):
     # Verificar se há credenciais na sessão (após criar campeonato)
     credenciais_campeonato = request.session.pop('credenciais_campeonato', None)
     
+    # Gerar URL completo de login
+    try:
+        dominio = request.get_host()
+        # Remover porta se estiver em desenvolvimento
+        if ':' in dominio:
+            dominio = dominio.split(':')[0]
+        # Usar https em produção, http em desenvolvimento
+        protocolo = 'https' if not request.get_host().startswith('localhost') and not request.get_host().startswith('127.0.0.1') else 'http'
+        login_url = f"{protocolo}://{dominio}{reverse('academia_login')}"
+    except:
+        login_url = request.build_absolute_uri(reverse('academia_login'))
+    
     context = {
         'campeonatos': campeonatos,
+        'login_url': login_url,
     }
     
     if credenciais_campeonato:
@@ -2957,6 +3060,77 @@ def editar_campeonato(request, campeonato_id):
         'campeonato': campeonato,
         'formas_pagamento': formas_pagamento,
     })
+
+@operacional_required
+def deletar_campeonato(request, campeonato_id):
+    """Deletar campeonato"""
+    campeonato = get_object_or_404(Campeonato, id=campeonato_id)
+    
+    if request.method == 'POST':
+        try:
+            nome_campeonato = campeonato.nome
+            
+            # Verificar se há inscrições
+            total_inscricoes = Inscricao.objects.filter(campeonato=campeonato).count()
+            if total_inscricoes > 0:
+                messages.error(request, f'Não é possível excluir o campeonato "{nome_campeonato}" pois ele possui {total_inscricoes} inscrição(ões). Remova as inscrições primeiro.')
+                return redirect('lista_campeonatos')
+            
+            # Verificar se há chaves
+            total_chaves = Chave.objects.filter(campeonato=campeonato).count()
+            if total_chaves > 0:
+                messages.error(request, f'Não é possível excluir o campeonato "{nome_campeonato}" pois ele possui {total_chaves} chave(s) gerada(s). Remova as chaves primeiro.')
+                return redirect('lista_campeonatos')
+            
+            # Verificar se está ativo
+            if campeonato.ativo:
+                messages.error(request, f'Não é possível excluir o campeonato "{nome_campeonato}" pois ele está ativo. Desative-o primeiro.')
+                return redirect('lista_campeonatos')
+            
+            # Verificar outros relacionamentos importantes
+            from .models import AcademiaPontuacao, Despesa, InsumoEstrutura, EquipeTecnicaCampeonato, Pagamento, ConferenciaPagamento, PesagemHistorico
+            total_pontuacoes = AcademiaPontuacao.objects.filter(campeonato=campeonato).count()
+            total_despesas = Despesa.objects.filter(campeonato=campeonato).count()
+            total_pagamentos = Pagamento.objects.filter(campeonato=campeonato).count()
+            
+            if total_pontuacoes > 0 or total_despesas > 0 or total_pagamentos > 0:
+                mensagem = f'Não é possível excluir o campeonato "{nome_campeonato}" pois ele possui dados financeiros ou de pontuação vinculados.'
+                if total_pontuacoes > 0:
+                    mensagem += f' ({total_pontuacoes} pontuação(ões) de academias)'
+                if total_despesas > 0:
+                    mensagem += f' ({total_despesas} despesa(s))'
+                if total_pagamentos > 0:
+                    mensagem += f' ({total_pagamentos} pagamento(s))'
+                messages.error(request, mensagem)
+                return redirect('lista_campeonatos')
+            
+            # Deletar vínculos relacionados (em cascata ou manualmente)
+            AcademiaCampeonato.objects.filter(campeonato=campeonato).delete()
+            AcademiaCampeonatoSenha.objects.filter(campeonato=campeonato).delete()
+            # Nota: Outros modelos com ForeignKey CASCADE serão deletados automaticamente
+            
+            # Deletar o campeonato
+            campeonato.delete()
+            
+            messages.success(request, f'Campeonato "{nome_campeonato}" excluído com sucesso!')
+            return redirect('lista_campeonatos')
+        except Exception as e:
+            messages.error(request, f'Erro ao excluir campeonato: {str(e)}')
+            return redirect('lista_campeonatos')
+    
+    # GET: Mostrar informações
+    total_inscricoes = Inscricao.objects.filter(campeonato=campeonato).count()
+    total_chaves = Chave.objects.filter(campeonato=campeonato).count()
+    total_academias = AcademiaCampeonato.objects.filter(campeonato=campeonato).count()
+    
+    context = {
+        'campeonato': campeonato,
+        'total_inscricoes': total_inscricoes,
+        'total_chaves': total_chaves,
+        'total_academias': total_academias,
+    }
+    
+    return render(request, 'atletas/deletar_campeonato.html', context)
 
 @operacional_required
 def definir_campeonato_ativo(request, campeonato_id):
@@ -3182,12 +3356,25 @@ def gerenciar_senhas_campeonato(request, campeonato_id):
             except AcademiaCampeonatoSenha.DoesNotExist:
                 pass
     
+    # Gerar URL completo de login
+    try:
+        dominio = request.get_host()
+        # Remover porta se estiver em desenvolvimento
+        if ':' in dominio:
+            dominio = dominio.split(':')[0]
+        # Usar https em produção, http em desenvolvimento
+        protocolo = 'https' if not request.get_host().startswith('localhost') and not request.get_host().startswith('127.0.0.1') else 'http'
+        login_url = f"{protocolo}://{dominio}{reverse('academia_login')}"
+    except:
+        login_url = request.build_absolute_uri(reverse('academia_login'))
+    
     context = {
         'campeonato': campeonato,
         'academias_com_senhas': academias_com_senhas,
         'data_competicao': campeonato.data_competicao.strftime('%d/%m/%Y') if campeonato.data_competicao else 'Não definida',
         'valor_federado': f"R$ {campeonato.valor_inscricao_federado:.2f}" if campeonato.valor_inscricao_federado else 'Não definido',
         'valor_nao_federado': f"R$ {campeonato.valor_inscricao_nao_federado:.2f}" if campeonato.valor_inscricao_nao_federado else 'Não definido',
+        'login_url': login_url,
     }
     
     return render(request, 'atletas/administracao/gerenciar_senhas_campeonato.html', context)
@@ -5252,3 +5439,32 @@ def rejeitar_pagamento(request, pagamento_id):
     """
     messages.info(request, 'O módulo de Validação de Pagamentos foi unificado com a Conferência de Pagamentos.')
     return redirect('conferencia_pagamentos_lista')
+
+
+def servir_media(request, path):
+    """
+    View dedicada para servir arquivos de media (fotos de perfil, documentos, etc)
+    Funciona tanto em desenvolvimento quanto em produção no Render
+    """
+    from django.conf import settings
+    import mimetypes
+    
+    # Construir caminho completo do arquivo
+    file_path = os.path.join(settings.MEDIA_ROOT, path)
+    
+    # Verificar se o arquivo existe
+    if not os.path.exists(file_path) or not os.path.isfile(file_path):
+        raise Http404("Arquivo não encontrado")
+    
+    # Detectar tipo MIME
+    content_type, _ = mimetypes.guess_type(file_path)
+    if not content_type:
+        content_type = 'application/octet-stream'
+    
+    # Servir o arquivo
+    try:
+        response = FileResponse(open(file_path, 'rb'), content_type=content_type)
+        response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_path)}"'
+        return response
+    except Exception as e:
+        raise Http404(f"Erro ao servir arquivo: {str(e)}")

@@ -1,15 +1,18 @@
 
-{% extends "atletas/layouts/base_operational.html" %}
+{% extends 'atletas/base.html' %}
 {% load static %}
 
 {% block title %}Inscrever Atletas - Sistema de Gestão de Competições de Judô{% endblock %}
 
 {% block content %}
-{% if campeonato_ativo %}
-  {% include "atletas/ui/_page_head.html" with title="Inscrever Atletas no Campeonato" subtitle=campeonato_ativo.nome %}
-{% else %}
-  {% include "atletas/ui/_page_head.html" with title="Inscrever Atletas no Campeonato" subtitle="Nenhum campeonato ativo" %}
-{% endif %}
+<div class="page-header">
+    <h1 class="page-title">Inscrever Atletas no Campeonato</h1>
+    {% if campeonato_ativo %}
+    <p class="page-description">{{ campeonato_ativo.nome }}</p>
+    {% else %}
+    <p class="page-description" style="color: var(--color-warning);">Nenhum campeonato ativo</p>
+    {% endif %}
+</div>
 
 <!-- Filtros -->
 <div class="card mb-6">
@@ -44,7 +47,7 @@
             
             <div class="form-group" style="display: flex; align-items: flex-end; gap: var(--spacing-2);">
                 <button type="submit" class="btn btn-primary">Filtrar</button>
-                <a href="{% url 'inscrever_atletas' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Limpar</a>
+                <a href="{% url 'inscrever_atletas' %}" class="btn btn-secondary">Limpar</a>
             </div>
         </form>
     </div>
@@ -154,11 +157,10 @@
                 </svg>
             </button>
         </div>
-        <form id="form-inscricao" method="post" action="{% url 'inscrever_atletas' organizacao_slug=request.organizacao.slug %}">
+        <form id="form-inscricao" method="post" action="{% url 'inscrever_atletas' %}">
             <input type="hidden" name="campeonato_id" value="{{ campeonato_ativo.id }}">
             {% csrf_token %}
             <input type="hidden" id="atleta_id_inscricao" name="atleta_id">
-            <input type="hidden" id="sexo_atleta_inscricao" name="sexo">
             
             <div class="modal-body">
                 <div class="form-group mb-4">
@@ -197,26 +199,6 @@
                     <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">
                         Após selecionar a classe, escolha a categoria de peso
                     </small>
-
-                    <div style="margin-top: var(--spacing-3);">
-                        <button type="button" class="btn btn-secondary" onclick="toggleTabelaCategorias()" style="width: 100%;">
-                            Ver tabela de categorias
-                        </button>
-                        <div id="tabela-categorias" style="display: none; margin-top: var(--spacing-3); border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-md); max-height: 240px; overflow: auto;">
-                            <table class="table" style="margin: 0;">
-                                <thead>
-                                    <tr>
-                                        <th>Classe</th>
-                                        <th>Categoria</th>
-                                        <th>Limite Mín (kg)</th>
-                                        <th>Limite Máx (kg)</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabela-categorias-body">
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                 </div>
             </div>
             
@@ -234,11 +216,8 @@ const categorias = [
     {
         id: {{ categoria.id }},
         classe: "{{ categoria.classe }}",
-        classe_id: "{{ categoria.classe_id }}",
         sexo: "{{ categoria.sexo }}",
-        label: "{{ categoria.label|escapejs }}",
-        limite_min: "{{ categoria.limite_min }}",
-        limite_max: "{{ categoria.limite_max }}"
+        label: "{{ categoria.label|escapejs }}"
     }{% if not forloop.last %},{% endif %}
     {% endfor %}
 ];
@@ -246,36 +225,6 @@ const categorias = [
 let atletaAtual = null;
 let classeAtleta = '';
 let sexoAtleta = '';
-
-function renderTabelaCategorias(classeFiltro, sexoFiltro) {
-    const tbody = document.getElementById('tabela-categorias-body');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    const filtradas = categorias.filter(cat => {
-        const classeMatch = classeFiltro ? cat.classe.toUpperCase().trim() === classeFiltro.toUpperCase().trim() : true;
-        const sexoMatch = sexoFiltro ? cat.sexo === sexoFiltro : true;
-        return classeMatch && sexoMatch;
-    });
-
-    if (filtradas.length === 0) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = '<td colspan="4" style="color: var(--color-gray-500); text-align: center;">Nenhuma categoria para os filtros selecionados.</td>';
-        tbody.appendChild(tr);
-        return;
-    }
-
-    filtradas.forEach(cat => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${cat.classe}</td>
-            <td>${cat.label}</td>
-            <td>${cat.limite_min || '-'}</td>
-            <td>${cat.limite_max || '-'}</td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
 
 function abrirModalInscricao(atletaId, atletaNome, classe, sexo) {
     console.log('Abrindo modal para atleta:', {atletaId, atletaNome, classe, sexo});
@@ -285,8 +234,6 @@ function abrirModalInscricao(atletaId, atletaNome, classe, sexo) {
     sexoAtleta = sexo;
     
     document.getElementById('atleta_id_inscricao').value = atletaId;
-    const sexoHidden = document.getElementById('sexo_atleta_inscricao');
-    if (sexoHidden) sexoHidden.value = sexo || '';
     document.getElementById('atleta_nome_inscricao').textContent = atletaNome;
     document.getElementById('atleta_classe_inscricao').textContent = classe;
     document.getElementById('atleta_sexo_inscricao').textContent = sexo === 'M' ? 'Masculino' : 'Feminino';
@@ -297,7 +244,7 @@ function abrirModalInscricao(atletaId, atletaNome, classe, sexo) {
     console.log('Classes permitidas:', classesPermitidas);
     console.log('Classes existentes nas categorias:', [...new Set(categorias.map(c => c.classe))]);
     
-    // Preencher select de classe (valor = classe_id; exibição = nome)
+    // Preencher select de classe
     const classeSelect = document.getElementById('classe_escolhida');
     if (!classeSelect) {
         console.error('Select de classe não encontrado!');
@@ -311,22 +258,14 @@ function abrirModalInscricao(atletaId, atletaNome, classe, sexo) {
         classeSelect.disabled = true;
     } else {
         classeSelect.disabled = false;
-        const vistos = new Set();
         classesPermitidas.forEach(classePermitida => {
-            const classeNorm = classePermitida.toUpperCase().trim();
-            if (vistos.has(classeNorm)) return;
-            vistos.add(classeNorm);
-            const catMatch = categorias.find(cat =>
-                cat.sexo === sexoAtleta &&
-                cat.classe.toUpperCase().trim() === classeNorm
-            );
             const option = document.createElement('option');
-            option.value = catMatch ? catMatch.classe_id : '';
+            option.value = classePermitida;
             option.textContent = classePermitida;
-            option.dataset.classeNome = classePermitida;
             // Selecionar a primeira opção se houver apenas uma
-            if (vistos.size === 1 && classesPermitidas.length === 1) {
+            if (classesPermitidas.length === 1) {
                 option.selected = true;
+                // Disparar evento change para carregar categorias
                 setTimeout(() => {
                     classeSelect.dispatchEvent(new Event('change'));
                 }, 100);
@@ -342,9 +281,6 @@ function abrirModalInscricao(atletaId, atletaNome, classe, sexo) {
         categoriaSelect.disabled = true;
         categoriaSelect.removeAttribute('required');
     }
-
-    // Atualizar tabela de categorias com filtros iniciais (classe do atleta e sexo)
-    renderTabelaCategorias(classeAtleta, sexoAtleta);
     
     const modal = document.getElementById('modal-inscricao');
     if (!modal) {
@@ -375,88 +311,117 @@ function fecharModalInscricao() {
     sexoAtleta = '';
 }
 
-function toggleTabelaCategorias() {
-    const tabela = document.getElementById('tabela-categorias');
-    if (!tabela) return;
-    const isHidden = tabela.style.display === 'none' || tabela.style.display === '';
-    tabela.style.display = isHidden ? 'block' : 'none';
-    if (!isHidden) return;
-    // Ao abrir, renderizar com a classe selecionada (ou classe do atleta) e sexo
-    const classeSelect = document.getElementById('classe_escolhida');
-    const classeSelecionadaNome = classeSelect && classeSelect.selectedOptions[0]
-        ? classeSelect.selectedOptions[0].dataset.classeNome || classeSelect.selectedOptions[0].textContent
-        : '';
-    const classeFiltro = classeSelecionadaNome || classeAtleta || '';
-    renderTabelaCategorias(classeFiltro, sexoAtleta);
-}
-
-function normalizeClasseNome(nome) {
-    if (!nome) return '';
-    let up = nome.toUpperCase().trim().replace('SUB ', 'SUB-');
-    if (up === 'VETERANO' || up === 'VETERANOS' || up === 'MASTER' || up === 'MASTERS') {
-        return 'VETERANOS';
-    }
-    if (up === 'SENIOR' || up === 'SÊNIOR') {
-        return 'SÊNIOR';
-    }
-    return up;
+// Função para normalizar nome de classe (igual ao Python)
+function normalizarNomeClasse(nomeClasse) {
+    if (!nomeClasse) return "";
+    
+    // Converter para maiúsculas e remover espaços extras
+    let nome = nomeClasse.toUpperCase().trim();
+    
+    // Remover espaços e hífens de "SUB X" ou "SUB-X" -> "SUBX"
+    nome = nome.replace(/SUB\s*[- ]?\s*(\d+)/g, 'SUB$1');
+    
+    // Normalizar variações comuns
+    nome = nome.replace("SÊNIOR", "SENIOR");
+    nome = nome.replace("VETERANO", "VETERANOS");
+    
+    return nome;
 }
 
 function categoriasPermitidas(classeAtleta) {
-    const classeNormalizada = normalizeClasseNome(classeAtleta);
+    // Normalizar classe do atleta para comparação
+    const classeNormalizada = normalizarNomeClasse(classeAtleta);
     
-    // Obter classes que existem nas categorias disponíveis
-    const classesExistentes = [...new Set(categorias.map(c => c.classe.toUpperCase().trim()))];
+    // Obter classes que existem nas categorias disponíveis (com nomes originais)
+    const classesExistentesMap = new Map();
+    categorias.forEach(cat => {
+        const classeNormal = normalizarNomeClasse(cat.classe);
+        if (!classesExistentesMap.has(classeNormal)) {
+            classesExistentesMap.set(classeNormal, cat.classe); // Guarda o valor original
+        }
+    });
+    const classesExistentesNormalizadas = Array.from(classesExistentesMap.keys());
     
-    // Regras de elegibilidade
-    let classesPermitidas = [];
-    if (classeNormalizada === 'VETERANOS') {
-        classesPermitidas = ['VETERANOS', 'SÊNIOR'];
-    } else if (['SUB-18', 'SUB-21', 'SÊNIOR'].includes(classeNormalizada)) {
-        classesPermitidas = ['SUB-18', 'SUB-21', 'SÊNIOR'];
+    // Determinar classes permitidas baseado na classe normalizada
+    let classesPermitidasNormalizadas = [];
+    
+    if (classeNormalizada === "FESTIVAL") {
+        // Festival: somente Festival
+        classesPermitidasNormalizadas = ["FESTIVAL"];
+    } else if (classeNormalizada === "SUB9") {
+        // SUB-9: somente sua própria classe
+        classesPermitidasNormalizadas = [classeNormalizada];
+    } else if (classeNormalizada === "SUB11") {
+        // SUB-11: somente sua própria classe
+        classesPermitidasNormalizadas = [classeNormalizada];
+    } else if (classeNormalizada === "SUB13") {
+        // SUB-13: somente sua própria classe
+        classesPermitidasNormalizadas = [classeNormalizada];
+    } else if (classeNormalizada === "SUB15") {
+        // SUB-15: somente sua própria classe
+        classesPermitidasNormalizadas = [classeNormalizada];
+    } else if (classeNormalizada === "SUB18") {
+        // SUB-18: pode escolher SUB-18, SUB-21, SÊNIOR/VET
+        classesPermitidasNormalizadas = ["SUB18", "SUB21", "SENIOR"];
+    } else if (classeNormalizada === "SUB21") {
+        // SUB-21: pode escolher SUB-21 ou SÊNIOR/VET
+        classesPermitidasNormalizadas = ["SUB21", "SENIOR"];
+    } else if (classeNormalizada === "SENIOR" || classeNormalizada.includes("SENIOR")) {
+        // SÊNIOR/VET: pode escolher apenas SÊNIOR/VET
+        classesPermitidasNormalizadas = ["SENIOR"];
+    } else if (classeNormalizada === "VETERANOS" || classeNormalizada === "VETERANO") {
+        // VETERANOS: pode escolher VETERANOS ou SÊNIOR/VET
+        classesPermitidasNormalizadas = ["VETERANOS", "SENIOR"];
     } else {
-        classesPermitidas = classeNormalizada ? [classeNormalizada] : [];
+        // Regra padrão: apenas sua própria classe
+        classesPermitidasNormalizadas = [classeNormalizada];
     }
     
-    // Filtrar apenas classes que existem nas categorias
-    return classesPermitidas.filter(cl => {
-        const clNormalizada = cl.toUpperCase().trim();
-        return classesExistentes.some(ex => ex === clNormalizada);
+    // Filtrar apenas classes que existem nas categorias e retornar nomes originais
+    const classesFinais = [];
+    classesPermitidasNormalizadas.forEach(classePermitidaNormalizada => {
+        if (classesExistentesNormalizadas.includes(classePermitidaNormalizada)) {
+            // Encontrar o nome original da classe
+            const nomeOriginal = classesExistentesMap.get(classePermitidaNormalizada);
+            if (nomeOriginal && !classesFinais.includes(nomeOriginal)) {
+                classesFinais.push(nomeOriginal);
+            }
+        }
     });
+    
+    return classesFinais;
 }
 
 // Atualizar categorias quando classe for selecionada
 const classeSelectEl = document.getElementById('classe_escolhida');
 if (classeSelectEl) {
     classeSelectEl.addEventListener('change', function() {
-        const classeSelecionadaId = this.value;
-        const classeSelecionadaNome = this.selectedOptions[0] ? this.selectedOptions[0].dataset.classeNome : '';
+        const classeSelecionada = this.value;
         const categoriaSelect = document.getElementById('categoria_escolhida');
         
         categoriaSelect.innerHTML = '<option value="">Selecione uma categoria</option>';
         
-        if (!classeSelecionadaId) {
+        if (!classeSelecionada) {
             categoriaSelect.disabled = true;
             categoriaSelect.removeAttribute('required');
             categoriaSelect.innerHTML = '<option value="">Selecione primeiro a classe</option>';
-            renderTabelaCategorias('', sexoAtleta);
             return;
         }
         
-        // Filtrar categorias pela classe selecionada e sexo
+        // Filtrar categorias pela classe selecionada e sexo (usando normalização)
+        const classeSelecionadaNormalizada = normalizarNomeClasse(classeSelecionada);
         const categoriasFiltradas = categorias.filter(cat => {
-            const catClasseNormalizada = cat.classe.toUpperCase().trim();
-            const classeSelecionadaNormalizada = (classeSelecionadaNome || '').toUpperCase().trim();
+            const catClasseNormalizada = normalizarNomeClasse(cat.classe);
             return catClasseNormalizada === classeSelecionadaNormalizada && 
                    cat.sexo === sexoAtleta;
         });
         
-        console.log('Categorias filtradas para', classeSelecionadaNome, '-', sexoAtleta, ':', categoriasFiltradas);
+        console.log('Categorias filtradas para', classeSelecionada, '-', sexoAtleta, ':', categoriasFiltradas);
         
         categoriaSelect.innerHTML = '<option value="">Selecione uma categoria</option>';
         
         if (categoriasFiltradas.length === 0) {
-            categoriaSelect.innerHTML = '<option value="">Nenhuma categoria disponível para ' + (classeSelecionadaNome || '') + ' - ' + (sexoAtleta === 'M' ? 'Masculino' : 'Feminino') + '</option>';
+            categoriaSelect.innerHTML = '<option value="">Nenhuma categoria disponível para ' + classeSelecionada + ' - ' + (sexoAtleta === 'M' ? 'Masculino' : 'Feminino') + '</option>';
             categoriaSelect.disabled = true;
             categoriaSelect.removeAttribute('required');
         } else {
@@ -470,9 +435,6 @@ if (classeSelectEl) {
                 categoriaSelect.appendChild(option);
             });
         }
-
-        // Atualizar tabela com a classe selecionada e sexo do atleta
-        renderTabelaCategorias(classeSelecionadaNome, sexoAtleta);
     });
 }
 
@@ -495,3 +457,4 @@ document.getElementById('modal-inscricao').addEventListener('click', function(e)
 });
 </script>
 {% endblock %}
+

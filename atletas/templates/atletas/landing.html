@@ -1,408 +1,677 @@
-<!doctype html>
 {% load static %}
-<html lang="pt-BR" class="h-full">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SHIAI - Gestão de Campeonatos de Judô</title>
-  <script src="/_sdk/element_sdk.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Shiai System – Gestão completa de campeonatos de Judô</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Sistema completo para organização de campeonatos de Judô: inscrições, pesagem, chaves, súmulas, ranking e relatórios – tudo em um só lugar." />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
+    :root {
+      --primary: #111827;   /* quase preto (judogi) */
+      --accent: #fbbf24;    /* amarelo (faixa) */
+      --accent-dark: #d97706;
+      --bg-soft: #f3f4f6;
+    }
     body {
-      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #111827;
+      background-color: #ffffff;
     }
-    
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    * {
-      font-family: 'Inter', sans-serif;
+    .navbar-brand {
+      color: #111827 !important;
+      text-decoration: none;
     }
-
-    :root{
-      --azul-noturno:#07101A;
-      --azul-escuro:#0B1220;
-      --azul-grafite:#111827;
-      --branco:#FFFFFF;
-      --branco-suave:#E5E7EB;
-      --cinza-claro:#9CA3AF;
-      --cinza-medio:#6B7280;
-      --cta:#FACC15;
-      --cta-hover:#EAB308;
-      --sucesso:#22C55E;
-      --alerta:#DC2626;
-    }
-
-    .gradient-bg {
-      background: linear-gradient(135deg, var(--azul-noturno) 0%, var(--azul-escuro) 50%, var(--azul-grafite) 100%);
-    }
-    
-    .gradient-text {
-      background: linear-gradient(135deg, var(--cta) 0%, var(--cta-hover) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    
-    .gradient-button {
-      background: linear-gradient(135deg, var(--cta) 0%, var(--cta-hover) 100%);
-      transition: all 0.3s ease;
-    }
-    
-    .gradient-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(250,204,21,0.25);
-    }
-    
-    .outline-button {
-      border: 2px solid var(--cta);
-      transition: all 0.3s ease;
-    }
-    
-    .outline-button:hover {
-      background: rgba(250,204,21,0.08);
-      transform: translateY(-2px);
-    }
-    
-    .card-elevated {
-      background: rgba(229,231,235,0.04);
-      border: 1px solid rgba(229,231,235,0.08);
-      backdrop-filter: blur(10px);
-      transition: all 0.3s ease;
-    }
-    
-    .card-elevated:hover {
-      background: rgba(229,231,235,0.06);
-      border-color: rgba(234,179,8,0.18);
-      transform: translateY(-4px);
-    }
-    
-    .logo-text {
+    .navbar-brand span {
       font-weight: 700;
-      font-size: 2.5rem;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.06em;
+      color: #111827 !important;
+      font-size: 1.1rem;
     }
-    
-    .section-spacing {
-      padding: 6rem 0;
+    .navbar-brand:hover {
+      color: #111827 !important;
     }
-    
-    @media (max-width: 768px) {
-      .section-spacing {
-        padding: 4rem 0;
-      }
+    .navbar-brand:hover span {
+      color: #111827 !important;
+    }
+    .btn-primary-custom {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      border: none;
+      color: #111827;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    }
+    .btn-primary-custom:hover {
+      background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+      color: #111827;
+      transform: translateY(-1px);
+    }
+    .btn-outline-custom {
+      border: 2px solid #e5e7eb;
+      background-color: transparent;
+      color: #111827 !important;
+      font-weight: 600;
+    }
+    .btn-outline-custom:hover {
+      border-color: var(--accent);
+      color: #111827 !important;
+      background-color: #fffbeb;
+    }
+    /* Ajuste para botão outline no hero (fundo escuro) */
+    .hero .btn-outline-custom {
+      border-color: rgba(255, 255, 255, 0.3);
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #ffffff !important;
+    }
+    .hero .btn-outline-custom:hover {
+      border-color: var(--accent);
+      background-color: rgba(251, 191, 36, 0.2);
+      color: #ffffff !important;
+    }
+    .btn-access-system {
+      background: linear-gradient(135deg, #111827, #1f2937);
+      border: none;
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(17,24,39,0.25);
+    }
+    .btn-access-system:hover {
+      background: linear-gradient(135deg, #1f2937, #111827);
+      color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 12px 35px rgba(17,24,39,0.35);
+    }
+    .hero {
+      background: radial-gradient(circle at top left, #1f2937 0, #020617 40%, #020617 100%);
+      color: #f9fafb;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-badge {
+      background: rgba(15,23,42,0.9);
+      border-radius: 999px;
+      border: 1px solid rgba(249,250,251,0.12);
+      padding: 6px 14px;
+      font-size: 0.78rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .hero-badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(251,191,36,0.3);
+    }
+    .hero h1 {
+      font-size: clamp(2.3rem, 4vw, 3rem);
+      font-weight: 800;
+      line-height: 1.1;
+    }
+    .hero-highlight {
+      color: var(--accent);
+    }
+    .hero-img-card {
+      border-radius: 24px;
+      overflow: hidden;
+      background: #020617;
+      border: 1px solid rgba(148,163,184,0.4);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+    }
+    .section-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #6b7280;
+      font-weight: 600;
+    }
+    .feature-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      background: #111827;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+    }
+    .pricing-card {
+      border-radius: 20px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 18px 45px rgba(15,23,42,0.08);
+    }
+    .pricing-card.featured {
+      border: 2px solid var(--accent);
+      transform: translateY(-6px);
+    }
+    .badge-popular {
+      background-color: #fef3c7;
+      color: #92400e;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      padding: 2px 10px;
+      font-weight: 600;
+    }
+    .competitors-card {
+      border-radius: 20px;
+      background: linear-gradient(145deg, #0b1120, #020617);
+      color: #e5e7eb;
+      border: 1px solid rgba(148,163,184,0.4);
+    }
+    .faq-item {
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+    }
+    .floating-whatsapp {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      z-index: 999;
+    }
+    .floating-whatsapp a {
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #22c55e;
+      color: #ffffff;
+      box-shadow: 0 15px 35px rgba(22,163,74,0.55);
+      font-size: 1.7rem;
+      text-decoration: none;
+    }
+    .floating-whatsapp a:hover {
+      background: #16a34a;
+      transform: translateY(-1px);
+    }
+    footer {
+      border-top: 1px solid #e5e7eb;
+      background-color: #f9fafb;
+    }
+    .access-banner {
+      background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+      color: #ffffff;
+      padding: 1.5rem 0;
+      border-bottom: 3px solid var(--accent);
+    }
+    .access-banner-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .access-banner-text {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .access-banner-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(251,191,36,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
     }
   </style>
-  <style>@view-transition { navigation: auto; }</style>
-  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
- </head>
- <body class="gradient-bg text-white h-full overflow-auto">
-  <div class="w-full h-full"><!-- Hero Section -->
-   <section class="section-spacing">
-    <div class="max-w-7xl mx-auto px-6">
-     <div class="grid md:grid-cols-2 gap-16 items-center">
-      <div>
-       <div class="logo-text mb-6" aria-hidden="true">
-        <svg width="520" height="160" viewBox="0 0 520 160" fill="none" xmlns="http://www.w3.org/2000/svg" class="inline-block">
-          <!-- Mini kimono logo -->
-          <g transform="translate(16,12)">
-            <image href="{% static 'atletas/images/logo_white.png' %}" x="0" y="0" width="480" height="120" preserveAspectRatio="xMidYMid meet" />
-            
-            <path d="M30 6 L36 20" stroke="var(--azul-grafite)" stroke-width="2" stroke-linecap="round"/>
-            <path d="M50 6 L44 20" stroke="var(--azul-grafite)" stroke-width="2" stroke-linecap="round"/>
-          </g>
-        
-        </svg>
-       </div>
-       <p id="hero-kicker" class="text-indigo-400 text-sm uppercase tracking-wider mb-4 font-medium">Plataforma para competições</p>
-       <h1 id="hero-title" class="text-5xl md:text-6xl font-bold mb-6 leading-tight">Gestão profissional de campeonatos de Judô</h1>
-       <p id="hero-subtitle" class="text-gray-400 text-lg mb-10 leading-relaxed">Do cadastro ao pódio — inscrições, pesagem, chaves e resultados com disciplina, clareza e controle auditável.</p>
-      <div class="flex flex-col sm:flex-row gap-4"><a id="cta-primary" href="#acesso-sistema" class="gradient-button px-8 py-4 rounded-lg font-semibold text-white">Entrar no sistema</a> <a id="cta-secondary" href="https://wa.me/5524999582526" target="_blank" rel="noopener noreferrer" class="outline-button inline-flex items-center px-8 py-4 rounded-lg font-semibold text-white">Falar com a organização</a>
-       </div>
+</head>
+<body>
+
+  <!-- BANNER DE ACESSO AO SISTEMA -->
+  <div class="access-banner">
+    <div class="container">
+      <div class="access-banner-content">
+        <div class="access-banner-text">
+          <div class="access-banner-icon">🔐</div>
+          <div>
+            <strong>Já possui acesso ao sistema?</strong>
+            <span class="d-block small opacity-75">Acesse sua conta e gerencie seus campeonatos</span>
+          </div>
+        </div>
+        <div>
+          <a href="{% url 'selecionar_tipo_login' %}" class="btn btn-access-system btn-lg">
+            Acessar Sistema →
+          </a>
+        </div>
       </div>
-      <div class="card-elevated p-12 rounded-2xl text-center">
-       <svg class="w-48 h-48 mx-auto mb-6 opacity-90" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ilustração de kimono">
-          <defs>
-            <linearGradient id="kimonoFill" x1="0" x2="1">
-              <stop offset="0%" stop-color="rgba(229,231,235,0.06)"/>
-              <stop offset="100%" stop-color="rgba(229,231,235,0.10)"/>
-            </linearGradient>
-          </defs>
-          <g transform="translate(10,8)">
-            <!-- Outer kimono image (replaced path) -->
-            <image href="{% static 'atletas/images/icons8-judô-90.png' %}" x="24" y="12" width="128" height="128" preserveAspectRatio="xMidYMid meet" />
-            <!-- Lapels -->
-            <path d="M86 18 L96 66" stroke="var(--azul-grafite)" stroke-width="6" stroke-linecap="round"/>
-            <path d="M126 18 L116 66" stroke="var(--azul-grafite)" stroke-width="6" stroke-linecap="round"/>
-            <!-- Belt removed as requested -->
-          </g>
-        </svg>
-       <h3 class="text-2xl font-semibold mb-2">Disciplina. Respeito. Hierarquia.</h3>
-      </div>
-     </div>
     </div>
-   </section><!-- O que é o SHIAI -->
-   <section class="section-spacing">
-    <div class="max-w-7xl mx-auto px-6">
-     <h2 id="section-about-title" class="text-4xl font-bold text-center mb-16">O que é o SHIAI</h2>
-     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-      <div class="card-elevated p-8 rounded-xl text-center">
-      <svg class="w-16 h-16 mx-auto mb-6" viewbox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 28 L40 28 M24 36 L40 36 M24 44 L32 44" stroke="#6B7280" stroke-width="2" stroke-linecap="round" /> <circle cx="32" cy="12" r="4" fill="#111827" />
-       </svg>
-       <h3 class="text-xl font-semibold mb-3">Inscrições</h3>
-       <p class="text-gray-400 text-sm">Cadastro e gestão de atletas com validações por categoria.</p>
-      </div>
-      <div class="card-elevated p-8 rounded-xl text-center">
-      <svg class="w-16 h-16 mx-auto mb-6" viewbox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M26 30 L38 30" stroke="#6B7280" stroke-width="3" stroke-linecap="round" /> <circle cx="32" cy="40" r="6" stroke="#111827" stroke-width="2" fill="none" /> <path d="M32 36 L32 44" stroke="#6B7280" stroke-width="2" stroke-linecap="round" />
-       </svg>
-       <h3 class="text-xl font-semibold mb-3">Pesagem</h3>
-       <p class="text-gray-400 text-sm">Registro oficial, histórico auditável e remanejamento controlado.</p>
-      </div>
-      <div class="card-elevated p-8 rounded-xl text-center">
-      <svg class="w-16 h-16 mx-auto mb-6" viewbox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 12 L44 28 L44 44 L32 52 L20 44 L20 28 Z" stroke="#111827" stroke-width="2" fill="rgba(229,231,235,0.06)" /> <path d="M32 24 L32 40 M24 32 L40 32" stroke="#6B7280" stroke-width="2" stroke-linecap="round" />
-       </svg>
-       <h3 class="text-xl font-semibold mb-3">Chaves</h3>
-       <p class="text-gray-400 text-sm">Geração automática de chaves e sequência de lutas.</p>
-      </div>
-      <div class="card-elevated p-8 rounded-xl text-center">
-      <svg class="w-16 h-16 mx-auto mb-6" viewbox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 16 L38 28 L52 28 L42 36 L46 48 L32 40 L18 48 L22 36 L12 28 L26 28 Z" stroke="#111827" stroke-width="2" fill="rgba(229,231,235,0.06)" /> <circle cx="32" cy="32" r="6" fill="#6B7280" />
-       </svg>
-       <h3 class="text-xl font-semibold mb-3">Ranking</h3>
-       <p class="text-gray-400 text-sm">Pontuação por evento e resultados oficiais.</p>
-      </div>
-     </div>
-    </div>
-   </section><!-- Para quem é -->
-   <section class="section-spacing">
-    <div class="max-w-7xl mx-auto px-6">
-     <h2 class="text-4xl font-bold text-center mb-16">Para quem é</h2>
-     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div class="card-elevated p-6 rounded-xl text-center">
-       <h3 class="text-lg font-semibold mb-2">Federações</h3>
-       <p class="text-gray-400 text-sm">Gestão completa de campeonatos oficiais</p>
-      </div>
-      <div class="card-elevated p-6 rounded-xl text-center">
-       <h3 class="text-lg font-semibold mb-2">Organizadores</h3>
-       <p class="text-gray-400 text-sm">Controle total do evento</p>
-      </div>
-      <div class="card-elevated p-6 rounded-xl text-center">
-       <h3 class="text-lg font-semibold mb-2">Academias</h3>
-       <p class="text-gray-400 text-sm">Inscrição e acompanhamento de atletas</p>
-      </div>
-      <div class="card-elevated p-6 rounded-xl text-center">
-       <h3 class="text-lg font-semibold mb-2">Oficiais</h3>
-       <p class="text-gray-400 text-sm">Ferramentas para mesa e pesagem</p>
-      </div>
-     </div>
-    </div>
-   </section><!-- Planos e Valores -->
-   <section class="section-spacing">
-    <div class="max-w-4xl mx-auto px-6">
-     <h2 class="text-4xl font-bold text-center mb-8">Planos e Valores</h2>
-     <div class="card-elevated p-12 rounded-2xl text-center">
-      <p class="text-gray-300 text-lg leading-relaxed">Oferecemos pacotes para eventos únicos, planos mensais para organizações e soluções personalizadas para federações.<br><br><span class="text-indigo-400 font-medium">Os valores são definidos conforme o porte do campeonato.</span></p>
-     </div>
-    </div>
-   </section><!-- Contato e Acesso -->
-   <section class="section-spacing">
-    <div class="max-w-6xl mx-auto px-6">
-     <div class="grid md:grid-cols-2 gap-8">
-      <div class="card-elevated p-10 rounded-2xl" id="acesso-sistema">
-       <h2 id="contact-title" class="text-3xl font-bold mb-6">Contato</h2>
-       <p class="text-gray-400 mb-8">Entre em contato para saber mais sobre o sistema e planos disponíveis.</p><a id="whatsapp-link" href="https://wa.me/5524999582526" target="_blank" rel="noopener noreferrer" class="gradient-button inline-flex items-center px-8 py-4 rounded-lg font-semibold text-white">
-        <svg class="w-6 h-6 mr-3" fill="currentColor" viewbox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-        </svg><span id="whatsapp-number">Fale Conosco!</span> </a>
-      </div>
-      <div class="card-elevated p-10 rounded-2xl">
-       <h2 class="text-3xl font-bold mb-6">Acesso ao sistema</h2>
-       <p class="text-gray-400 mb-8">Escolha o tipo de login adequado ao seu papel</p>
-      <div class="space-y-4">
-       <a href="{% url 'login' %}" class="outline-button w-full inline-flex justify-center px-8 py-4 rounded-lg font-semibold text-white">Login Operacional</a>
-       <a href="{% url 'academia_login' %}" class="outline-button w-full inline-flex justify-center px-8 py-4 rounded-lg font-semibold text-white">Login Academia</a>
-      </div>
-      </div>
-     </div>
-    </div>
-   </section><!-- Footer -->
-   <footer class="py-8 text-center text-gray-500 text-sm border-t border-gray-800">
-    <div class="max-w-7xl mx-auto px-6">
-     <p>© 2024 SHIAI. Sistema de gestão de campeonatos de Judô.</p>
-    </div>
-   </footer>
   </div>
-  <script>
-    const defaultConfig = {
-      background_color: "#07101A",
-      surface_color: "#0B1220",
-      text_color: "#ffffff",
-      primary_action_color: "#FACC15",
-      secondary_action_color: "#EAB308",
-      font_family: "Inter",
-      font_size: 16,
-      hero_kicker: "Plataforma para competições",
-      hero_title: "Gestão profissional de campeonatos de Judô",
-      hero_subtitle: "Do cadastro ao pódio — inscrições, pesagem, chaves e resultados com disciplina, clareza e controle auditável.",
-      cta_primary: "Entrar no sistema",
-      cta_secondary: "Falar com a organização",
-      section_about_title: "O que é o SHIAI",
-      contact_title: "Contato",
-      whatsapp_number: "+55 24 99958-2526"
-    };
 
-    async function onConfigChange(config) {
-      const customFont = config.font_family || defaultConfig.font_family;
-      const baseFontStack = 'Inter, sans-serif';
-      const baseSize = config.font_size || defaultConfig.font_size;
-      
-      // Apply font family
-      document.body.style.fontFamily = `${customFont}, ${baseFontStack}`;
-      
-      // Apply font sizes
-      const heroTitle = document.getElementById('hero-title');
-      if (heroTitle) heroTitle.style.fontSize = `${baseSize * 3.5}px`;
-      
-      const sectionTitles = document.querySelectorAll('h2');
-      sectionTitles.forEach(title => {
-        title.style.fontSize = `${baseSize * 2.5}px`;
-      });
-      
-      const cardTitles = document.querySelectorAll('.card-elevated h3');
-      cardTitles.forEach(title => {
-        title.style.fontSize = `${baseSize * 1.25}px`;
-      });
-      
-      const paragraphs = document.querySelectorAll('p');
-      paragraphs.forEach(p => {
-        p.style.fontSize = `${baseSize}px`;
-      });
-      
-      // Apply colors
-      const bgColor = config.background_color || defaultConfig.background_color;
-      const surfaceColor = config.surface_color || defaultConfig.surface_color;
-      const textColor = config.text_color || defaultConfig.text_color;
-      const primaryColor = config.primary_action_color || defaultConfig.primary_action_color;
-      const secondaryColor = config.secondary_action_color || defaultConfig.secondary_action_color;
-      
-      document.body.style.background = `linear-gradient(135deg, ${bgColor} 0%, ${surfaceColor} 50%, ${bgColor} 100%)`;
-      document.body.style.color = textColor;
-      
-      const gradientButtons = document.querySelectorAll('.gradient-button');
-      gradientButtons.forEach(btn => {
-        btn.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
-      });
-      
-      const outlineButtons = document.querySelectorAll('.outline-button');
-      outlineButtons.forEach(btn => {
-        btn.style.borderColor = primaryColor;
-      });
-      
-      const gradientTexts = document.querySelectorAll('.gradient-text');
-      gradientTexts.forEach(text => {
-        text.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
-        text.style.webkitBackgroundClip = 'text';
-        text.style.webkitTextFillColor = 'transparent';
-      });
-      
-      // Update text content
-      const heroKicker = document.getElementById('hero-kicker');
-      if (heroKicker) heroKicker.textContent = config.hero_kicker || defaultConfig.hero_kicker;
-      
-      if (heroTitle) heroTitle.textContent = config.hero_title || defaultConfig.hero_title;
-      
-      const heroSubtitle = document.getElementById('hero-subtitle');
-      if (heroSubtitle) heroSubtitle.textContent = config.hero_subtitle || defaultConfig.hero_subtitle;
-      
-      const ctaPrimary = document.getElementById('cta-primary');
-      if (ctaPrimary) ctaPrimary.textContent = config.cta_primary || defaultConfig.cta_primary;
-      
-      const ctaSecondary = document.getElementById('cta-secondary');
-      if (ctaSecondary) ctaSecondary.textContent = config.cta_secondary || defaultConfig.cta_secondary;
-      
-      const sectionAboutTitle = document.getElementById('section-about-title');
-      if (sectionAboutTitle) sectionAboutTitle.textContent = config.section_about_title || defaultConfig.section_about_title;
-      
-      const contactTitle = document.getElementById('contact-title');
-      if (contactTitle) contactTitle.textContent = config.contact_title || defaultConfig.contact_title;
-      
-      const whatsappNumber = document.getElementById('whatsapp-number');
-      const whatsappLink = document.getElementById('whatsapp-link');
-      if (whatsappNumber && whatsappLink) {
-        const number = config.whatsapp_number || defaultConfig.whatsapp_number;
-        whatsappNumber.textContent = number;
-        const cleanNumber = number.replace(/\D/g, '');
-        whatsappLink.href = `https://wa.me/${cleanNumber}`;
-      }
-    }
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
+    <div class="container py-2">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#top" style="text-decoration: none;">
+        <img src="{% static 'img/logo_black.png' %}" alt="Shiai System" width="38" height="38" class="rounded-circle border border-1 border-dark-subtle object-fit-cover">
+        <span style="color: #111827; font-weight: 700; letter-spacing: 0.06em; font-size: 1.1rem;">SHIAI SYSTEM</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 me-lg-3">
+          <li class="nav-item"><a class="nav-link" href="#como-funciona">Como funciona</a></li>
+          <li class="nav-item"><a class="nav-link" href="#planos">Planos</a></li>
+          <li class="nav-item"><a class="nav-link" href="#por-que">Por que é diferente</a></li>
+          <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
+        </ul>
+        <a href="{% url 'selecionar_tipo_login' %}" class="btn btn-sm btn-access-system me-2">Acessar Sistema</a>
+        <a href="https://wa.me/5524999582625?text=Olá%2C%20tenho%20interesse%20no%20Shiai%20System%20para%20meus%20campeonatos%20de%20Judô."
+           class="btn btn-sm btn-primary-custom">
+          Falar com especialista
+        </a>
+      </div>
+    </div>
+  </nav>
 
-    if (window.elementSdk) {
-      window.elementSdk.init({
-        defaultConfig,
-        onConfigChange,
-        mapToCapabilities: (config) => ({
-          recolorables: [
-            {
-              get: () => config.background_color || defaultConfig.background_color,
-              set: (value) => {
-                config.background_color = value;
-                window.elementSdk.setConfig({ background_color: value });
-              }
-            },
-            {
-              get: () => config.surface_color || defaultConfig.surface_color,
-              set: (value) => {
-                config.surface_color = value;
-                window.elementSdk.setConfig({ surface_color: value });
-              }
-            },
-            {
-              get: () => config.text_color || defaultConfig.text_color,
-              set: (value) => {
-                config.text_color = value;
-                window.elementSdk.setConfig({ text_color: value });
-              }
-            },
-            {
-              get: () => config.primary_action_color || defaultConfig.primary_action_color,
-              set: (value) => {
-                config.primary_action_color = value;
-                window.elementSdk.setConfig({ primary_action_color: value });
-              }
-            },
-            {
-              get: () => config.secondary_action_color || defaultConfig.secondary_action_color,
-              set: (value) => {
-                config.secondary_action_color = value;
-                window.elementSdk.setConfig({ secondary_action_color: value });
-              }
-            }
-          ],
-          borderables: [],
-          fontEditable: {
-            get: () => config.font_family || defaultConfig.font_family,
-            set: (value) => {
-              config.font_family = value;
-              window.elementSdk.setConfig({ font_family: value });
-            }
-          },
-          fontSizeable: {
-            get: () => config.font_size || defaultConfig.font_size,
-            set: (value) => {
-              config.font_size = value;
-              window.elementSdk.setConfig({ font_size: value });
-            }
-          }
-        }),
-        mapToEditPanelValues: (config) => new Map([
-          ["hero_kicker", config.hero_kicker || defaultConfig.hero_kicker],
-          ["hero_title", config.hero_title || defaultConfig.hero_title],
-          ["hero_subtitle", config.hero_subtitle || defaultConfig.hero_subtitle],
-          ["cta_primary", config.cta_primary || defaultConfig.cta_primary],
-          ["cta_secondary", config.cta_secondary || defaultConfig.cta_secondary],
-          ["section_about_title", config.section_about_title || defaultConfig.section_about_title],
-          ["contact_title", config.contact_title || defaultConfig.contact_title],
-          ["whatsapp_number", config.whatsapp_number || defaultConfig.whatsapp_number]
-        ])
-      });
-    }
-  </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ae13adf44be5796',t:'MTc2NTc1MjMwOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <!-- HERO -->
+  <section id="top" class="hero py-5 py-lg-5">
+    <div class="container">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-6">
+          <div class="hero-badge mb-3">
+            <span class="hero-badge-dot"></span>
+            <span>Feito por quem vive o tatame, para quem organiza no dia a dia</span>
+          </div>
+          <h1 class="mb-3">
+            Organize campeonatos de Judô<br>
+            com <span class="hero-highlight">controle total</span> do início ao fim.
+          </h1>
+          <p class="lead mb-4 text-secondary">
+            Do cadastro do atleta à pesagem, chaves, súmulas, ranking e certificados:
+            o Shiai System centraliza tudo em uma plataforma pensada para a realidade
+            dos organizadores e professores de Judô no Brasil.
+          </p>
+          <div class="d-flex flex-wrap gap-3 mb-3">
+            <a href="#planos" class="btn btn-primary-custom btn-lg">
+              Ver planos e começar
+            </a>
+            <a href="https://wa.me/5524999582625?text=Quero%20ver%20uma%20demonstração%20do%20Shiai%20System."
+               class="btn btn-outline-custom btn-lg">
+              Agendar demonstração por WhatsApp
+            </a>
+          </div>
+          <div class="d-flex flex-wrap gap-4 mt-3">
+            <div class="d-flex align-items-center gap-2">
+              <div class="feature-icon">
+                🥋
+              </div>
+              <div>
+                <div class="fw-semibold">Focado 100% em Judô</div>
+                <small class="text-secondary">Categoria, idade, peso e regras ajustadas à realidade dos campeonatos.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="hero-img-card p-3 p-md-4">
+            {% if 'landing/judo-hero-1.jpg' %}
+            <img src="/static/img/landing/judo-hero-1.jpg' %}"
+                 alt="Judocas em competição"
+                 class="img-fluid rounded-4 mb-3"
+                 onerror="this.style.display='none';">
+            {% endif %}
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="mb-1">Visão do evento em tempo real</h6>
+                <small class="text-secondary">Inscrições, categorias e chaves sempre organizadas – sem planilha caótica.</small>
+              </div>
+              <div class="text-end">
+                <div class="badge bg-success-subtle text-success-emphasis mb-1">
+                  + agilidade no dia do shiai
+                </div>
+                <div class="small text-secondary">Menos papel, menos erro, mais segurança.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>      
+    </div>
+  </section>
+
+  <!-- COMO FUNCIONA -->
+  <section id="como-funciona" class="py-5 bg-light">
+    <div class="container">
+      <div class="text-center mb-5">
+        <div class="section-label mb-2">Como funciona</div>
+        <h2 class="fw-bold mb-3">Um fluxo simples para um dia de competição sem caos</h2>
+        <p class="text-secondary">
+          O Shiai System foi pensado para o organizador que tem pouco tempo, muitos atletas
+          e não pode se dar ao luxo de errar na chave ou na súmula.
+        </p>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="p-4 h-100 bg-white rounded-4 shadow-sm">
+            <div class="feature-icon mb-3">①</div>
+            <h5 class="fw-semibold">Configure o evento</h5>
+            <p class="text-secondary small mb-3">
+              Defina categorias, faixas etárias, pesos, áreas de combate e número de lutas.
+              O sistema já traz a lógica de Judô pronta, você apenas ajusta o que for específico.
+            </p>
+            <ul class="text-secondary small ps-3 mb-0">
+              <li>Categorias geradas automaticamente por idade/peso</li>
+              <li>Controle de área e sequência de lutas</li>
+              <li>Multi-organização: vários eventos na mesma conta</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-4 h-100 bg-white rounded-4 shadow-sm">
+            <div class="feature-icon mb-3">②</div>
+            <h5 class="fw-semibold">Inscrições & pesagem organizadas</h5>
+            <p class="text-secondary small mb-3">
+              Cadastre atletas com rapidez, inclusive inscrições de última hora.
+              Controle pesagem de forma clara, sem papel espalhado pelo ginásio.
+            </p>
+            <ul class="text-secondary small ps-3 mb-0">
+              <li>Cadastro rápido ou completo de atletas</li>
+              <li>Lista de pesagem com conferência de peso</li>
+              <li>Relatórios para professores conferirem seus alunos</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-4 h-100 bg-white rounded-4 shadow-sm">
+            <div class="feature-icon mb-3">③</div>
+            <h5 class="fw-semibold">Chaves, súmulas e ranking</h5>
+            <p class="text-secondary small mb-3">
+              Gere chaves, resultados, medalhistas e ranking de forma automática.
+              Tenha tudo pronto para imprimir ou usar em tela.
+            </p>
+            <ul class="text-secondary small ps-3 mb-0">
+              <li>Chaves com rodízio e melhor de 3, quando aplicável</li>
+              <li>Súmulas claras para mesa e árbitros</li>
+              <li>Ranking por atleta, academia e evento</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLANOS -->
+  <section id="planos" class="py-5">
+    <div class="container">
+      <div class="text-center mb-5">
+        <div class="section-label mb-2">Planos de contratação</div>
+        <h2 class="fw-bold mb-3">Planos simples, alinhados à realidade dos eventos</h2>
+        <p class="text-secondary">
+          Você paga pelo tamanho do evento – não por recursos escondidos. 
+          Sem surpresa, sem planos confusos.
+        </p>
+      </div>
+
+      <div class="row g-4 align-items-stretch">
+        <!-- Plano até 250 atletas -->
+        <div class="col-md-4">
+          <div class="pricing-card h-100 p-4 d-flex flex-column">
+            <h5 class="fw-semibold mb-1">Evento até 250 atletas</h5>
+            <p class="text-secondary small mb-3">
+              Ideal para copas regionais, festivais e eventos de porte médio.
+            </p>
+            <div class="mb-3">
+              <span class="h3 fw-bold">R$ 450</span>
+              <span class="text-secondary small">por evento / 30 dias de uso</span>
+            </div>
+            <ul class="text-secondary small ps-3 mb-4">
+              <li>Todos os recursos do sistema liberados para esse evento</li>
+              <li>Cadastro de academias, atletas, pesagem e chaves</li>
+              <li>Relatórios pós-evento para organizador e professores</li>
+            </ul>
+            <div class="mt-auto">
+              <a href="https://wa.me/5524999582625?text=Tenho%20interesse%20no%20plano%20para%20eventos%20até%20250%20atletas."
+                 class="btn btn-primary-custom w-100">
+                Quero esse plano
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plano acima de 250 atletas -->
+        <div class="col-md-4">
+          <div class="pricing-card featured h-100 p-4 d-flex flex-column position-relative">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h5 class="fw-semibold mb-1">Evento acima de 250 atletas</h5>
+              <span class="badge-popular">Mais escolhido</span>
+            </div>
+            <p class="text-secondary small mb-3">
+              Pensado para etapas maiores, circuitos e campeonatos com grande volume.
+            </p>
+            <div class="mb-3">
+              <span class="h3 fw-bold">R$ 700</span>
+              <span class="text-secondary small">por evento / 30 dias de uso</span>
+            </div>
+            <ul class="text-secondary small ps-3 mb-4">
+              <li>Todos os recursos liberados, sem limite de inscrições</li>
+              <li>Melhor custo-benefício para grandes campeonatos</li>
+              <li>Apoio direto via WhatsApp antes e durante o evento</li>
+            </ul>
+            <div class="mt-auto">
+              <a href="https://wa.me/5524999582625?text=Tenho%20interesse%20no%20plano%20para%20eventos%20acima%20de%20250%20atletas."
+                 class="btn btn-primary-custom w-100">
+                Falar sobre este plano
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plano anual -->
+        <div class="col-md-4">
+          <div class="pricing-card h-100 p-4 d-flex flex-column">
+            <h5 class="fw-semibold mb-1">Plano anual para organizadores</h5>
+            <p class="text-secondary small mb-3">
+              Para ligas, federações ou núcleos que realizam vários eventos ao longo do ano.
+            </p>
+            <div class="mb-3">
+              <span class="h3 fw-bold">R$ 2.250</span>
+              <span class="text-secondary small">equivalente a 5 eventos de até 250 atletas</span>
+            </div>
+            <ul class="text-secondary small ps-3 mb-4">
+              <li>Até 5 eventos incluídos no período de 12 meses</li>
+              <li>Ideal para quem organiza calendário anual</li>
+              <li>Condição especial para renovação</li>
+            </ul>
+            <div class="mt-auto">
+              <a href="https://wa.me/5524999582625?text=Quero%20conversar%20sobre%20o%20plano%20anual%20do%20Shiai%20System."
+                 class="btn btn-outline-custom w-100">
+                Conversar sobre condições
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-center text-secondary small mt-4">
+        Precisa de um formato diferente (circuito, parceria ou mais eventos)? 
+        <a href="https://wa.me/5524999582625?text=Preciso%20de%20um%20formato%20personalizado%20de%20parceria%20com%20o%20Shiai%20System.">Fale conosco</a> e montamos uma proposta sob medida.
+      </p>
+    </div>
+  </section>
+
+  <!-- POR QUE É DIFERENTE DOS CONCORRENTES -->
+  <section id="por-que" class="py-5">
+    <div class="container">
+      <div class="row g-4 align-items-center">
+        <div class="col-lg-6">
+          <div class="competitors-card p-4 p-md-5 h-100">
+            <div class="section-label mb-2 text-warning">Comparando com o mercado</div>
+            <h2 class="fw-bold mb-3">Não é "mais um sistema de chave". É uma solução pensada para quem vive o Judô.</h2>
+            <p class="small mb-3">
+              Muitos sistemas disponíveis hoje foram criados para "esportes em geral". 
+              Eles até fazem chave, mas:
+            </p>
+            <ul class="small mb-3">
+              <li>São engessados, pouco adaptados à realidade do Judô brasileiro;</li>
+              <li>Forçam o organizador a depender de planilhas paralelas e improvisos;</li>
+              <li>Limitam o acesso do professor, que só vê os dados no dia do evento – quando vê;</li>
+              <li>Cobram valores fixos que não consideram o tamanho real do seu campeonato.</li>
+            </ul>
+            <p class="small mb-0">
+              O Shiai System nasceu do tatame, ouvindo professores, árbitros e organizadores, 
+              para simplificar o que é complexo sem perder o controle sobre o evento.
+            </p>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                <h6 class="fw-semibold mb-1">Multi-organização e visão para professores</h6>
+                <p class="small text-secondary mb-0">
+                  Um mesmo sistema pode atender diferentes organizadores e academias, 
+                  mantendo os dados organizados por evento. Professores podem acompanhar 
+                  seus atletas, históricos e rankings, mesmo depois do campeonato acabar.
+                </p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                <h6 class="fw-semibold mb-1">Pós-evento que continua útil</h6>
+                <p class="small text-secondary mb-0">
+                  Os dados ficam disponíveis para conferência, estatísticas e planejamento 
+                  dos próximos eventos. Não é um sistema que "morre" quando a competição termina.
+                </p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                <h6 class="fw-semibold mb-1">Suporte direto pelo WhatsApp</h6>
+                <p class="small text-secondary mb-0">
+                  Nada de abrir chamado frio. Você fala direto com quem criou o sistema,
+                  que entende tanto de código quanto de Judô.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>      
+    </div>
+  </section>
+
+  <!-- IMAGENS / VITRINE JUDÔ -->
+  <section class="py-5 bg-light">
+    <div class="container">
+      <div class="text-center mb-4">
+        <div class="section-label mb-2">Judô em destaque</div>
+        <h2 class="fw-bold mb-3">Feito para quem ama o Judô em todas as faixas</h2>
+        <p class="text-secondary">
+          Use o Shiai System para dar mais profissionalismo ao seu evento e mais orgulho 
+          para atletas, famílias e professores.
+        </p>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <img src="/static/img/landing/judo-kids.jpg' %}" alt="Festival de Judô infantil"
+               class="img-fluid rounded-4 shadow-sm"
+               onerror="this.style.display='none';">
+        </div>
+        <div class="col-md-4">
+          <img src="/static/img/landing/judo-competition.jpg' %}" alt="Combate de Judô"
+               class="img-fluid rounded-4 shadow-sm"
+               onerror="this.style.display='none';">
+        </div>
+        <div class="col-md-4">
+          <img src="/static/img/landing/judo-medals.jpg' %}" alt="Judocas no pódio"
+               class="img-fluid rounded-4 shadow-sm"
+               onerror="this.style.display='none';">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="py-5">
+    <div class="container">
+      <div class="text-center mb-4">
+        <div class="section-label mb-2">FAQ</div>
+        <h2 class="fw-bold mb-3">Perguntas frequentes</h2>
+        <p class="text-secondary">
+          Se ainda ficou alguma dúvida, você pode falar direto pelo WhatsApp.
+        </p>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="faq-item p-3 p-md-4">
+            <h6 class="fw-semibold mb-2">O sistema funciona só para Judô?</h6>
+            <p class="small text-secondary mb-0">
+              O foco principal é o Judô. Toda a lógica de idade, categoria, peso e formato de 
+              disputa foi pensada para a realidade de campeonatos de Judô no Brasil.
+            </p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="faq-item p-3 p-md-4">
+            <h6 class="fw-semibold mb-2">Preciso instalar algo no computador?</h6>
+            <p class="small text-secondary mb-0">
+              Não. O Shiai System funciona via navegador. Você pode usar em notebooks
+              e, em versões específicas, em telas menores para apoio durante o evento.
+            </p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="faq-item p-3 p-md-4">
+            <h6 class="fw-semibold mb-2">Professores conseguem acessar os dados dos atletas?</h6>
+            <p class="small text-secondary mb-0">
+              Sim. O sistema permite que organizadores e professores consultem dados de inscrições, 
+              resultados e rankings, de forma organizada e segura.
+            </p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="faq-item p-3 p-md-4">
+            <h6 class="fw-semibold mb-2">O pagamento é por evento mesmo?</h6>
+            <p class="small text-secondary mb-0">
+              Sim. Você escolhe o plano de acordo com o tamanho do campeonato
+              ou fecha o plano anual se tiver calendário definido. Sem fidelização escondida.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <p class="text-secondary mb-2">Quer tirar uma dúvida específica sobre o seu evento?</p>
+        <a href="https://wa.me/5524999582625?text=Tenho%20algumas%20dúvidas%20sobre%20o%20Shiai%20System%20para%20meus%20campeonatos."
+           class="btn btn-primary-custom">
+          Falar agora pelo WhatsApp
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="py-3">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+      <div class="small text-secondary">
+        © {% now "Y" %} Shiai System – Gestão de Campeonatos de Judô.
+      </div>
+      <div class="small text-secondary">
+        Suporte WhatsApp: <a href="https://wa.me/5524999582625" class="text-decoration-none">+55 (24) 99958-2625</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- BOTÃO FLOAT WHATSAPP -->
+  <div class="floating-whatsapp">
+    <a href="https://wa.me/5524999582625?text=Olá%2C%20vim%20do%20site%20do%20Shiai%20System%20e%20quero%20saber%20mais."
+       aria-label="Fale conosco pelo WhatsApp">
+      💬
+    </a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
+

@@ -1,8 +1,8 @@
-
-{% extends 'atletas/layouts/base_operational.html' %}
+{% extends 'atletas/base.html' %}
 {% load static %}
 
 {% block title %}Cadastrar Categoria - Sistema de Gestão de Competições de Judô{% endblock %}
+{# Template corrigido - apenas um bloco title #}
 
 {% block content %}
 <div class="page-header">
@@ -15,17 +15,27 @@
         <h3 class="card-title">Informações da Categoria</h3>
     </div>
     <div class="card-body">
-<form method="post">
-    {% csrf_token %}
-    
+        <form method="post">
+            {% csrf_token %}
+            
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-6);">
                 <div class="form-group">
                     <label class="form-label" for="classe">
                         Classe
                         <span style="color: var(--color-danger);">*</span>
                     </label>
+                    {% if classes %}
+                    <select id="classe" name="classe" class="form-select" required>
+                        <option value="">Selecione uma classe</option>
+                        {% for classe in classes %}
+                        <option value="{{ classe.nome }}">{{ classe.nome }} ({{ classe.idade_min }} a {{ classe.idade_max }} anos)</option>
+                        {% endfor %}
+                    </select>
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Ou digite uma nova classe abaixo</small>
+                    {% else %}
                     <input type="text" id="classe" name="classe" class="form-input" required placeholder="Ex: SUB 9, SUB 11, SUB 13, SÊNIOR...">
-                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Faixa etária ou nível</small>
+                    <small style="display: block; margin-top: var(--spacing-1); color: var(--color-gray-500); font-size: var(--font-size-xs);">Digite o nome da classe</small>
+                    {% endif %}
                 </div>
     
                 <div class="form-group">
@@ -75,14 +85,14 @@
                 </div>
             </div>
             
-            <div class="form-actions">
-                <a href="{% url 'lista_categorias' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Cancelar</a>
+            <div style="display: flex; gap: var(--spacing-3); justify-content: flex-end; margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 1px solid var(--color-gray-200);">
+                <a href="{% url 'lista_categorias' %}" class="btn btn-secondary">Cancelar</a>
                 <button type="submit" class="btn btn-primary">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                     Cadastrar Categoria
                 </button>
             </div>
-</form>
+        </form>
     </div>
 </div>
 {% endblock %}

@@ -15,7 +15,7 @@
             </p>
         </div>
         <div class="flex gap-3" style="flex-wrap: wrap;">
-            <a href="{% url 'administracao_equipe' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">
+            <a href="{% url 'administracao_equipe' %}" class="btn btn-secondary">
                 Voltar
             </a>
         </div>
@@ -126,7 +126,7 @@
                     </select>
                     <button type="submit" class="btn btn-secondary">Filtrar</button>
                     {% if nome_filtro or tipo_filtro %}
-                    <a href="{% url 'administracao_equipe_pessoas_lista' organizacao_slug=request.organizacao.slug %}" class="btn btn-ghost">Limpar</a>
+                    <a href="{% url 'administracao_equipe_pessoas_lista' %}" class="btn btn-ghost">Limpar</a>
                     {% endif %}
                 </form>
             </div>
@@ -283,69 +283,97 @@ function toggleTipoPessoa() {
     if (tipoAtleta) {
         camposAtleta.style.display = 'block';
         camposExterna.style.display = 'none';
-        atletaId.required = true;
-        nomeExterna.required = false;
-        telefoneExterna.required = false;
-        chavePixExterna.required = false;
-        // Limpar campos externos
-        nomeExterna.value = '';
-        telefoneExterna.value = '';
-        chavePixExterna.value = '';
+        if (atletaId) {
+            atletaId.setAttribute('required', 'required');
+        }
+        if (nomeExterna) {
+            nomeExterna.removeAttribute('required');
+            nomeExterna.value = '';
+        }
+        if (telefoneExterna) {
+            telefoneExterna.removeAttribute('required');
+            telefoneExterna.value = '';
+        }
+        if (chavePixExterna) {
+            chavePixExterna.removeAttribute('required');
+            chavePixExterna.value = '';
+        }
     } else {
         camposAtleta.style.display = 'none';
         camposExterna.style.display = 'block';
-        atletaId.required = false;
-        nomeExterna.required = true;
-        telefoneExterna.required = true;
-        chavePixExterna.required = true;
-        // Limpar campo atleta
-        atletaId.value = '';
+        if (atletaId) {
+            atletaId.removeAttribute('required');
+            atletaId.value = '';
+        }
+        if (nomeExterna) {
+            nomeExterna.setAttribute('required', 'required');
+        }
+        if (telefoneExterna) {
+            telefoneExterna.setAttribute('required', 'required');
+        }
+        if (chavePixExterna) {
+            chavePixExterna.setAttribute('required', 'required');
+        }
     }
 }
 
 // Validação do formulário antes de submeter
-document.addEventListener('DOMContentLoaded', function() {
-    toggleTipoPessoa();
-});
-
-document.getElementById('form-criar-pessoa')?.addEventListener('submit', function(e) {
-    const tipoAtleta = document.getElementById('tipo_atleta').checked;
-    const atletaId = document.getElementById('atleta_id');
-    const nomeExterna = document.getElementById('nome_externa');
-    const telefoneExterna = document.getElementById('telefone_externa');
-    const chavePixExterna = document.getElementById('chave_pix_externa');
-    
-    if (tipoAtleta) {
-        if (!atletaId.value) {
-            e.preventDefault();
-            alert('Por favor, selecione um atleta.');
-            atletaId.focus();
-            return false;
-        }
-    } else {
-        if (!nomeExterna.value.trim()) {
-            e.preventDefault();
-            alert('Por favor, preencha o nome completo.');
-            nomeExterna.focus();
-            return false;
-        }
-        if (!telefoneExterna.value.trim()) {
-            e.preventDefault();
-            alert('Por favor, preencha o telefone.');
-            telefoneExterna.focus();
-            return false;
-        }
-        if (!chavePixExterna.value.trim()) {
-            e.preventDefault();
-            alert('Por favor, preencha a chave PIX.');
-            chavePixExterna.focus();
-            return false;
-        }
+(function() {
+    const form = document.getElementById('form-criar-pessoa');
+    if (!form) {
+        console.error('Formulário form-criar-pessoa não encontrado!');
+        return;
     }
     
-    // Se chegou aqui, permitir submit
-    return true;
-});
+    form.addEventListener('submit', function(e) {
+        console.log('Formulário sendo submetido...');
+        const tipoAtleta = document.getElementById('tipo_atleta').checked;
+        const atletaId = document.getElementById('atleta_id');
+        const nomeExterna = document.getElementById('nome_externa');
+        const telefoneExterna = document.getElementById('telefone_externa');
+        const chavePixExterna = document.getElementById('chave_pix_externa');
+        
+        console.log('Tipo pessoa:', tipoAtleta ? 'atleta' : 'externa');
+        
+        if (tipoAtleta) {
+            if (!atletaId || !atletaId.value) {
+                e.preventDefault();
+                alert('Por favor, selecione um atleta.');
+                if (atletaId) atletaId.focus();
+                return false;
+            }
+            console.log('Atleta selecionado:', atletaId.value);
+        } else {
+            if (!nomeExterna || !nomeExterna.value.trim()) {
+                e.preventDefault();
+                alert('Por favor, preencha o nome completo.');
+                if (nomeExterna) nomeExterna.focus();
+                return false;
+            }
+            if (!telefoneExterna || !telefoneExterna.value.trim()) {
+                e.preventDefault();
+                alert('Por favor, preencha o telefone.');
+                if (telefoneExterna) telefoneExterna.focus();
+                return false;
+            }
+            if (!chavePixExterna || !chavePixExterna.value.trim()) {
+                e.preventDefault();
+                alert('Por favor, preencha a chave PIX.');
+                if (chavePixExterna) chavePixExterna.focus();
+                return false;
+            }
+            console.log('Dados pessoa externa:', {
+                nome: nomeExterna.value,
+                telefone: telefoneExterna.value,
+                chavePix: chavePixExterna.value
+            });
+        }
+        
+        // Se chegou aqui, permitir submit
+        console.log('Validação passou, enviando formulário...');
+        return true;
+    });
+})();
 
 function editarPessoa(id, nome, telefone, chavePix, observacao) {
     document.getElementById('editar_pessoa_id').value = id;
@@ -374,21 +402,42 @@ function fecharModal() {
 }
 
 // Fechar modal ao clicar no overlay
-document.getElementById('modal-editar')?.addEventListener('click', function(e) {
-    if (e.target === this) {
-        fecharModal();
+(function() {
+    const modalEditar = document.getElementById('modal-editar');
+    if (modalEditar) {
+        modalEditar.addEventListener('click', function(e) {
+            if (e.target === this) {
+                fecharModal();
+            }
+        });
     }
-});
+})();
 
-// Preencher telefone e PIX automaticamente ao selecionar atleta
-document.getElementById('atleta_id')?.addEventListener('change', function() {
-    const option = this.options[this.selectedIndex];
-    if (option && option.dataset.telefone) {
-        document.getElementById('telefone_atleta').value = option.dataset.telefone || '';
-        document.getElementById('chave_pix_atleta').value = option.dataset.pix || '';
+// Inicializar formulário quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    // Garantir que o estado inicial está correto
+    toggleTipoPessoa();
+    
+    // Preencher telefone e PIX automaticamente ao selecionar atleta
+    const atletaSelect = document.getElementById('atleta_id');
+    if (atletaSelect) {
+        atletaSelect.addEventListener('change', function() {
+            const option = this.options[this.selectedIndex];
+            if (option && option.dataset) {
+                const telefoneAtleta = document.getElementById('telefone_atleta');
+                const chavePixAtleta = document.getElementById('chave_pix_atleta');
+                if (telefoneAtleta && option.dataset.telefone) {
+                    telefoneAtleta.value = option.dataset.telefone || '';
+                }
+                if (chavePixAtleta && option.dataset.pix) {
+                    chavePixAtleta.value = option.dataset.pix || '';
+                }
+            }
+        });
     }
 });
 </script>
 {% endblock %}
+
 
 

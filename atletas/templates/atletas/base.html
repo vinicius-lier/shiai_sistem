@@ -7,8 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>{% block title %}SHIAI SISTEM - Gestão de Competições de Judô{% endblock %}</title>
     <!-- Favicon SHIAI -->
-    <link rel="icon" type="image/png" href="{% static 'img/logo_black.png' %}">
-    <link rel="apple-touch-icon" href="{% static 'img/logo_black.png' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/logo_white.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/logo_white.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1482,7 +1482,7 @@
         <!-- Navbar Bootstrap 5 -->
         <nav class="navbar navbar-expand-lg navbar-dark navbar-shiai fixed-top">
             <div class="container-fluid">
-                <a class="navbar-brand" href="{% url 'index' %}">
+                <a class="navbar-brand" href="{% if request.organizacao %}{% url 'index' organizacao_slug=request.organizacao.slug %}{% else %}/{% endif %}">
                     <img src="{% static 'img/logo_white.png' %}" alt="SHIAI SISTEM" height="32" class="d-inline-block align-text-top">
                 </a>
                 <!-- Botão Hambúrguer (Mobile) -->
@@ -1497,7 +1497,7 @@
                     <ul class="navbar-nav me-auto">
                         <!-- Início -->
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% if request.organizacao %}{% url 'index' organizacao_slug=request.organizacao.slug %}{% else %}/{% endif %}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                                     <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -1516,22 +1516,22 @@
                                 Eventos
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="eventosDropdown">
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'lista_campeonatos' %}active{% endif %}" href="{% url 'lista_campeonatos' %}">Listar Eventos</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'cadastrar_campeonato' %}active{% endif %}" href="{% url 'cadastrar_campeonato' %}">Criar Evento</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'lista_campeonatos' %}active{% endif %}" href="{% url 'lista_campeonatos' organizacao_slug=request.organizacao.slug %}">Listar Eventos</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'cadastrar_campeonato' %}active{% endif %}" href="{% url 'cadastrar_campeonato' organizacao_slug=request.organizacao.slug %}">Criar Evento</a></li>
                                 {% if campeonato_ativo %}
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'inscrever_atletas' %}active{% endif %}" href="{% url 'inscrever_atletas' %}">Inscrições</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' %}active{% endif %}" href="{% url 'pesagem' %}">Pesagem</a></li>
-                                <li><a class="dropdown-item {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_categorias' %}">Categorias</a></li>
-                                <li><a class="dropdown-item {% if 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_chaves' %}">Chaves</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'metricas_evento' %}active{% endif %}" href="{% url 'metricas_evento' %}">Métricas</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'inscrever_atletas' %}active{% endif %}" href="{% url 'inscrever_atletas' organizacao_slug=request.organizacao.slug %}">Inscrições</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' %}active{% endif %}" href="{% url 'pesagem' organizacao_slug=request.organizacao.slug %}">Pesagem</a></li>
+                                <li><a class="dropdown-item {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_categorias' organizacao_slug=request.organizacao.slug %}">Categorias</a></li>
+                                <li><a class="dropdown-item {% if 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_chaves' organizacao_slug=request.organizacao.slug %}">Chaves</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'metricas_evento' %}active{% endif %}" href="{% url 'metricas_evento' organizacao_slug=request.organizacao.slug %}">Métricas</a></li>
                                 {% endif %}
                             </ul>
                         </li>
                         
                         <!-- Atletas -->
                         <li class="nav-item">
-                            <a class="nav-link {% if 'atleta' in request.resolver_match.url_name and request.resolver_match.url_name != 'inscrever_atletas' %}active{% endif %}" href="{% url 'lista_atletas' %}">
+                            <a class="nav-link {% if 'atleta' in request.resolver_match.url_name and request.resolver_match.url_name != 'inscrever_atletas' %}active{% endif %}" href="{% url 'lista_atletas' organizacao_slug=request.organizacao.slug %}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                     <circle cx="9" cy="7" r="4"></circle>
@@ -1544,7 +1544,7 @@
                         
                         <!-- Academias (menu direto) -->
                         <li class="nav-item">
-                            <a class="nav-link {% if 'academia' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_academias' %}">
+                            <a class="nav-link {% if 'academia' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lista_academias' organizacao_slug=request.organizacao.slug %}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                                     <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -1564,9 +1564,9 @@
                                 Rankings
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="rankingsDropdown">
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ranking_global' %}active{% endif %}" href="{% url 'ranking_global' %}">Ranking Global</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ranking_global' %}active{% endif %}" href="{% url 'ranking_global' organizacao_slug=request.organizacao.slug %}">Ranking Global</a></li>
                                 {% if campeonato_ativo %}
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}active{% endif %}" href="{% url 'ranking_academias' %}">Ranking do Evento</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}active{% endif %}" href="{% url 'ranking_academias' organizacao_slug=request.organizacao.slug %}">Ranking do Evento</a></li>
                                 {% endif %}
                             </ul>
                         </li>
@@ -1582,20 +1582,20 @@
                                 Administração
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_financeiro' %}active{% endif %}" href="{% url 'administracao_financeiro' %}">Financeiro</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_despesas' %}active{% endif %}" href="{% url 'administracao_despesas' %}">Despesas e Receitas</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_equipe' %}active{% endif %}" href="{% url 'administracao_equipe' %}">Equipe Técnica</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_financeiro' %}active{% endif %}" href="{% url 'administracao_financeiro' organizacao_slug=request.organizacao.slug %}">Financeiro</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_despesas' %}active{% endif %}" href="{% url 'administracao_despesas' organizacao_slug=request.organizacao.slug %}">Despesas e Receitas</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_equipe' %}active{% endif %}" href="{% url 'administracao_equipe' organizacao_slug=request.organizacao.slug %}">Equipe Técnica</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'conferencia_pagamentos_lista' or request.resolver_match.url_name == 'conferencia_pagamentos_detalhe' %}active{% endif %}" href="{% url 'conferencia_pagamentos_lista' %}">Conferência de Pagamentos</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'conferencia_pagamentos_lista' or request.resolver_match.url_name == 'conferencia_pagamentos_detalhe' %}active{% endif %}" href="{% url 'conferencia_pagamentos_lista' organizacao_slug=request.organizacao.slug %}">Conferência de Pagamentos</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ocorrencias_lista' or request.resolver_match.url_name == 'ocorrencias_criar' or request.resolver_match.url_name == 'ocorrencias_detalhe' %}active{% endif %}" href="{% url 'ocorrencias_lista' %}">Ocorrências</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ocorrencias_historico' %}active{% endif %}" href="{% url 'ocorrencias_historico' %}">Histórico do Sistema</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ocorrencias_lista' or request.resolver_match.url_name == 'ocorrencias_criar' or request.resolver_match.url_name == 'ocorrencias_detalhe' %}active{% endif %}" href="{% url 'ocorrencias_lista' organizacao_slug=request.organizacao.slug %}">Ocorrências</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ocorrencias_historico' %}active{% endif %}" href="{% url 'ocorrencias_historico' organizacao_slug=request.organizacao.slug %}">Histórico do Sistema</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}" href="{% url 'administracao_relatorios' %}">Relatórios</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}" href="{% url 'administracao_relatorios' organizacao_slug=request.organizacao.slug %}">Relatórios</a></li>
                                 {% if user.is_authenticated %}
                                     {% if user|pode_gerenciar_usuarios %}
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}" href="{% url 'gerenciar_usuarios_operacionais' %}">Usuários Operacionais</a></li>
+                                    <li><a class="dropdown-item {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}" href="{% url 'gerenciar_usuarios_operacionais' organizacao_slug=request.organizacao.slug %}">Usuários Operacionais</a></li>
                                     {% endif %}
                                 {% endif %}
                             </ul>
@@ -1610,11 +1610,11 @@
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                     <circle cx="12" cy="7" r="4"></circle>
                                 </svg>
-                                {% if user.is_authenticated %}{{ user.first_name|default:user.username }}{% else %}Perfil{% endif %}
+                                {% if user.is_authenticated %}{{ user.first_name|default:user.get_username }}{% else %}Perfil{% endif %}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="perfilDropdown">
-                                <li><a class="dropdown-item" href="{% url 'index' %}">Meu Perfil</a></li>
-                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ajuda_manual' %}active{% endif %}" href="{% url 'ajuda_manual' %}">
+                                <li><a class="dropdown-item" href="{% if request.organizacao %}{% url 'index' organizacao_slug=request.organizacao.slug %}{% else %}/{% endif %}">Meu Perfil</a></li>
+                                <li><a class="dropdown-item {% if request.resolver_match.url_name == 'ajuda_manual' %}active{% endif %}" href="{% url 'ajuda_manual' organizacao_slug=request.organizacao.slug %}">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"></path>
                                     </svg>
@@ -1668,7 +1668,7 @@
             <nav>
                 <ul class="sidebar-nav">
                     <li class="nav-item">
-                        <a href="{% url 'index' %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+                        <a href="{% if request.organizacao %}{% url 'index' organizacao_slug=request.organizacao.slug %}{% else %}/{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -1686,33 +1686,33 @@
                         </a>
                         <ul class="sidebar-submenu">
                             <li class="nav-item">
-                                <a href="{% url 'lista_campeonatos' %}" class="nav-link {% if request.resolver_match.url_name == 'lista_campeonatos' %}active{% endif %}">Listar Eventos</a>
+                                <a href="{% url 'lista_campeonatos' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'lista_campeonatos' %}active{% endif %}">Listar Eventos</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'cadastrar_campeonato' %}" class="nav-link {% if request.resolver_match.url_name == 'cadastrar_campeonato' %}active{% endif %}">Criar Evento</a>
+                                <a href="{% url 'cadastrar_campeonato' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'cadastrar_campeonato' %}active{% endif %}">Criar Evento</a>
                             </li>
                             {% if campeonato_ativo %}
                             <li><div class="sidebar-submenu-divider"></div></li>
                             <li class="nav-item">
-                                <a href="{% url 'inscrever_atletas' %}" class="nav-link {% if request.resolver_match.url_name == 'inscrever_atletas' %}active{% endif %}">Inscrições</a>
+                                <a href="{% url 'inscrever_atletas' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'inscrever_atletas' %}active{% endif %}">Inscrições</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'pesagem' %}" class="nav-link {% if request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' %}active{% endif %}">Pesagem</a>
+                                <a href="{% url 'pesagem' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'pesagem' or request.resolver_match.url_name == 'pesagem_mobile' or request.resolver_match.url_name == 'registrar_peso' or request.resolver_match.url_name == 'confirmar_remanejamento' or request.resolver_match.url_name == 'rebaixar_categoria' %}active{% endif %}">Pesagem</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'lista_categorias' %}" class="nav-link {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}">Categorias</a>
+                                <a href="{% url 'lista_categorias' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}">Categorias</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'lista_chaves' %}" class="nav-link {% if 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name %}active{% endif %}">Chaves</a>
+                                <a href="{% url 'lista_chaves' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if 'chave' in request.resolver_match.url_name or 'luta' in request.resolver_match.url_name %}active{% endif %}">Chaves</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'metricas_evento' %}" class="nav-link {% if request.resolver_match.url_name == 'metricas_evento' %}active{% endif %}">Métricas</a>
+                                <a href="{% url 'metricas_evento' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'metricas_evento' %}active{% endif %}">Métricas</a>
                             </li>
                             {% endif %}
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'lista_atletas' %}" class="nav-link {% if 'atleta' in request.resolver_match.url_name and request.resolver_match.url_name != 'inscrever_atletas' %}active{% endif %}">
+                        <a href="{% url 'lista_atletas' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if 'atleta' in request.resolver_match.url_name and request.resolver_match.url_name != 'inscrever_atletas' %}active{% endif %}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="9" cy="7" r="4"></circle>
@@ -1723,7 +1723,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'lista_academias' %}" class="nav-link {% if 'academia' in request.resolver_match.url_name %}active{% endif %}">
+                        <a href="{% url 'lista_academias' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if 'academia' in request.resolver_match.url_name %}active{% endif %}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -1742,11 +1742,11 @@
                         </a>
                         <ul class="sidebar-submenu">
                             <li class="nav-item">
-                                <a href="{% url 'ranking_global' %}" class="nav-link {% if request.resolver_match.url_name == 'ranking_global' %}active{% endif %}">Ranking Global</a>
+                                <a href="{% url 'ranking_global' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'ranking_global' %}active{% endif %}">Ranking Global</a>
                             </li>
                             {% if campeonato_ativo %}
                             <li class="nav-item">
-                                <a href="{% url 'ranking_academias' %}" class="nav-link {% if request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}active{% endif %}">Ranking do Evento</a>
+                                <a href="{% url 'ranking_academias' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'ranking_academias' or request.resolver_match.url_name == 'calcular_pontuacao' %}active{% endif %}">Ranking do Evento</a>
                             </li>
                             {% endif %}
                         </ul>
@@ -1762,34 +1762,34 @@
                         </a>
                         <ul class="sidebar-submenu">
                             <li class="nav-item">
-                                <a href="{% url 'administracao_financeiro' %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_financeiro' %}active{% endif %}">Financeiro</a>
+                                <a href="{% url 'administracao_financeiro' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_financeiro' %}active{% endif %}">Financeiro</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'administracao_despesas' %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_despesas' %}active{% endif %}">Despesas e Receitas</a>
+                                <a href="{% url 'administracao_despesas' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_despesas' %}active{% endif %}">Despesas e Receitas</a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'administracao_equipe' %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_equipe' %}active{% endif %}">Equipe Técnica</a>
-                            </li>
-                            <li><div class="sidebar-submenu-divider"></div></li>
-                            <li class="nav-item">
-                                <a href="{% url 'conferencia_pagamentos_lista' %}" class="nav-link {% if request.resolver_match.url_name == 'conferencia_pagamentos_lista' or request.resolver_match.url_name == 'conferencia_pagamentos_detalhe' %}active{% endif %}">Conferência de Pagamentos</a>
+                                <a href="{% url 'administracao_equipe' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_equipe' %}active{% endif %}">Equipe Técnica</a>
                             </li>
                             <li><div class="sidebar-submenu-divider"></div></li>
                             <li class="nav-item">
-                                <a href="{% url 'ocorrencias_lista' %}" class="nav-link {% if request.resolver_match.url_name == 'ocorrencias_lista' or request.resolver_match.url_name == 'ocorrencias_criar' or request.resolver_match.url_name == 'ocorrencias_detalhe' %}active{% endif %}">Ocorrências</a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'ocorrencias_historico' %}" class="nav-link {% if request.resolver_match.url_name == 'ocorrencias_historico' %}active{% endif %}">Histórico do Sistema</a>
+                                <a href="{% url 'conferencia_pagamentos_lista' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'conferencia_pagamentos_lista' or request.resolver_match.url_name == 'conferencia_pagamentos_detalhe' %}active{% endif %}">Conferência de Pagamentos</a>
                             </li>
                             <li><div class="sidebar-submenu-divider"></div></li>
                             <li class="nav-item">
-                                <a href="{% url 'administracao_relatorios' %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}">Relatórios</a>
+                                <a href="{% url 'ocorrencias_lista' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'ocorrencias_lista' or request.resolver_match.url_name == 'ocorrencias_criar' or request.resolver_match.url_name == 'ocorrencias_detalhe' %}active{% endif %}">Ocorrências</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'ocorrencias_historico' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'ocorrencias_historico' %}active{% endif %}">Histórico do Sistema</a>
+                            </li>
+                            <li><div class="sidebar-submenu-divider"></div></li>
+                            <li class="nav-item">
+                                <a href="{% url 'administracao_relatorios' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'administracao_relatorios' %}active{% endif %}">Relatórios</a>
                             </li>
                             {% if user.is_authenticated %}
                                 {% if user|pode_gerenciar_usuarios %}
                                 <li><div class="sidebar-submenu-divider"></div></li>
                                 <li class="nav-item">
-                                    <a href="{% url 'gerenciar_usuarios_operacionais' %}" class="nav-link {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}">Usuários Operacionais</a>
+                                    <a href="{% url 'gerenciar_usuarios_operacionais' organizacao_slug=request.organizacao.slug %}" class="nav-link {% if request.resolver_match.url_name == 'gerenciar_usuarios_operacionais' %}active{% endif %}">Usuários Operacionais</a>
                                 </li>
                                 {% endif %}
                             {% endif %}
@@ -1920,7 +1920,7 @@
                     const mensagem = document.getElementById('mensagem-reset');
                     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
                     
-                    fetch('{% url "reset_campeonato" %}', {
+                    fetch('{% url "reset_campeonato" organizacao_slug=request.organizacao.slug %}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -2247,3 +2247,4 @@
     {% block extra_js %}{% endblock %}
 </body>
 </html>
+

@@ -73,7 +73,7 @@
                     {% if item.academia.foto_perfil %}
                         <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}">
                     {% else %}
-                        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI">
+                        <img src="{% static 'img/logo_white.png' %}" alt="SHIAI">
                     {% endif %}
                 </div>
                 <div style="font-size: var(--font-size-2xl); font-weight: 600; margin-bottom: var(--spacing-2);">{{ item.academia.nome }}</div>
@@ -133,7 +133,7 @@
                                     {% if item.academia.foto_perfil %}
                                         <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}">
                                     {% else %}
-                                        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI">
+                                        <img src="{% static 'img/logo_white.png' %}" alt="SHIAI">
                                     {% endif %}
                                 </div>
                                 <div style="font-weight: 500; color: var(--color-gray-900);">{{ item.academia.nome }}</div>
@@ -194,7 +194,7 @@
                     {% if item.atleta.foto_perfil %}
                         <img src="{{ item.atleta.foto_perfil.url }}" alt="{{ item.atleta.nome }}">
                     {% else %}
-                        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI">
+                        <img src="{% static 'img/logo_white.png' %}" alt="SHIAI">
                     {% endif %}
                 </div>
                 <div style="font-size: var(--font-size-2xl); font-weight: 600; margin-bottom: var(--spacing-2);">{{ item.atleta.nome }}</div>
@@ -255,7 +255,7 @@
                                     {% if item.atleta.foto_perfil %}
                                         <img src="{{ item.atleta.foto_perfil.url }}" alt="{{ item.atleta.nome }}">
                                     {% else %}
-                                        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI">
+                                        <img src="{% static 'img/logo_white.png' %}" alt="SHIAI">
                                     {% endif %}
                                 </div>
                                 <div style="font-weight: 500; color: var(--color-gray-900);">{{ item.atleta.nome }}</div>
@@ -307,3 +307,5 @@
 </div>
 {% endif %}
 {% endblock %}
+
+

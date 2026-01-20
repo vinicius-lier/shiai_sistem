@@ -170,7 +170,7 @@
 {% block content %}
 <div class="mobile-header">
     <h1>⚖️ Pesagem</h1>
-    <a href="{% url 'pesagem' %}?desktop=1" class="link-desktop">← Versão Desktop</a>
+    <a href="{% url 'pesagem' organizacao_slug=request.organizacao.slug %}?desktop=1" class="link-desktop">← Versão Desktop</a>
 </div>
 
 <div class="page-header">
@@ -358,6 +358,12 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
+                if (data.resultado === 'desclassificado' || data.desclassificado) {
+                    const mensagem = data.mensagem || data.message || 'Atleta desclassificado por faixa incompatível.';
+                    alert(mensagem);
+                    window.location.reload();
+                    return;
+                }
                 if (data.precisa_confirmacao) {
                     mostrarModalRemanejamento(data, inscricaoId);
                 } else {

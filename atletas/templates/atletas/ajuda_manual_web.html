@@ -154,7 +154,7 @@
 {% block content %}
 <div class="manual-toolbar">
     <div class="flex items-center justify-between flex-wrap gap-4">
-        <a href="{% url 'ajuda_manual' %}" class="btn btn-ghost">
+        <a href="{% url 'ajuda_manual' organizacao_slug=request.organizacao.slug %}" class="btn btn-ghost">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
                 <polyline points="15 18 9 12 15 6"></polyline>
             </svg>

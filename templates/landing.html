@@ -1,9 +1,9 @@
 {% extends 'base_public.html' %}
 {% block title %}SHIAI — Gestão profissional de competições de Judô{% endblock %}
 {% block content %}
-  <section class="hero tatami">
+  <section class="hero">
     <div class="container">
-      <div class="grid-2" style="align-items:center">
+      <div class="grid-2 align-center">
         <div>
           <h1 class="lead">SHIAI — Gestão profissional de competições de Judô</h1>
           <p class="sub">Do cadastro de atletas ao ranking final. Tudo organizado, seguro e em tempo real.</p>
@@ -22,10 +22,10 @@
     </div>
   </section>
 
-  <section style="padding:40px 0">
+  <section class="section-md">
     <div class="container">
       <h3>O problema</h3>
-      <div class="grid-3" style="margin-top:16px">
+      <div class="grid-3 mt-4">
         <div class="card">
           <h4>Planilhas</h4>
           <p class="muted">Processos manuais que geram erros e retrabalhos.</p>
@@ -42,10 +42,10 @@
     </div>
   </section>
 
-  <section style="padding:40px 0;background:transparent">
+  <section class="section-md">
     <div class="container">
-      <h3>A solução — SHIAI</h3>
-      <div class="grid-3" style="margin-top:16px">
+      <h3>A solução – SHIAI</h3>
+      <div class="grid-3 mt-4">
         <div class="card">
           <div class="hstack"><div class="icon">🏷️</div><h4>Cadastro</h4></div>
           <p class="muted">Atletas, academias e categorias organizados.</p>
@@ -74,10 +74,10 @@
     </div>
   </section>
 
-  <section style="padding:40px 0">
+  <section class="section-md">
     <div class="container">
       <h3>Para quem é</h3>
-      <div class="grid-3" style="margin-top:16px">
+      <div class="grid-3 mt-4">
         <div class="card"><h4>Organizadores</h4><p class="muted">Eventos regionais e nacionais.</p></div>
         <div class="card"><h4>Federações</h4><p class="muted">Ferramentas para gestão em larga escala.</p></div>
         <div class="card"><h4>Academias</h4><p class="muted">Controle e visibilidade dos atletas.</p></div>
@@ -85,10 +85,10 @@
     </div>
   </section>
 
-  <section style="padding:40px 0;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)">
+  <section class="section-md section-muted">
     <div class="container">
       <h3>Valores</h3>
-      <div class="pricing" style="margin-top:16px">
+      <div class="pricing mt-4">
         <div class="card price">
           <h4>Plano Evento Único</h4>
           <div class="amount">R$ 499</div>
@@ -105,23 +105,23 @@
           <p class="muted">Customizado para federações e grandes ligas.</p>
         </div>
       </div>
-      <p class="muted" style="margin-top:12px">Valores ajustáveis conforme porte do evento.</p>
+      <p class="muted mt-3">Valores ajustáveis conforme porte do evento.</p>
     </div>
   </section>
 
-  <section id="contact" style="padding:40px 0">
+  <section id="contact" class="section-md">
     <div class="container">
       <h3>Contato</h3>
-      <div class="grid-2" style="margin-top:16px">
+      <div class="grid-2 mt-4">
         <div class="card">
           <p class="muted">WhatsApp: (xx) xxxxx-xxxx<br>Email: contato@shiai.example</p>
           <p class="muted">Também atendemos por formulário abaixo.</p>
         </div>
         <div class="card">
           <form class="stack" onsubmit="event.preventDefault();alert('Formulário demo — sem backend')">
-            <div class="form-row"><label class="muted">Nome</label><input class="form-input" type="text" placeholder="Seu nome"></div>
-            <div class="form-row"><label class="muted">Contato</label><input class="form-input" type="text" placeholder="Telefone ou email"></div>
-            <div class="form-row"><label class="muted">Mensagem</label><textarea class="form-input" rows="4" placeholder="Como podemos ajudar?"></textarea></div>
+            <div class="form-row"><label>Nome</label><input class="form-input" type="text" placeholder="Seu nome"></div>
+            <div class="form-row"><label>Contato</label><input class="form-input" type="text" placeholder="Telefone ou email"></div>
+            <div class="form-row"><label>Mensagem</label><textarea class="form-input" rows="4" placeholder="Como podemos ajudar?"></textarea></div>
             <div><button class="btn btn-primary">Enviar</button></div>
           </form>
         </div>
@@ -129,10 +129,10 @@
     </div>
   </section>
 
-  <section style="padding:24px 0">
+  <section class="section-sm">
     <div class="container">
       <h3>Login</h3>
-      <div class="grid-3" style="margin-top:12px">
+      <div class="grid-3 mt-3">
         <div class="card"><h4>Operacional</h4><p class="muted">Acesso para equipe de organização.</p><a class="btn btn-ghost" href="/accounts/login/">Entrar</a></div>
         <div class="card"><h4>Academia</h4><p class="muted">Acesso para academias e treinadores.</p><a class="btn btn-ghost" href="/academia/login/">Entrar</a></div>
         <div class="card"><h4>Convidado</h4><p class="muted">Acesso limitado para ver resultados.</p><a class="btn btn-ghost" href="#">Visitar</a></div>

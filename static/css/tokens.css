@@ -1,49 +1,49 @@
 :root {
   /* Foundations */
-  --bg: #0B0F14;
-  --surface: #121826;
-  --surface-soft: #1A2134;
-  --surface-strong: #0F141F;
-  --border: #1F2536;
-  --border-strong: #2C3448;
-  --text: #E5E7EB;
-  --muted: #9CA3AF;
-  --muted-strong: #6B7280;
-  --primary: #2563EB;
-  --primary-strong: #1D4ED8;
+  --bg: #f7f9fc;
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+  --surface-strong: #ffffff;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+  --text: #111827;
+  --muted: #4b5563;
+  --muted-strong: #6b7280;
+  --primary: #2563eb;
+  --primary-strong: #1d4ed8;
   --primary-soft: rgba(37, 99, 235, 0.12);
-  --highlight: #F5C451;
+  --highlight: #f59e0b;
   --blue-judô: #1D4ED8;
   --red-judô: #B91C1C;
-  --success: #10B981;
-  --warning: #F59E0B;
-  --danger: #EF4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
 
   /* Legacy aliases (mantém templates antigos funcionando) */
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-strong);
   --color-primary-light: var(--primary-soft);
-  --color-secondary: #4C1D95;
-  --color-secondary-hover: #3B0F7B;
-  --color-secondary-light: rgba(76, 29, 149, 0.15);
-  --color-dark: var(--bg);
-  --color-dark-light: var(--surface);
-  --color-gray-50: #0F1521;
-  --color-gray-100: #161D2B;
-  --color-gray-200: #1F2536;
-  --color-gray-300: #2C3448;
-  --color-gray-400: #3B455E;
-  --color-gray-500: #596079;
-  --color-gray-600: #7A829C;
-  --color-gray-700: #A7AEC5;
-  --color-gray-800: #CFD5E7;
-  --color-gray-900: #F6F7FB;
+  --color-secondary: #1d4ed8;
+  --color-secondary-hover: #1e40af;
+  --color-secondary-light: rgba(29, 78, 216, 0.12);
+  --color-dark: #111827;
+  --color-dark-light: #1f2937;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
   --color-success: var(--success);
   --color-success-light: rgba(16, 185, 129, 0.14);
   --color-danger: var(--danger);
   --color-danger-light: rgba(239, 68, 68, 0.18);
   --color-warning: var(--warning);
-  --color-warning-light: rgba(245, 196, 81, 0.2);
+  --color-warning-light: rgba(245, 158, 11, 0.2);
   --color-white: #FFFFFF;
 
   /* Spacing scale (4px grid) */
@@ -94,9 +94,9 @@
   --radius-xl: 22px;
   --radius-pill: 999px;
   --border-width: 1px;
-  --shadow-soft: 0 12px 32px rgba(7, 10, 18, 0.35);
-  --shadow-card: 0 18px 38px rgba(3, 7, 18, 0.45);
-  --shadow-raised: 0 30px 60px rgba(1, 4, 9, 0.65);
+  --shadow-soft: 0 12px 32px rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 18px 38px rgba(15, 23, 42, 0.12);
+  --shadow-raised: 0 30px 60px rgba(15, 23, 42, 0.16);
 }
 
 body {
@@ -104,3 +104,5 @@ body {
   background: var(--bg);
   color: var(--text);
 }
+
+

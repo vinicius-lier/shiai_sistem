@@ -8,6 +8,11 @@
         <h1 class="page-title">Organizações</h1>
         <p class="page-description">Selecione uma organização para entrar no painel operacional.</p>
     </div>
+    <div>
+        <a href="{% url 'criar_organizacao' %}" class="btn btn-primary">
+            Nova Organizacao
+        </a>
+    </div>
 </div>
 
 {% if organizacoes %}
@@ -46,6 +51,21 @@
                                     Entrar
                                 </a>
                                 {% endif %}
+                                <a href="{% url 'editar_organizacao' org.id %}" class="btn btn-secondary btn-sm">
+                                    Editar
+                                </a>
+                                <form method="post" action="{% url 'alternar_organizacao_status' org.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    {% if org.ativo %}
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Deseja desativar esta organizacao?');">
+                                        Desativar
+                                    </button>
+                                    {% else %}
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        Ativar
+                                    </button>
+                                    {% endif %}
+                                </form>
                             </div>
                         </td>
                     </tr>
@@ -64,5 +84,6 @@
 {% endif %}
 
 {% endblock %}
+
 
 

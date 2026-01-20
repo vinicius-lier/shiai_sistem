@@ -402,7 +402,7 @@
             {% if item.academia.foto_perfil %}
                 <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}">
             {% else %}
-                <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI">
+                <img src="{% static 'img/logo_white.png' %}" alt="SHIAI">
             {% endif %}
         </div>
         <div class="podium-position">{{ forloop.counter }}º Lugar</div>
@@ -470,7 +470,7 @@
                                     {% if item.academia.foto_perfil %}
                                         <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}">
                                     {% else %}
-                                        <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI">
+                                        <img src="{% static 'img/logo_white.png' %}" alt="SHIAI">
                                     {% endif %}
                                 </div>
                                 <div>
@@ -605,3 +605,5 @@
 }
 </style>
 {% endblock %}
+
+

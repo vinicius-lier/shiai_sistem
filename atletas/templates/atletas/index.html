@@ -1,184 +1,788 @@
 {% extends "atletas/layouts/base_operational.html" %}
 {% load static %}
 
-{% block title %}Dashboard - Sistema de Gestao de Competicoes de Judo{% endblock %}
+{% block title %}Dashboard - SHIAI{% endblock %}
+
+{% block extra_css %}
+<style>
+  .dashboard-shell {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--space-6);
+  }
+
+  .dash-card {
+    background: #fff;
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .dash-header {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--space-6);
+    align-items: center;
+    padding: var(--card-padding);
+  }
+
+  .dash-brand {
+    grid-column: span 5;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .dash-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid var(--color-gray-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .dash-logo img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+  }
+
+  .dash-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    color: var(--color-gray-900);
+  }
+
+  .dash-subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+    margin: 0;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid transparent;
+  }
+
+  .status-pill.is-info {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+  }
+
+  .status-pill.is-warning {
+    background: #fffbeb;
+    color: #92400e;
+    border-color: #fde68a;
+  }
+
+  .status-pill.is-success {
+    background: #ecfdf3;
+    color: #166534;
+    border-color: #86efac;
+  }
+
+  .status-pill.is-neutral {
+    background: #f3f4f6;
+    color: #475569;
+    border-color: #e5e7eb;
+  }
+
+  .dash-search {
+    grid-column: span 4;
+  }
+
+  .dash-search input {
+    width: 100%;
+    height: 44px;
+    padding: 0 var(--space-4);
+    border-radius: 12px;
+    border: 1px solid var(--color-gray-200);
+    background: #fff;
+    font-size: var(--font-size-sm);
+  }
+
+  .dash-profile {
+    grid-column: span 3;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-3);
+  }
+
+  .dash-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  .dash-profile-name {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-gray-900);
+  }
+
+  .dash-profile-role {
+    font-size: 12px;
+    color: var(--color-gray-500);
+  }
+
+  .kpi-section {
+    grid-column: 1 / -1;
+  }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .kpi-card {
+    padding: var(--card-padding);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-height: 130px;
+  }
+
+  .kpi-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: var(--color-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin: 0;
+  }
+
+  .kpi-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-gray-500);
+    font-weight: 600;
+  }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin: 0 0 var(--space-4) 0;
+  }
+
+  .flow-section {
+    grid-column: 1 / -1;
+  }
+
+  .flow-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .flow-card {
+    padding: var(--card-padding);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .flow-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #f3f4f6;
+    color: var(--color-gray-700);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .flow-title {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-gray-900);
+  }
+
+  .flow-desc {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+    margin: 0;
+  }
+
+  .flow-actions {
+    margin-top: auto;
+  }
+
+  .status-section {
+    grid-column: 1 / -1;
+  }
+
+  .status-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .status-main {
+    grid-column: span 8;
+    padding: var(--card-padding);
+  }
+
+  .status-side {
+    grid-column: span 4;
+    padding: var(--card-padding);
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-2);
+    color: var(--color-gray-700);
+  }
+
+  .progress-bar {
+    height: 10px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: var(--space-4);
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--color-primary);
+    border-radius: 999px;
+  }
+
+  .status-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .status-meta-card {
+    background: #f8fafc;
+    border: 1px solid var(--color-gray-200);
+    border-radius: 12px;
+    padding: var(--space-3);
+  }
+
+  .status-meta-value {
+    font-weight: 700;
+    color: var(--color-gray-900);
+    font-size: var(--font-size-lg);
+  }
+
+  .status-meta-label {
+    font-size: 12px;
+    color: var(--color-gray-500);
+  }
+
+  .alert-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .alert-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: 12px;
+    border: 1px solid #fee2e2;
+    background: #fef2f2;
+    color: #991b1b;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+  }
+
+  .alert-item.is-warning {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+  }
+
+  .alert-item.is-success {
+    border-color: #bbf7d0;
+    background: #ecfdf3;
+    color: #166534;
+  }
+
+  .ranking-section {
+    grid-column: 1 / -1;
+  }
+
+  .ranking-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .ranking-main {
+    grid-column: span 8;
+    padding: var(--card-padding);
+  }
+
+  .ranking-side {
+    grid-column: span 4;
+    padding: var(--card-padding);
+  }
+
+  .ranking-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ranking-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: 12px;
+    border: 1px solid var(--color-gray-200);
+    background: #fff;
+  }
+
+  .ranking-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .ranking-rank {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: var(--color-primary);
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .ranking-name {
+    font-weight: 600;
+    color: var(--color-gray-900);
+    font-size: var(--font-size-sm);
+  }
+
+  .ranking-meta {
+    font-size: 12px;
+    color: var(--color-gray-500);
+  }
+
+  .ranking-score {
+    font-weight: 700;
+    color: var(--color-primary);
+    font-size: var(--font-size-sm);
+  }
+
+  .empty-box {
+    border: 1px dashed var(--color-gray-300);
+    border-radius: 12px;
+    padding: var(--space-6);
+    text-align: center;
+    color: var(--color-gray-500);
+    font-size: var(--font-size-sm);
+    background: #f8fafc;
+  }
+
+  .dash-footer {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    font-size: 12px;
+    color: var(--color-gray-500);
+    padding: 0 var(--space-2);
+  }
+
+  @media (max-width: 1200px) {
+    .dash-brand { grid-column: span 12; }
+    .dash-search { grid-column: span 7; }
+    .dash-profile { grid-column: span 5; }
+    .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .flow-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .status-main { grid-column: span 12; }
+    .status-side { grid-column: span 12; }
+    .ranking-main { grid-column: span 12; }
+    .ranking-side { grid-column: span 12; }
+  }
+
+  @media (max-width: 768px) {
+    .page-main { margin: var(--space-4); }
+    .dash-header { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+    .dash-brand, .dash-search, .dash-profile { grid-column: span 1; }
+    .dash-profile { justify-content: flex-start; }
+    .kpi-grid { grid-template-columns: 1fr; }
+    .flow-grid { grid-template-columns: 1fr; }
+    .status-meta { grid-template-columns: 1fr; }
+    .dash-footer { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<section class="saas-header">
-  <div>
-    <h1 class="saas-title">Fluxos principais do sistema</h1>
-    <p class="saas-subtitle">Acesse rapidamente os processos operacionais do evento em andamento.</p>
-  </div>
-</section>
-
-<section class="workflow-grid">
-  <article class="workflow-card">
-    <div class="workflow-card-header">
-      <div class="workflow-icon is-linkedin">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-          <circle cx="9" cy="7" r="4"></circle>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-      </div>
-      <span class="workflow-badge">Operacional</span>
-    </div>
-    <h3 class="workflow-title">Inscricoes</h3>
-    <p class="workflow-desc">Gerencie atletas inscritos e confirme a participacao.</p>
-    <div class="workflow-meta">
-      <span class="workflow-badge">Fluxo</span>
-      <a class="workflow-cta" href="{% url 'inscrever_atletas' organizacao_slug=request.organizacao.slug %}">Acessar</a>
-    </div>
-  </article>
-
-  <article class="workflow-card">
-    <div class="workflow-card-header">
-      <div class="workflow-icon is-gmail">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6 2v6"></path>
-          <path d="M18 2v6"></path>
-          <path d="M3 10h18"></path>
-          <rect x="3" y="4" width="18" height="18" rx="2"></rect>
-        </svg>
-      </div>
-      <span class="workflow-badge is-paid">Evento</span>
-    </div>
-    <h3 class="workflow-title">Pesagem</h3>
-    <p class="workflow-desc">Registre pesos oficiais e valide as categorias.</p>
-    <div class="workflow-meta">
-      <span class="workflow-badge is-paid">Fluxo</span>
-      <a class="workflow-cta" href="{% url 'pesagem' organizacao_slug=request.organizacao.slug %}">Acessar</a>
-    </div>
-  </article>
-
-  <article class="workflow-card">
-    <div class="workflow-card-header">
-      <div class="workflow-icon is-instagram">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-        </svg>
-      </div>
-      <span class="workflow-badge">Operacional</span>
-    </div>
-    <h3 class="workflow-title">Chaves</h3>
-    <p class="workflow-desc">Gere chaves e acompanhe o andamento das lutas.</p>
-    <div class="workflow-meta">
-      <span class="workflow-badge">Fluxo</span>
-      <a class="workflow-cta" href="{% url 'lista_chaves' organizacao_slug=request.organizacao.slug %}">Acessar</a>
-    </div>
-  </article>
-
-  <article class="workflow-card">
-    <div class="workflow-card-header">
-      <div class="workflow-icon is-twitter">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="12" y1="20" x2="12" y2="10"></line>
-          <line x1="18" y1="20" x2="18" y2="4"></line>
-          <line x1="6" y1="20" x2="6" y2="16"></line>
-        </svg>
-      </div>
-      <span class="workflow-badge is-paid">Ranking</span>
-    </div>
-    <h3 class="workflow-title">Rankings</h3>
-    <p class="workflow-desc">Acompanhe a pontuacao de atletas e academias.</p>
-    <div class="workflow-meta">
-      <span class="workflow-badge is-paid">Fluxo</span>
-      <a class="workflow-cta" href="{% url 'ranking_academias' organizacao_slug=request.organizacao.slug %}">Acessar</a>
-    </div>
-  </article>
-</section>
-
-<section class="analytics-grid">
-  <div class="panel ranking-card">
-    <div class="ranking-card-header ranking-card-header--primary">
-      <div class="ranking-card-header-content">
-        <div>
-          <h3 class="ranking-card-title">Ranking de Academias</h3>
-          <p class="ranking-card-subtitle">Top 3 do evento em destaque</p>
+<div class="dashboard-shell">
+  <div class="dashboard-grid">
+    <header class="dash-card dash-header">
+      <div class="dash-brand">
+        <div class="dash-logo">
+          <img src="{% static 'img/logo_black.png' %}" alt="SHIAI">
         </div>
-        <a class="btn ranking-card-action" href="{% url 'ranking_academias' organizacao_slug=request.organizacao.slug %}">Ver ranking</a>
-      </div>
-    </div>
-    <div class="ranking-card-body">
-      {% if ranking_academias_completo %}
-      <div class="ranking-top3 ranking-top3--game">
-        {% for item in ranking_academias_completo|slice:":3" %}
-        <div class="ranking-podium-item {% if forloop.counter == 1 %}ranking-podium-item--first{% elif forloop.counter == 2 %}ranking-podium-item--second{% else %}ranking-podium-item--third{% endif %}">
-          <div class="ranking-avatar-wrap">
-            <div class="ranking-avatar {% if forloop.counter == 1 %}ranking-avatar--gold{% elif forloop.counter == 2 %}ranking-avatar--silver{% else %}ranking-avatar--bronze{% endif %}">
-              {% if item.academia.foto_perfil %}
-                <img src="{{ item.academia.foto_perfil.url }}" alt="{{ item.academia.nome }}">
-              {% else %}
-                <img src="{% static 'atletas/images/logo_black.png' %}" alt="SHIAI">
-              {% endif %}
-            </div>
-            <span class="ranking-medal {% if forloop.counter == 1 %}ranking-medal--gold{% elif forloop.counter == 2 %}ranking-medal--silver{% else %}ranking-medal--bronze{% endif %}">
-              {% if forloop.counter == 1 %}👑{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
+        <div>
+          <div class="dash-title">
+            {% if campeonato_ativo %}{{ campeonato_ativo.nome }}{% else %}Sem evento ativo{% endif %}
+          </div>
+          <div class="dash-subtitle">
+            Status:
+            <span class="status-pill {% if event_status_tone == 'success' %}is-success{% elif event_status_tone == 'warning' %}is-warning{% elif event_status_tone == 'info' %}is-info{% else %}is-neutral{% endif %}">
+              {{ event_status_label }}
             </span>
           </div>
-          <div class="ranking-name">{{ item.academia.nome }}</div>
-          <div class="ranking-subtitle">{{ item.pontos_totais }} pts</div>
         </div>
-        {% endfor %}
       </div>
-      {% else %}
-      <div class="empty-state">
-        <div class="empty-state-title">Ranking indisponivel</div>
-        <div class="empty-state-description">Cadastre resultados para gerar o ranking global.</div>
+      <div class="dash-search">
+        <input type="text" placeholder="Busca global por atleta, academia ou chave">
+      </div>
+      <div class="dash-profile">
+        <div class="dash-avatar">{{ request.user.get_username|slice:":2"|upper }}</div>
+        <div>
+          <div class="dash-profile-name">{{ request.user.get_username }}</div>
+          <div class="dash-profile-role">Organizacao</div>
+        </div>
+      </div>
+    </header>
+
+    <section class="kpi-section">
+      <div class="kpi-grid">
+        <div class="dash-card kpi-card">
+          <div class="kpi-icon">
+            <svg class="icon-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div class="kpi-value">{{ total_inscricoes|default:0 }}</div>
+          <div class="kpi-label">Total de atletas inscritos</div>
+        </div>
+        <div class="dash-card kpi-card">
+          <div class="kpi-icon">
+            <svg class="icon-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 21h18"></path>
+              <path d="M6 21V7l6-4 6 4v14"></path>
+            </svg>
+          </div>
+          <div class="kpi-value">{{ total_academias|default:0 }}</div>
+          <div class="kpi-label">Academias participantes</div>
+        </div>
+        <div class="dash-card kpi-card">
+          <div class="kpi-icon">
+            <svg class="icon-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16v4H4z"></path>
+              <path d="M4 10h16v4H4z"></path>
+              <path d="M4 16h16v4H4z"></path>
+            </svg>
+          </div>
+          <div class="kpi-value">{{ total_categorias|default:0 }}</div>
+          <div class="kpi-label">Categorias criadas</div>
+        </div>
+        <div class="dash-card kpi-card">
+          <div class="kpi-icon">
+            <svg class="icon-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 3v18"></path>
+              <path d="M18 3v18"></path>
+              <path d="M3 7h18"></path>
+              <path d="M3 17h18"></path>
+            </svg>
+          </div>
+          <div class="kpi-value">{{ total_lutas|default:0 }}</div>
+          <div class="kpi-label">Lutas programadas</div>
+        </div>
+        <div class="dash-card kpi-card">
+          <div class="kpi-icon">
+            <svg class="icon-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"></path>
+            </svg>
+          </div>
+          <div class="kpi-value">{{ lutas_concluidas|default:0 }}</div>
+          <div class="kpi-label">Lutas concluidas</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="flow-section">
+      <h2 class="section-title">Fluxos operacionais</h2>
+      <div class="flow-grid">
+        <article class="dash-card flow-card">
+          <div class="flow-icon">
+            <svg class="icon-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 6v6l4 2"></path>
+              <circle cx="12" cy="12" r="10"></circle>
+            </svg>
+          </div>
+          <h3 class="flow-title">Inscricoes</h3>
+          <p class="flow-desc">Controle de atletas, documentos e aprovacoes.</p>
+          <div class="flow-actions">
+            <a class="btn btn-primary btn-sm btn-full" href="{% url 'inscrever_atletas' organizacao_slug=request.organizacao.slug %}">Acessar</a>
+          </div>
+        </article>
+
+        <article class="dash-card flow-card">
+          <div class="flow-icon">
+            <svg class="icon-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 2v6"></path>
+              <path d="M18 2v6"></path>
+              <path d="M3 10h18"></path>
+              <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+            </svg>
+          </div>
+          <h3 class="flow-title">Pesagem</h3>
+          <p class="flow-desc">Registro oficial de peso e categoria.</p>
+          <div class="flow-actions">
+            <a class="btn btn-primary btn-sm btn-full" href="{% url 'pesagem' organizacao_slug=request.organizacao.slug %}">Acessar</a>
+          </div>
+        </article>
+
+        <article class="dash-card flow-card">
+          <div class="flow-icon">
+            <svg class="icon-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+          </div>
+          <h3 class="flow-title">Chaves</h3>
+          <p class="flow-desc">Geracao de chaves e revisao tecnica.</p>
+          <div class="flow-actions">
+            <a class="btn btn-primary btn-sm btn-full" href="{% url 'lista_chaves' organizacao_slug=request.organizacao.slug %}">Acessar</a>
+          </div>
+        </article>
+
+        <article class="dash-card flow-card">
+          <div class="flow-icon">
+            <svg class="icon-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="20" x2="12" y2="10"></line>
+              <line x1="18" y1="20" x2="18" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="16"></line>
+            </svg>
+          </div>
+          <h3 class="flow-title">Controle de lutas</h3>
+          <p class="flow-desc">Mesas, lutas ativas e resultados.</p>
+          <div class="flow-actions">
+            <a class="btn btn-primary btn-sm btn-full" href="/matches/mesas/">Acessar</a>
+          </div>
+        </article>
+
+        <article class="dash-card flow-card">
+          <div class="flow-icon">
+            <svg class="icon-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2l3 7h7l-5.5 4 2.5 7-7-4-7 4 2.5-7L2 9h7z"></path>
+            </svg>
+          </div>
+          <h3 class="flow-title">Rankings</h3>
+          <p class="flow-desc">Pontuacao e classificacao final.</p>
+          <div class="flow-actions">
+            <a class="btn btn-primary btn-sm btn-full" href="{% url 'ranking_academias' organizacao_slug=request.organizacao.slug %}">Acessar</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="status-section">
+      <h2 class="section-title">Status do evento</h2>
+        <div class="status-grid">
+          <div class="dash-card status-main">
+          <div class="status-row">
+            <span>Progresso da pesagem</span>
+            <strong>{{ pesagens_ok|default:0 }} / {{ total_inscricoes|default:0 }}</strong>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" style="width: {% if total_inscricoes > 0 %}{% widthratio pesagens_ok total_inscricoes 100 %}{% else %}0{% endif %}%;"></div>
+          </div>
+
+          <div class="status-meta">
+            <div class="status-meta-card">
+              <div class="status-meta-value">{{ total_categorias|default:0 }}</div>
+              <div class="status-meta-label">Categorias prontas</div>
+            </div>
+            <div class="status-meta-card">
+              <div class="status-meta-value">{{ categorias_pendentes|default:0 }}</div>
+              <div class="status-meta-label">Categorias pendentes</div>
+            </div>
+            <div class="status-meta-card">
+              <div class="status-meta-value">{{ total_chaves|default:0 }}</div>
+              <div class="status-meta-label">Chaves geradas</div>
+            </div>
+            <div class="status-meta-card">
+              <div class="status-meta-value">{{ chaves_pendentes|default:0 }}</div>
+              <div class="status-meta-label">Chaves nao geradas</div>
+            </div>
+          </div>
+          </div>
+
+          <div class="dash-card status-side">
+            <div class="section-title" style="margin-bottom: var(--space-3);">Alertas importantes</div>
+            <ul class="alert-list">
+            {% if total_inscricoes == 0 %}
+            <li class="alert-item is-warning">Sem inscricoes confirmadas no evento.</li>
+            {% else %}
+            {% if atletas_sem_pesagem > 0 %}
+            <li class="alert-item">Atletas sem pesagem: {{ atletas_sem_pesagem }}</li>
+            {% endif %}
+            {% if lutas_pendentes > 0 %}
+            <li class="alert-item is-warning">Lutas pendentes: {{ lutas_pendentes }}</li>
+            {% endif %}
+            {% if categorias_pendentes > 0 %}
+            <li class="alert-item">Categorias sem chave: {{ categorias_pendentes }}</li>
+            {% endif %}
+            {% if atletas_sem_pesagem == 0 and lutas_pendentes == 0 and categorias_pendentes == 0 %}
+            <li class="alert-item is-success">Nenhum alerta critico no momento.</li>
+            {% endif %}
+            {% endif %}
+          </ul>
+          {% if categorias_sem_chave_list %}
+          <div style="margin-top: var(--space-4);">
+            <div class="section-title" style="margin-bottom: var(--space-2); font-size: var(--font-size-sm);">
+              Categorias sem chave ({{ categorias_sem_chave_list|length }})
+            </div>
+            <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+              {% for categoria in categorias_sem_chave_list %}
+              <div style="padding: var(--space-2); border-radius: 8px; background: #fef2f2; border: 1px solid #fee2e2; font-size: var(--font-size-xs);">
+                <strong>{{ categoria.classe }}</strong> · {{ categoria.categoria }} · {{ categoria.sexo }}
+              </div>
+              {% endfor %}
+              {% if categorias_sem_chave_extra %}
+              <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">
+                +{{ categorias_sem_chave_extra }} outras categorias pendentes
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          </div>
+        </div>
+      </section>
+
+    <section class="ranking-section">
+      <h2 class="section-title">Ranking e resultados</h2>
+      <div class="ranking-grid">
+        <div class="dash-card ranking-main">
+          <div class="status-row" style="margin-bottom: var(--space-4);">
+            <strong>Ranking de academias</strong>
+            <span class="status-pill is-info">Top 5</span>
+          </div>
+          {% if ranking_academias_completo %}
+          <ul class="ranking-list">
+            {% for item in ranking_academias_completo|slice:":5" %}
+            <li class="ranking-item">
+              <div class="ranking-info">
+                <div class="ranking-rank">{{ forloop.counter }}</div>
+                <div>
+                  <div class="ranking-name">{{ item.academia.nome }}</div>
+                  <div class="ranking-meta">{{ item.total_atletas_ativos }} atletas ativos</div>
+                </div>
+              </div>
+              <div class="ranking-score">{{ item.pontos_totais }} pts</div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <div class="empty-box">Ranking ainda nao disponivel. Cadastre resultados para liberar.</div>
+          {% endif %}
+        </div>
+
+        <div class="dash-card ranking-side">
+          <div class="status-row" style="margin-bottom: var(--space-4);">
+            <strong>Resultados</strong>
+            <span class="status-pill is-neutral">Secundario</span>
+          </div>
+          <div class="empty-box">
+            Nenhum resultado publicado no momento.
+            <div style="margin-top: var(--space-3);">
+              <a class="btn btn-secondary btn-sm" href="/matches/mesas/">Abrir mesas</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% if atletas_sem_chave_alerta %}
+      <div class="dash-card alert-card alerta-sem-chave">
+        <div class="status-row" style="margin-bottom: var(--space-3);">
+          <strong>Atletas elegíveis sem chave</strong>
+          <span class="status-pill is-warning">Revisão</span>
+        </div>
+        <ul class="alert-list">
+          {% for item in atletas_sem_chave_alerta %}
+          <li class="alert-item is-warning">
+            <div>
+              <div>{{ item.atleta.nome }}</div>
+              <div style="font-size: var(--font-size-xs); color: var(--color-gray-500);">
+                {{ item.classe }} · {{ item.categoria }} · {{ item.peso|default_if_none:"-" }}kg
+              </div>
+            </div>
+            <span>{{ item.grupo_faixas|default:"sem grupo" }}</span>
+          </li>
+          {% endfor %}
+        </ul>
       </div>
       {% endif %}
-    </div>
-  </div>
-  <div class="panel">
-    <div class="panel-header">
-      <h3 class="panel-title">Total de inscritos</h3>
-    </div>
-    <div class="donut-wrap">
-      <div class="donut">
-        <div class="donut-center">
-          {{ total_inscricoes|default:0 }}
-          <span>Atletas</span>
-        </div>
-      </div>
-      <p class="saas-subtitle">Academias ativas: {{ total_academias|default:0 }}</p>
-    </div>
-  </div>
-</section>
+    </section>
 
-<section class="table-panel">
-  <div class="panel-header">
-    <h3 class="panel-title">Indicadores operacionais</h3>
+    <footer class="dash-footer">
+      <span>SHIAI v1.0.0</span>
+      <span>{% if request.organizacao %}{{ request.organizacao.nome }}{% else %}Organizacao{% endif %}</span>
+      <span>{% now "d/m/Y H:i" %}</span>
+    </footer>
   </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Indicador</th>
-        <th>Valor</th>
-        <th>Detalhe</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Inscricoes</td>
-        <td>{{ total_inscricoes|default:0 }}</td>
-        <td>Federados: {{ inscricoes_federados|default:0 }} | Nao federados: {{ inscricoes_nao_federados|default:0 }}</td>
-        <td><span class="status-badge status-active">Ativo</span></td>
-      </tr>
-      <tr>
-        <td>Academias</td>
-        <td>{{ total_academias|default:0 }}</td>
-        <td>Academias participantes</td>
-        <td><span class="status-badge status-active">Ativo</span></td>
-      </tr>
-      <tr>
-        <td>Chaves</td>
-        <td>{{ total_chaves|default:0 }}</td>
-        <td>Chaves geradas no evento</td>
-        <td><span class="status-badge status-running">Em andamento</span></td>
-      </tr>
-    </tbody>
-  </table>
-</section>
+</div>
 {% endblock %}
+
+

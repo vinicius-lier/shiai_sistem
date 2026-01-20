@@ -171,7 +171,7 @@
 <!-- Tabela de Pesagem -->
 {% if atletas %}
 <div class="print-only" style="display:none; margin-bottom:12px; display:flex; align-items:center; gap:12px;">
-    <img src="{% static 'atletas/images/logo_black.png' %}" alt="Shiai System" style="height:42px; width:auto; display:block;">
+    <img src="{% static 'img/logo_white.png' %}" alt="Shiai System" style="height:42px; width:auto; display:block;">
     <div style="font-size:14px; line-height:1.3;">
         <div style="font-weight:700;">Shiai System - Pesagem</div>
         {% if campeonato_selecionado %}
@@ -283,7 +283,7 @@
                     </form>
                     {% if 'Pode rebaixar' in atleta.motivo_ajuste %}
                     <div style="margin-top: var(--spacing-2);">
-                        <a href="{% url 'rebaixar_categoria' atleta.id %}" class="btn btn-success" style="padding: var(--spacing-2) var(--spacing-3); font-size: var(--font-size-xs);">
+                        <a href="{% url 'rebaixar_categoria' atleta.id organizacao_slug=request.organizacao.slug %}" class="btn btn-success" style="padding: var(--spacing-2) var(--spacing-3); font-size: var(--font-size-xs);">
                             Rebaixar Categoria
                         </a>
                     </div>
@@ -406,6 +406,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('precisa_confirmacao:', data.precisa_confirmacao, 'tipo:', typeof data.precisa_confirmacao);
                 console.log('categoria_ok:', data.categoria_ok);
                 console.log('categoria_nova:', data.categoria_nova);
+                
+                if (data.resultado === 'desclassificado' || data.desclassificado) {
+                    const mensagem = data.mensagem || data.message || 'Atleta desclassificado por faixa incompatível.';
+                    alert(mensagem);
+                    btnSubmit.disabled = false;
+                    btnSubmit.textContent = originalText;
+                    return;
+                }
                 
                 if (data.success) {
                     // Verificar se precisa confirmação (pode ser true, 'true', ou 1)
@@ -983,3 +991,5 @@ function inicializarFuncoesWhatsApp() {
 }
 </script>
 {% endblock %}
+
+

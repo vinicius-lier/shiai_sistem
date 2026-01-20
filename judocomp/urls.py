@@ -30,7 +30,10 @@ urlpatterns = [
 
     # Landing page pública e login global (sem organização)
     path('', atletas_views.landing_publica, name='landing_publica'),
-    path('login/', atletas_views.login_operacional, name='login'),
+    path('login/', atletas_views.selecionar_tipo_login, name='selecionar_tipo_login'),
+    path('login/', atletas_views.selecionar_tipo_login, name='login'),
+    path('login/operacional/', atletas_views.login_operacional, name='login_operacional'),
+    path('logout/', atletas_views.logout_geral, name='logout_geral'),
     path('logout/', atletas_views.logout_geral, name='logout'),
 
     # Seletor de organização (superuser)
@@ -38,6 +41,9 @@ urlpatterns = [
 
     # Painel de organizações (apenas superuser)
     path('painel/organizacoes/', atletas_views.painel_organizacoes, name='painel_organizacoes'),
+    path('painel/organizacoes/nova/', atletas_views.criar_organizacao, name='criar_organizacao'),
+    path('painel/organizacoes/<int:org_id>/editar/', atletas_views.editar_organizacao, name='editar_organizacao'),
+    path('painel/organizacoes/<int:org_id>/status/', atletas_views.alternar_organizacao_status, name='alternar_organizacao_status'),
 
     # Tabela pública de categorias de peso
     path('tabela-categorias/', atletas_views.tabela_categorias_peso, name='tabela_categorias_peso'),

@@ -265,7 +265,12 @@ Os tempos de luta serão definidos conforme a classe e categoria, de acordo com 
 13.3. Os casos omissos serão resolvidos pela Coordenação Geral do evento.`;
     
     if (confirm('Deseja substituir o regulamento atual pelo regulamento padrão? As alterações não salvas serão perdidas.')) {
-        document.getElementById('regulamento').value = regulamentoPadrao;
+        const regulamentoField = document.getElementById('{{ form.regulamento.id_for_label }}') || document.querySelector('[name="regulamento"]');
+        if (regulamentoField) {
+            regulamentoField.value = regulamentoPadrao;
+        } else {
+            alert('Campo de regulamento não encontrado. Atualize a página e tente novamente.');
+        }
     }
 }
 </script>

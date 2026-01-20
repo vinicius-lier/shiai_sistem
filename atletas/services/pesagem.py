@@ -11,7 +11,9 @@ from atletas.models import (
     AcademiaPontuacao,
     Chave,
     Luta,
+    Classe,
 )
+from atletas.utils import validar_faixa_e_categoria_por_idade
 
 
 def _normalize_classe_nome(nome: str) -> str:
@@ -46,6 +48,25 @@ def _normalize_classe_nome(nome: str) -> str:
     return up
 
 
+def _buscar_classe_por_nome(nome: str):
+    """
+    Encontra Classe usando normalizacao flexivel (SUB 13 vs SUB-13).
+    Retorna None se nao encontrar.
+    """
+    if not nome:
+        return None
+    nome_norm = _normalize_classe_nome(nome)
+    # Tenta match direto primeiro
+    classe = Classe.objects.filter(nome__iexact=nome).first()
+    if classe:
+        return classe
+    # Match por normalizacao
+    for classe_obj in Classe.objects.all():
+        if _normalize_classe_nome(classe_obj.nome) == nome_norm:
+            return classe_obj
+    return None
+
+
 def _tolerancia_por_classe(classe_nome: str) -> Decimal:
     """
     Retorna tolerância (kg) aplicada no limite máximo para a classe.
@@ -73,10 +94,12 @@ def calcular_categoria_por_peso(classe_nome: str, sexo: str, peso: Decimal) -> O
         peso = Decimal(str(peso))
     if not classe_nome or not sexo or peso is None:
         return None
-    classe_nome = _normalize_classe_nome(classe_nome)
+    classe_obj = _buscar_classe_por_nome(classe_nome)
+    if not classe_obj:
+        return None
 
     qs = Categoria.objects.filter(
-        classe__nome=classe_nome,
+        classe=classe_obj,
         sexo=sexo
     ).order_by('limite_min')
 
@@ -233,6 +256,26 @@ def registrar_peso(inscricao: Inscricao, peso: Decimal, observacoes: str = "", u
     elif not isinstance(peso, Decimal):
         peso = Decimal(str(peso))
 
+    faixa_ok, faixa_msg, categoria_etaria, grupo = validar_faixa_e_categoria_por_idade(inscricao.atleta)
+    if not faixa_ok:
+        desclassificar_por_faixa(
+            inscricao,
+            peso,
+            motivo=faixa_msg,
+            categoria_etaria=categoria_etaria,
+            grupo_tecnico=grupo,
+            observacoes=observacoes,
+            usuario=usuario,
+        )
+        return {
+            "categoria_ok": False,
+            "desclassificado": True,
+            "status_pesagem": "FAIXA_INVALIDA",
+            "mensagem_validacao": faixa_msg,
+            "resultado": "desclassificado",
+            "motivo": "faixa_incompativel_idade",
+        }
+
     validacao = validar_peso(inscricao, peso)
     categoria_encontrada = validacao.get("categoria_encontrada")
     categoria_sugerida = validacao.get("categoria_sugerida")
@@ -356,19 +399,22 @@ def confirmar_remanejamento(inscricao: Inscricao, peso: Decimal, acao: str, cate
     )
 
     if acao == 'remanejar':
-        classe_base = inscricao.classe_real
-        categoria_final = categoria_sugerida
-        if not categoria_final:
-            if classe_base:
-                categoria_final = calcular_categoria_por_peso(classe_base.nome, inscricao.atleta.sexo, peso)
-            elif inscricao.classe_real:
-                categoria_final = calcular_categoria_por_peso(inscricao.classe_real.nome, inscricao.atleta.sexo, peso)
-            else:
-                categoria_final = None
-        if not categoria_final:
-            raise ValueError("Não foi possível encontrar categoria para remanejar; desclassificar é obrigatório.")
+        faixa_ok, faixa_msg, categoria_etaria, grupo = validar_faixa_e_categoria_por_idade(inscricao.atleta)
+        if not faixa_ok:
+            raise ValueError(faixa_msg)
 
-        # Atualizar campos novos
+        if not categoria_sugerida:
+            raise ValueError("Categoria sugerida obrigatoria para remanejamento.")
+
+        categoria_final = categoria_sugerida
+        classe_final = categoria_final.classe.nome if categoria_final.classe else ""
+        if categoria_etaria:
+            classe_norm = _normalize_classe_nome(classe_final)
+            categoria_norm = _normalize_classe_nome(categoria_etaria)
+            if classe_norm and categoria_norm and classe_norm != categoria_norm:
+                raise ValueError("Categoria sugerida incompativel com idade.")
+
+# Atualizar campos novos
         inscricao.categoria_ajustada = categoria_final.categoria_nome
         inscricao.categoria_calculada = categoria_final.categoria_nome
         inscricao.categoria_real = categoria_final
@@ -470,4 +516,50 @@ def confirmar_remanejamento(inscricao: Inscricao, peso: Decimal, acao: str, cate
 
     else:
         raise ValueError("Ação inválida. Use 'remanejar' ou 'desclassificar'.")
+
+
+def desclassificar_por_faixa(inscricao: Inscricao, peso: Decimal, motivo: str, categoria_etaria: Optional[str], grupo_tecnico: Optional[str], observacoes: str = '', usuario=None):
+    inscricao.peso = peso
+    inscricao.peso_real = peso
+    inscricao.data_pesagem = timezone.now()
+    inscricao.status_inscricao = 'desclassificado'
+    inscricao.status_atual = 'desclassificado'
+    inscricao.remanejado = False
+    inscricao.bloqueado_chave = True
+    inscricao.motivo_ajuste = motivo
+    inscricao.save(update_fields=[
+        'status_inscricao',
+        'status_atual',
+        'remanejado',
+        'bloqueado_chave',
+        'motivo_ajuste',
+        'peso',
+        'peso_real',
+        'data_pesagem'
+    ])
+
+    PesagemHistorico.objects.create(
+        inscricao=inscricao,
+        campeonato=inscricao.campeonato,
+        peso_registrado=peso,
+        categoria_ajustada=inscricao.categoria_ajustada or (inscricao.categoria_real.categoria_nome if inscricao.categoria_real else ''),
+        motivo_ajuste=motivo,
+        observacoes=observacoes or '',
+        pesado_por=usuario if usuario and usuario.is_authenticated else None
+    )
+
+    OcorrenciaAtleta.objects.create(
+        atleta=inscricao.atleta,
+        campeonato=inscricao.campeonato,
+        tipo='DESCLASSIFICACAO',
+        motivo='FAIXA_IDADE',
+        detalhes_json={
+            'peso_registrado': peso,
+            'faixa': inscricao.atleta.faixa,
+            'categoria_etaria': categoria_etaria,
+            'grupo_tecnico': grupo_tecnico,
+        }
+    )
+
+    remover_de_chaves(inscricao.campeonato, inscricao.atleta)
 

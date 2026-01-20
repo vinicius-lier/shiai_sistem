@@ -26,9 +26,6 @@ ALTER TABLE atletas_inscricao
     USING status::status_inscricao;
 """
 
-ALTER_COLUMN_SQL_REVERSE = """
-"""
-
 TRANSITIONS_SQL = """
 CREATE TABLE IF NOT EXISTS atletas_inscricao_status_transicao (
     id bigserial PRIMARY KEY,
@@ -52,11 +49,11 @@ DECLARE
     permitido boolean;
 BEGIN
     IF OLD.status = 'BLOQUEADA' THEN
-        RAISE EXCEPTION 'Inscrição BLOQUEADA não pode ser alterada';
+        RAISE EXCEPTION 'Inscricao BLOQUEADA nao pode ser alterada';
     END IF;
 
     IF OLD.status = 'CANCELADA' THEN
-        RAISE EXCEPTION 'Inscrição CANCELADA não pode ser alterada';
+        RAISE EXCEPTION 'Inscricao CANCELADA nao pode ser alterada';
     END IF;
 
     IF NEW.status = OLD.status THEN
@@ -72,7 +69,7 @@ BEGIN
     INTO permitido;
 
     IF NOT permitido THEN
-        RAISE EXCEPTION 'Transição inválida: % -> %', OLD.status, NEW.status;
+        RAISE EXCEPTION 'Transicao invalida: % -> %', OLD.status, NEW.status;
     END IF;
 
     RETURN NEW;
@@ -88,7 +85,7 @@ EXECUTE FUNCTION atletas_validar_transicao_status_inscricao();
 CREATE OR REPLACE FUNCTION atletas_bloquear_delete_inscricao()
 RETURNS trigger AS $$
 BEGIN
-    RAISE EXCEPTION 'Exclusão de inscrição proibida (histórico imutável)';
+    RAISE EXCEPTION 'Exclusao de inscricao proibida (historico imutavel)';
 END;
 $$ LANGUAGE plpgsql;
 
@@ -110,6 +107,21 @@ DROP TABLE IF EXISTS atletas_inscricao_status_transicao;
 """
 
 
+def apply_postgres_workflow(apps, schema_editor):
+    if schema_editor.connection.vendor != "postgresql":
+        return
+    schema_editor.execute(ENUM_SQL)
+    schema_editor.execute(ALTER_COLUMN_SQL)
+    schema_editor.execute(TRANSITIONS_SQL)
+
+
+def reverse_postgres_workflow(apps, schema_editor):
+    if schema_editor.connection.vendor != "postgresql":
+        return
+    schema_editor.execute(TRANSITIONS_SQL_REVERSE)
+    schema_editor.execute(ENUM_SQL_REVERSE)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -117,7 +129,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(ENUM_SQL, ENUM_SQL_REVERSE),
         migrations.AddField(
             model_name="inscricao",
             name="status",
@@ -135,6 +146,8 @@ class Migration(migrations.Migration):
                 verbose_name="Status (Workflow)",
             ),
         ),
-        migrations.RunSQL(ALTER_COLUMN_SQL, ALTER_COLUMN_SQL_REVERSE),
-        migrations.RunSQL(TRANSITIONS_SQL, TRANSITIONS_SQL_REVERSE),
+        migrations.RunPython(
+            apply_postgres_workflow,
+            reverse_postgres_workflow,
+        ),
     ]

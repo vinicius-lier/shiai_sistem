@@ -15,7 +15,7 @@
             </p>
         </div>
         <div class="flex gap-3" style="flex-wrap: wrap;">
-            <a href="{% url 'administracao_equipe' %}" class="btn btn-secondary">
+            <a href="{% url 'administracao_equipe' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">
                 Voltar
             </a>
         </div>
@@ -126,7 +126,7 @@
                     </select>
                     <button type="submit" class="btn btn-secondary">Filtrar</button>
                     {% if nome_filtro or tipo_filtro %}
-                    <a href="{% url 'administracao_equipe_pessoas_lista' %}" class="btn btn-ghost">Limpar</a>
+                    <a href="{% url 'administracao_equipe_pessoas_lista' organizacao_slug=request.organizacao.slug %}" class="btn btn-ghost">Limpar</a>
                     {% endif %}
                 </form>
             </div>

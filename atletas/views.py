@@ -584,6 +584,7 @@ def index(request, organizacao_slug=None):
     categorias_sem_chave = []
     categorias_sem_chave_extra = 0
     chaves_pendentes = 0
+    atletas_sem_chave_alerta = []
     total_inscricoes = 0
     inscricoes_federados = 0
     inscricoes_nao_federados = 0
@@ -640,6 +641,8 @@ def index(request, organizacao_slug=None):
                 chave_keys.add(key)
         categorias_sem_chave = []
         categorias_sem_chave_seen = set()
+        atletas_sem_chave_alerta = []
+        atletas_sem_chave_alerta_seen = set()
         categorias_com_inscricao = (
             inscricoes_query
             .select_related('classe_real', 'categoria_real', 'atleta')
@@ -657,9 +660,22 @@ def index(request, organizacao_slug=None):
                 except ValueError:
                     grupo = None
             key = _build_categoria_key(classe_name, sexo_value, categoria_name, grupo)
-            if not key or key in chave_keys or key in categorias_sem_chave_seen:
+            if not key:
+                continue
+
+            if key in chave_keys or key in categorias_sem_chave_seen:
                 continue
             categorias_sem_chave_seen.add(key)
+            if len(atletas_sem_chave_alerta) < 5 and key not in atletas_sem_chave_alerta_seen:
+                atletas_sem_chave_alerta_seen.add(key)
+                atletas_sem_chave_alerta.append({
+                    'atleta': inscricao.atleta,
+                    'classe': classe_name,
+                    'categoria': categoria_name,
+                    'peso': getattr(inscricao, 'peso_real', inscricao.peso),
+                    'grupo_faixas': grupo,
+                    'sexo': sexo_value,
+                })
             categorias_sem_chave.append({
                 'classe': classe_name,
                 'sexo': sexo_value,
@@ -805,6 +821,8 @@ def index(request, organizacao_slug=None):
         'lutas_pendentes': lutas_pendentes,
         'categorias_sem_chave_extra': categorias_sem_chave_extra,
         'categorias_sem_chave_list': categorias_sem_chave,
+        'atletas_sem_chave_alerta': atletas_sem_chave_alerta,
+        'atletas_sem_chave_alerta': atletas_sem_chave_alerta,
         'event_status_label': event_status_label,
         'event_status_tone': event_status_tone,
         'top_academias': top_academias,

@@ -47,7 +47,7 @@
             
             <div class="form-group" style="display: flex; align-items: flex-end; gap: var(--spacing-2);">
                 <button type="submit" class="btn btn-primary">Filtrar</button>
-                <a href="{% url 'inscrever_atletas' %}" class="btn btn-secondary">Limpar</a>
+                <a href="{% url 'inscrever_atletas' organizacao_slug=request.organizacao.slug %}" class="btn btn-secondary">Limpar</a>
             </div>
         </form>
     </div>
@@ -157,7 +157,7 @@
                 </svg>
             </button>
         </div>
-        <form id="form-inscricao" method="post" action="{% url 'inscrever_atletas' %}">
+        <form id="form-inscricao" method="post" action="{% url 'inscrever_atletas' organizacao_slug=request.organizacao.slug %}">
             <input type="hidden" name="campeonato_id" value="{{ campeonato_ativo.id }}">
             {% csrf_token %}
             <input type="hidden" id="atleta_id_inscricao" name="atleta_id">

@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <link rel="icon" type="image/png" href="{% static 'atletas/images/logo_black.png' %}">
+  <link rel="icon" type="image/png" href="{% static 'img/logo_white.png' %}">
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,14 +14,17 @@
   <style>
     .academy-shell {
       min-height: 100vh;
-      background: var(--background);
+      background: var(--bg);
       display: flex;
       flex-direction: column;
     }
     .academy-main {
       flex: 1;
-      padding: var(--space-4);
-      padding-bottom: calc(var(--space-4) + 72px);
+      padding: var(--page-padding);
+      padding-bottom: calc(var(--page-padding) + 72px);
+      max-width: var(--content-max-width);
+      width: calc(100% - (var(--space-6) * 2));
+      margin: 0 auto;
     }
     .academy-bottom-nav {
       position: fixed;
@@ -58,8 +61,8 @@
     }
     @media (min-width: 1024px) {
       .academy-main {
-        padding: var(--space-6);
-        padding-bottom: calc(var(--space-6) + 72px);
+        padding: var(--page-padding);
+        padding-bottom: calc(var(--page-padding) + 72px);
       }
       .academy-bottom-nav {
         left: 50%;
@@ -115,4 +118,6 @@
   {% block extra_js %}{% endblock %}
 </body>
 </html>
+
+
 

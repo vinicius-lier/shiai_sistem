@@ -349,10 +349,25 @@ class Atleta(models.Model):
 
 
 class Chave(models.Model):
+    GRUPOS_FAIXA_CHOICES = [
+        ('BRANCA_A_LARANJA', 'Branca a Laranja'),
+        ('VERDE_A_PRETA', 'Verde a Preta'),
+        ('BRANCA_A_VERDE', 'Branca a Verde'),
+        ('ROXA_A_PRETA', 'Roxa a Preta'),
+    ]
     campeonato = models.ForeignKey('Campeonato', on_delete=models.CASCADE, related_name='chaves', verbose_name="Campeonato", null=True, blank=True, help_text="Campeonato ao qual esta chave pertence")
     classe = models.CharField(max_length=20)
     sexo = models.CharField(max_length=1, choices=[('M', 'Masculino'), ('F', 'Feminino')])
     categoria = models.CharField(max_length=100)
+    grupo_faixas = models.CharField(
+        max_length=32,
+        choices=GRUPOS_FAIXA_CHOICES,
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name="Grupo de Faixas",
+        help_text="Grupo técnico da chave (obrigatório a partir de SUB-18)"
+    )
     atletas = models.ManyToManyField(Atleta, related_name='chaves')
     estrutura = models.JSONField(default=dict)  # Estrutura da chave (árvore de lutas)
 

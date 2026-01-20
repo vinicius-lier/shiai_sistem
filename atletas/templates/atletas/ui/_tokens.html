@@ -11,6 +11,7 @@
   --space-8: 32px;
   --space-12: 48px;
   --space-16: 64px;
+  --space-20: 80px;
 
   /* Compatibilidade: aliases usados nos templates antigos/novos */
   --spacing-1: var(--space-1);
@@ -26,7 +27,7 @@
   --bg: #f7f9fc;
   --surface: #ffffff;
   --text: #111827;
-  --muted: #6b7280;
+  --muted: #4b5563;
   --border: #e5e7eb;
   --primary: #2563eb;
   --primary-strong: #1d4ed8;
@@ -63,15 +64,23 @@
   --font-size-lg: 18px;
   --font-size-xl: 20px;
   --font-size-2xl: 24px;
+  --font-size-3xl: 28px;
+  --font-size-4xl: 32px;
+  --line-height-tight: 1.2;
+  --line-height-base: 1.6;
 
   /* Radius / sombra / borda */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-  --shadow-lg: 0 12px 30px rgba(0,0,0,0.16);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 6px 16px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 30px rgba(15, 23, 42, 0.12);
   --border-width: 1px;
+  --card-padding: var(--space-6);
+  --section-gap: var(--space-8);
+  --content-max-width: 1280px;
+  --page-padding: var(--space-6);
 
   /* Aliases de radius/border usados nos templates */
   --border-radius-sm: var(--radius-sm);
@@ -83,7 +92,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-family-base);
-  line-height: 1.6;
+  line-height: var(--line-height-base);
 }
 
 :focus-visible {

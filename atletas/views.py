@@ -35,7 +35,26 @@ from .academia_auth import (
     pode_criar_usuarios_required,
     organizacao_required,
 )
-from .utils import gerar_chave, get_resultados_chave, calcular_pontuacao_academias
+from .utils import gerar_chave, get_resultados_chave, calcular_pontuacao_academias, normalizar_nome_classe, classe_exige_grupo, calcular_grupo_faixa
+
+def _normalize_value(value: str) -> str:
+    if not value:
+        return ''
+    normalized = value.strip().upper()
+    normalized = normalized.replace(' - F', '').replace(' - M', '')
+    normalized = normalized.replace('-', ' ')
+    normalized = ' '.join(normalized.split())
+    return normalizar_nome_classe(normalized)
+
+
+def _build_categoria_key(classe_name: str, sexo: str, categoria_name: str, grupo: str = None):
+    sexo_norm = (sexo or '').upper()
+    normalized_classe = _normalize_value(classe_name)
+    normalized_categoria = _normalize_value(categoria_name)
+    normalized_grupo = (grupo or '').strip().upper()
+    if not normalized_classe or not normalized_categoria or not sexo_norm:
+        return None
+    return (normalized_classe, sexo_norm, normalized_categoria, normalized_grupo)
 from .utils_historico import registrar_historico
 from .utils_tenant import get_organizador_usuario
 from .services.pesagem import (
@@ -85,6 +104,13 @@ def _redirect_dashboard(request, user):
     """
     return _redirect_pos_login(request, user)
 
+
+def _redirect_lista_campeonatos(request):
+    organizacao = getattr(request, 'organizacao', None)
+    if organizacao:
+        return redirect('lista_campeonatos', organizacao_slug=organizacao.slug)
+    return redirect('lista_campeonatos')
+
 def login_operacional(request):
     """Login operacional - SEMPRE exige usuário e senha do Django (sem cache, sem login automático)"""
     import logging
@@ -118,7 +144,7 @@ def login_operacional(request):
                         ativo=True,
                         senha_alterada=True
                     )
-                return _redirect_dashboard(request, request.user)
+                return redirect('painel_organizacoes')
             
             try:
                 perfil = request.user.perfil_operacional
@@ -193,7 +219,7 @@ def login_operacional(request):
                         
                         django_login(request, user)
                         messages.success(request, f'Bem-vindo, {user.get_username()}!')
-                        return _redirect_pos_login(request, user)
+                        return redirect('painel_organizacoes')
                     
                     # Verificar perfil operacional e status para usuários normais
                     try:
@@ -268,7 +294,7 @@ def _redirect_pos_login(request, user):
         return redirect('academia_painel')
     # Superuser vai para seletor
     if user.is_superuser:
-        return redirect('selecionar_organizacao')
+        return redirect('painel_organizacoes')
     # Usuário operacional: tentar achar organização via perfil/academia
     try:
         perfil = user.perfil_operacional
@@ -429,6 +455,107 @@ def painel_organizacoes(request):
         'organizacoes': organizacoes,
     })
 
+
+def _require_superuser(request):
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        messages.error(request, 'Apenas superusuários podem gerenciar organizações.')
+        return redirect('login')
+    return None
+
+
+def criar_organizacao(request):
+    gate = _require_superuser(request)
+    if gate:
+        return gate
+
+    if request.method == 'POST':
+        nome = request.POST.get('nome', '').strip()
+        email = request.POST.get('email', '').strip() or None
+        telefone = request.POST.get('telefone', '').strip()
+        slug = request.POST.get('slug', '').strip() or None
+        ativo = request.POST.get('ativo') == '1'
+        logo = request.FILES.get('logo')
+
+        if not nome:
+            messages.error(request, 'Informe o nome da organização.')
+            return render(request, 'atletas/organizacao_form.html', {'is_edit': False})
+
+        if slug and Organizador.objects.filter(slug=slug).exists():
+            messages.error(request, 'Slug já está em uso. Escolha outro.')
+            return render(request, 'atletas/organizacao_form.html', {'is_edit': False})
+
+        organizacao = Organizador(
+            nome=nome,
+            email=email,
+            telefone=telefone,
+            slug=slug,
+            ativo=ativo,
+            owner=request.user,
+        )
+        if logo:
+            organizacao.logo = logo
+        organizacao.save()
+
+        messages.success(request, 'Organização criada com sucesso.')
+        return redirect('painel_organizacoes')
+
+    return render(request, 'atletas/organizacao_form.html', {'is_edit': False})
+
+
+def editar_organizacao(request, org_id):
+    gate = _require_superuser(request)
+    if gate:
+        return gate
+
+    organizacao = get_object_or_404(Organizador, id=org_id)
+
+    if request.method == 'POST':
+        nome = request.POST.get('nome', '').strip()
+        email = request.POST.get('email', '').strip() or None
+        telefone = request.POST.get('telefone', '').strip()
+        slug = request.POST.get('slug', '').strip() or None
+        ativo = request.POST.get('ativo') == '1'
+        logo = request.FILES.get('logo')
+
+        if not nome:
+            messages.error(request, 'Informe o nome da organização.')
+            return render(request, 'atletas/organizacao_form.html', {'is_edit': True, 'organizacao': organizacao})
+
+        if slug and Organizador.objects.filter(slug=slug).exclude(id=organizacao.id).exists():
+            messages.error(request, 'Slug já está em uso. Escolha outro.')
+            return render(request, 'atletas/organizacao_form.html', {'is_edit': True, 'organizacao': organizacao})
+
+        organizacao.nome = nome
+        organizacao.email = email
+        organizacao.telefone = telefone
+        organizacao.slug = slug
+        organizacao.ativo = ativo
+        organizacao.owner = request.user
+        if logo:
+            organizacao.logo = logo
+        organizacao.save()
+
+        messages.success(request, 'Organização atualizada com sucesso.')
+        return redirect('painel_organizacoes')
+
+    return render(request, 'atletas/organizacao_form.html', {'is_edit': True, 'organizacao': organizacao})
+
+
+def alternar_organizacao_status(request, org_id):
+    gate = _require_superuser(request)
+    if gate:
+        return gate
+
+    organizacao = get_object_or_404(Organizador, id=org_id)
+    if request.method == 'POST':
+        organizacao.ativo = not organizacao.ativo
+        organizacao.save()
+        status_label = 'ativada' if organizacao.ativo else 'desativada'
+        messages.success(request, f'Organização {status_label} com sucesso.')
+        return redirect('painel_organizacoes')
+
+    return redirect('painel_organizacoes')
+
 # ========== DASHBOARD E PÁGINAS PRINCIPAIS ==========
 
 @operacional_required
@@ -453,6 +580,20 @@ def index(request, organizacao_slug=None):
     
     # Ranking Global de Atletas
     ranking_global_atletas = []
+    total_categorias = 0
+    categorias_sem_chave = []
+    categorias_sem_chave_extra = 0
+    chaves_pendentes = 0
+    total_inscricoes = 0
+    inscricoes_federados = 0
+    inscricoes_nao_federados = 0
+    total_chaves = 0
+    total_lutas = 0
+    lutas_concluidas = 0
+    pesagens_ok = 0
+    categorias_inscricoes = 0
+    atletas_sem_pesagem = 0
+    lutas_pendentes = 0
     if campeonato_ativo:
         from .utils import calcular_pontuacao_academias, get_resultados_chave
         
@@ -475,7 +616,59 @@ def index(request, organizacao_slug=None):
         inscricoes_nao_federados = total_inscricoes - inscricoes_federados
         
         total_chaves = Chave.objects.filter(campeonato=campeonato_ativo).count()
-        
+        total_categorias = Categoria.objects.count()
+        total_lutas = Luta.objects.filter(chave__campeonato=campeonato_ativo).count()
+        lutas_concluidas = Luta.objects.filter(
+            chave__campeonato=campeonato_ativo,
+            concluida=True
+        ).count()
+        pesagens_ok = Inscricao.objects.filter(
+            campeonato=campeonato_ativo,
+            peso__isnull=False
+        ).count()
+        categorias_inscricoes = (
+            inscricoes_query.values('categoria_escolhida')
+            .exclude(categoria_escolhida__isnull=True)
+            .exclude(categoria_escolhida='')
+            .distinct()
+            .count()
+        )
+        chave_keys = set()
+        for chave in Chave.objects.filter(campeonato=campeonato_ativo).only('classe', 'sexo', 'categoria', 'grupo_faixas'):
+            key = _build_categoria_key(chave.classe, chave.sexo, chave.categoria, chave.grupo_faixas)
+            if key:
+                chave_keys.add(key)
+        categorias_sem_chave = []
+        categorias_sem_chave_seen = set()
+        categorias_com_inscricao = (
+            inscricoes_query
+            .select_related('classe_real', 'categoria_real', 'atleta')
+            .filter(classe_real__isnull=False, categoria_real__isnull=False)
+            .distinct()
+        )
+        for inscricao in categorias_com_inscricao:
+            classe_name = inscricao.classe_real.nome
+            categoria_name = inscricao.categoria_real.categoria_nome
+            sexo_value = inscricao.atleta.sexo
+            grupo = None
+            if classe_exige_grupo(classe_name):
+                try:
+                    grupo = calcular_grupo_faixa(inscricao.atleta.faixa, sexo_value)
+                except ValueError:
+                    grupo = None
+            key = _build_categoria_key(classe_name, sexo_value, categoria_name, grupo)
+            if not key or key in chave_keys or key in categorias_sem_chave_seen:
+                continue
+            categorias_sem_chave_seen.add(key)
+            categorias_sem_chave.append({
+                'classe': classe_name,
+                'sexo': sexo_value,
+                'categoria': categoria_name,
+                'grupo_faixas': grupo,
+            })
+        categorias_pendentes = max(categorias_inscricoes - total_categorias, 0)
+        categorias_sem_chave = categorias_sem_chave[:5]
+        categorias_sem_chave_extra = max(categorias_pendentes - len(categorias_sem_chave), 0)
         # Ranking completo de academias
         ranking_academias_completo = AcademiaPontuacao.objects.filter(
             campeonato=campeonato_ativo
@@ -560,10 +753,39 @@ def index(request, organizacao_slug=None):
         inscricoes_federados = 0
         inscricoes_nao_federados = 0
         total_chaves = 0
+        total_categorias = 0
+        total_lutas = 0
+        lutas_concluidas = 0
+        pesagens_ok = 0
+        categorias_pendentes = 0
+        chaves_pendentes = 0
+        categorias_inscricoes = 0
+        atletas_sem_pesagem = 0
+        lutas_pendentes = 0
         top_academias = []
         ranking_academias_list = []
         ranking_global_atletas = []
     
+    event_status_label = "Sem evento ativo"
+    event_status_tone = "neutral"
+    if campeonato_ativo:
+        hoje = timezone.now().date()
+        if campeonato_ativo.data_limite_inscricao and hoje <= campeonato_ativo.data_limite_inscricao:
+            event_status_label = "Inscricoes abertas"
+            event_status_tone = "info"
+        elif campeonato_ativo.data_competicao and hoje < campeonato_ativo.data_competicao:
+            event_status_label = "Pesagem em andamento"
+            event_status_tone = "warning"
+        elif total_lutas > 0 and lutas_concluidas < total_lutas:
+            event_status_label = "Lutas em andamento"
+            event_status_tone = "info"
+        elif total_lutas > 0 and lutas_concluidas == total_lutas:
+            event_status_label = "Finalizado"
+            event_status_tone = "success"
+        else:
+            event_status_label = "Em preparacao"
+            event_status_tone = "warning"
+
     context = {
         'campeonato_ativo': campeonato_ativo,
         'total_atletas': total_atletas,
@@ -572,6 +794,19 @@ def index(request, organizacao_slug=None):
         'inscricoes_federados': inscricoes_federados,
         'inscricoes_nao_federados': inscricoes_nao_federados,
         'total_chaves': total_chaves,
+        'total_categorias': total_categorias,
+        'total_lutas': total_lutas,
+        'lutas_concluidas': lutas_concluidas,
+        'pesagens_ok': pesagens_ok,
+        'categorias_pendentes': categorias_pendentes,
+        'chaves_pendentes': chaves_pendentes,
+        'categorias_inscricoes': categorias_inscricoes,
+        'atletas_sem_pesagem': atletas_sem_pesagem,
+        'lutas_pendentes': lutas_pendentes,
+        'categorias_sem_chave_extra': categorias_sem_chave_extra,
+        'categorias_sem_chave_list': categorias_sem_chave,
+        'event_status_label': event_status_label,
+        'event_status_tone': event_status_tone,
         'top_academias': top_academias,
         'ranking_global_atletas': ranking_global_atletas,
         'ranking_academias_completo': ranking_academias_list if campeonato_ativo else [],
@@ -1465,6 +1700,18 @@ def registrar_peso(request, organizacao_slug=None, inscricao_id=None, *args, **k
                 'organizacao_slug': request.organizacao.slug if getattr(request, "organizacao", None) else '',
             })
 
+        if resultado.get('desclassificado'):
+            return JsonResponse({
+                'success': False,
+                'resultado': resultado.get('resultado', 'desclassificado'),
+                'motivo': resultado.get('motivo', 'faixa_incompativel_idade'),
+                'mensagem': resultado.get('mensagem_validacao') or resultado.get('mensagem') or 'Faixa incompatível com a idade.',
+                'inscricao_id': inscricao.id,
+                'atleta_nome': inscricao.atleta.nome,
+                'peso': float(peso_oficial),
+                'organizacao_slug': request.organizacao.slug if getattr(request, "organizacao", None) else '',
+            })
+
         resultado.update({
             'success': True,
             'inscricao_id': inscricao.id,
@@ -1787,7 +2034,7 @@ def gerar_chave_manual(request, organizacao_slug=None, *args, **kwargs):
     
     if not campeonato_ativo:
         messages.warning(request, 'Nenhum campeonato ativo encontrado.')
-        return redirect('lista_campeonatos')
+        return redirect('lista_campeonatos', organizacao_slug=request.organizacao.slug)
     
     # Processar POST para criar chave manual
     if request.method == 'POST':
@@ -3008,7 +3255,7 @@ def cadastrar_campeonato(request, organizacao_slug=None, *args, **kwargs):
             }
             
             messages.success(request, f'Campeonato "{campeonato.nome}" criado com sucesso! Credenciais temporárias geradas para {len(credenciais_geradas)} academias.')
-            return redirect('lista_campeonatos')
+            return _redirect_lista_campeonatos(request)
         except Exception as e:
             messages.error(request, f'Erro ao cadastrar campeonato: {str(e)}')
     
@@ -3048,7 +3295,7 @@ def editar_campeonato(request, campeonato_id):
                     )
             
             messages.success(request, "Alterações salvas com sucesso.")
-            return redirect('lista_campeonatos')
+            return _redirect_lista_campeonatos(request)
         else:
             messages.error(request, "Por favor, corrija os erros abaixo.")
     else:
@@ -3074,18 +3321,18 @@ def deletar_campeonato(request, campeonato_id):
             total_inscricoes = Inscricao.objects.filter(campeonato=campeonato).count()
             if total_inscricoes > 0:
                 messages.error(request, f'Não é possível excluir o campeonato "{nome_campeonato}" pois ele possui {total_inscricoes} inscrição(ões). Remova as inscrições primeiro.')
-                return redirect('lista_campeonatos')
+                return _redirect_lista_campeonatos(request)
             
             # Verificar se há chaves
             total_chaves = Chave.objects.filter(campeonato=campeonato).count()
             if total_chaves > 0:
                 messages.error(request, f'Não é possível excluir o campeonato "{nome_campeonato}" pois ele possui {total_chaves} chave(s) gerada(s). Remova as chaves primeiro.')
-                return redirect('lista_campeonatos')
+                return _redirect_lista_campeonatos(request)
             
             # Verificar se está ativo
             if campeonato.ativo:
                 messages.error(request, f'Não é possível excluir o campeonato "{nome_campeonato}" pois ele está ativo. Desative-o primeiro.')
-                return redirect('lista_campeonatos')
+                return _redirect_lista_campeonatos(request)
             
             # Verificar outros relacionamentos importantes
             from .models import AcademiaPontuacao, Despesa, InsumoEstrutura, EquipeTecnicaCampeonato, Pagamento, ConferenciaPagamento, PesagemHistorico
@@ -3102,7 +3349,7 @@ def deletar_campeonato(request, campeonato_id):
                 if total_pagamentos > 0:
                     mensagem += f' ({total_pagamentos} pagamento(s))'
                 messages.error(request, mensagem)
-                return redirect('lista_campeonatos')
+                return _redirect_lista_campeonatos(request)
             
             # Deletar vínculos relacionados (em cascata ou manualmente)
             AcademiaCampeonato.objects.filter(campeonato=campeonato).delete()
@@ -3113,10 +3360,10 @@ def deletar_campeonato(request, campeonato_id):
             campeonato.delete()
             
             messages.success(request, f'Campeonato "{nome_campeonato}" excluído com sucesso!')
-            return redirect('lista_campeonatos')
+            return _redirect_lista_campeonatos(request)
         except Exception as e:
             messages.error(request, f'Erro ao excluir campeonato: {str(e)}')
-            return redirect('lista_campeonatos')
+            return _redirect_lista_campeonatos(request)
     
     # GET: Mostrar informações
     total_inscricoes = Inscricao.objects.filter(campeonato=campeonato).count()
@@ -3186,7 +3433,7 @@ def definir_campeonato_ativo(request, campeonato_id):
         messages.info(request, f'{vinculadas} academia(s) vinculada(s) automaticamente ao campeonato.')
     if senhas_geradas > 0:
         messages.info(request, f'{senhas_geradas} senha(s) gerada(s) para as academias.')
-    return redirect('lista_campeonatos')
+    return _redirect_lista_campeonatos(request)
 
 @operacional_required
 def gerenciar_academias_campeonato(request, organizacao_slug=None, campeonato_id=None):
@@ -4169,7 +4416,7 @@ def administracao_financeiro(request):
     # OBRIGATÓRIO: Sem evento, não pode acessar financeiro
     if not campeonato_ativo:
         messages.warning(request, 'Nenhum evento selecionado. Selecione um evento para acessar o módulo financeiro.')
-        return redirect('lista_campeonatos')
+        return redirect('lista_campeonatos', organizacao_slug=request.organizacao.slug)
     
     # Inicializar todas as variáveis
     ganho_previsto = 0
@@ -4374,7 +4621,7 @@ def administracao_despesas(request):
     # OBRIGATÓRIO: Sem evento, não pode acessar despesas
     if not campeonato_ativo:
         messages.warning(request, 'Nenhum evento selecionado. Selecione um evento para acessar despesas e receitas.')
-        return redirect('lista_campeonatos')
+        return _redirect_lista_campeonatos(request)
     
     # Processar ações via POST
     if request.method == 'POST':
@@ -4713,7 +4960,7 @@ def administracao_equipe_gerenciar(request, campeonato_id=None):
         campeonato = Campeonato.objects.filter(ativo=True).first()
         if not campeonato:
             messages.warning(request, 'Nenhum campeonato ativo encontrado. Selecione um campeonato.')
-            return redirect('lista_campeonatos')
+            return _redirect_lista_campeonatos(request)
     
     # Processar ações via POST
     if request.method == 'POST':
@@ -5468,3 +5715,4 @@ def servir_media(request, path):
         return response
     except Exception as e:
         raise Http404(f"Erro ao servir arquivo: {str(e)}")
+

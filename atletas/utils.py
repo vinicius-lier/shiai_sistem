@@ -1,5 +1,6 @@
 from datetime import date
 from decimal import Decimal
+from typing import Optional
 from django.db.models import Q
 from .models import Atleta, Categoria, Chave, Luta, Academia, Campeonato, AcademiaPontuacao, Inscricao, Classe
 import random
@@ -38,6 +39,202 @@ def normalizar_nome_classe(nome_classe):
     nome = nome.replace("VETERANO", "VETERANOS")
     
     return nome
+
+
+FAIXA_MIN_IDADE = {
+    'BRANCA': 0,
+    'P.CINZA': 4,
+    'CINZA': 5,
+    'P.AZUL': 6,
+    'AZUL': 7,
+    'P.AMARELA': 8,
+    'AMARELA': 9,
+    'P.LARANJA': 10,
+    'LARANJA': 11,
+    'VERDE': 12,
+    'ROXA': 13,
+    'MARRON': 14,
+    'PRETA': 16,
+}
+
+FAIXA_GRUPO_TECNICO = {
+    'BRANCA': 'INICIANTE',
+    'P.CINZA': 'INICIANTE',
+    'CINZA': 'INICIANTE',
+    'P.AZUL': 'INICIANTE',
+    'AZUL': 'INTERMEDIARIO',
+    'P.AMARELA': 'INTERMEDIARIO',
+    'AMARELA': 'INTERMEDIARIO',
+    'P.LARANJA': 'INTERMEDIARIO',
+    'LARANJA': 'AVANCADO',
+    'VERDE': 'AVANCADO',
+    'ROXA': 'AVANCADO',
+    'MARRON': 'GRADUADO',
+    'PRETA': 'GRADUADO',
+}
+
+FAIXAS_PERMITIDAS_POR_CATEGORIA = {
+    'FESTIVAL': {'BRANCA', 'CINZA'},
+    'SUB 9': {'BRANCA', 'CINZA', 'P.AZUL', 'P.AMARELA'},
+    'SUB 11': {'BRANCA', 'CINZA', 'P.AZUL', 'P.LARANJA'},
+    'SUB 13': {'BRANCA', 'AZUL', 'P.AMARELA', 'P.LARANJA'},
+    'SUB 15': {'BRANCA', 'P.AMARELA', 'AMARELA', 'VERDE'},
+    'SUB 18': {'BRANCA', 'AMARELA', 'LARANJA', 'VERDE', 'MARRON', 'PRETA'},
+    'SENIOR': {'BRANCA', 'VERDE', 'ROXA', 'MARRON', 'PRETA'},
+    'VETERANOS': {'BRANCA', 'VERDE', 'ROXA', 'MARRON', 'PRETA'},
+}
+
+SUB15_E_ABAIXO = {'FESTIVAL', 'SUB 9', 'SUB 11', 'SUB 13', 'SUB 15'}
+
+GRUPO_FAIXA_FEMININO = {
+    'BRANCA',
+    'P.CINZA',
+    'CINZA',
+    'P.AZUL',
+    'AZUL',
+    'P.AMARELA',
+    'AMARELA',
+    'P.LARANJA',
+    'LARANJA',
+}
+
+GRUPO_FAIXA_FEMININO_2 = {'VERDE', 'ROXA', 'MARRON', 'PRETA'}
+
+GRUPO_FAIXA_MASCULINO = {
+    'BRANCA',
+    'P.CINZA',
+    'CINZA',
+    'P.AZUL',
+    'AZUL',
+    'P.AMARELA',
+    'AMARELA',
+    'P.LARANJA',
+    'LARANJA',
+    'VERDE',
+}
+
+GRUPO_FAIXA_MASCULINO_2 = {'ROXA', 'MARRON', 'PRETA'}
+
+CLASSES_COM_GRUPO = {'SUB-18', 'SUB-21', 'SÉNIOR', 'SÉNIOR/VET', 'SENIOR', 'VETERANOS'}
+
+
+def _normalize_value(value: str) -> str:
+    if not value:
+        return ''
+    normalized = value.strip().upper()
+    normalized = normalized.replace(' - F', '').replace(' - M', '')
+    normalized = normalized.replace('-', ' ')
+    normalized = ' '.join(normalized.split())
+    return normalized
+
+
+def _build_categoria_key(classe_name: str, sexo: str, categoria_name: str):
+    normalized_classe = normalizar_nome_classe(_normalize_value(classe_name))
+    normalized_categoria = normalizar_nome_classe(_normalize_value(categoria_name))
+    normalized_sexo = (sexo or '').upper()
+    if not normalized_classe or not normalized_categoria or not normalized_sexo:
+        return None
+    return (normalized_classe, normalized_sexo, normalized_categoria)
+
+
+def classe_exige_grupo(classe_nome: str) -> bool:
+    normalized = normalizar_nome_classe(_normalize_value(classe_nome))
+    return normalized in CLASSES_COM_GRUPO
+
+
+def calcular_grupo_faixa(faixa: str, sexo: str) -> Optional[str]:
+    if not faixa or not sexo:
+        return None
+    sexo_norm = sexo.upper()
+    faixa_norm = normalizar_nome_classe(_normalize_value(faixa))
+    if sexo_norm == 'F':
+        if faixa_norm in {normalizar_nome_classe(_normalize_value(f)) for f in GRUPO_FAIXA_FEMININO}:
+            return 'BRANCA_A_LARANJA'
+        if faixa_norm in {normalizar_nome_classe(_normalize_value(f)) for f in GRUPO_FAIXA_FEMININO_2}:
+            return 'VERDE_A_PRETA'
+    elif sexo_norm == 'M':
+        if faixa_norm in {normalizar_nome_classe(_normalize_value(f)) for f in GRUPO_FAIXA_MASCULINO}:
+            return 'BRANCA_A_VERDE'
+        if faixa_norm in {normalizar_nome_classe(_normalize_value(f)) for f in GRUPO_FAIXA_MASCULINO_2}:
+            return 'ROXA_A_PRETA'
+    raise ValueError(f"Faixa '{faixa}' não pertence a nenhum grupo válido para sexo '{sexo}'.")
+
+
+def calcular_idade_por_ano(ano_nasc, ano_base=None):
+    if not ano_nasc:
+        return None
+    ano_base = ano_base or date.today().year
+    return int(ano_base) - int(ano_nasc)
+
+
+def categoria_etaria_por_idade(idade):
+    if idade is None:
+        return None
+    if 4 <= idade <= 6:
+        return 'FESTIVAL'
+    if 7 <= idade <= 8:
+        return 'SUB 9'
+    if 9 <= idade <= 10:
+        return 'SUB 11'
+    if 11 <= idade <= 12:
+        return 'SUB 13'
+    if 13 <= idade <= 14:
+        return 'SUB 15'
+    if 15 <= idade <= 17:
+        return 'SUB 18'
+    if 18 <= idade <= 29:
+        return 'SENIOR'
+    if idade >= 30:
+        return 'VETERANOS'
+    return None
+
+
+def grupo_tecnico_por_faixa(faixa):
+    if not faixa:
+        return None
+    return FAIXA_GRUPO_TECNICO.get(faixa)
+
+
+def faixa_min_idade(faixa):
+    if not faixa:
+        return None
+    return FAIXA_MIN_IDADE.get(faixa)
+
+
+def faixa_valida_por_idade(idade, faixa):
+    min_idade = faixa_min_idade(faixa)
+    if min_idade is None or idade is None:
+        return False
+    return idade >= min_idade
+
+
+def faixa_valida_por_categoria(categoria_etaria, faixa):
+    if not categoria_etaria or not faixa:
+        return False
+    faixas = FAIXAS_PERMITIDAS_POR_CATEGORIA.get(categoria_etaria, set())
+    return faixa in faixas
+
+
+def validar_faixa_e_categoria_por_idade(atleta, ano_base=None):
+    ano_nasc = atleta.get_ano_nasc()
+    idade = calcular_idade_por_ano(ano_nasc, ano_base=ano_base)
+    categoria_etaria = categoria_etaria_por_idade(idade)
+    faixa = atleta.faixa
+
+    if not idade or not categoria_etaria or not faixa:
+        return False, 'Faixa ou idade nao informada', categoria_etaria, None
+
+    if not faixa_valida_por_idade(idade, faixa):
+        return False, 'Faixa nao permitida para a idade do atleta', categoria_etaria, None
+
+    if not faixa_valida_por_categoria(categoria_etaria, faixa):
+        return False, 'Faixa nao permitida para a categoria etaria', categoria_etaria, None
+
+    grupo = grupo_tecnico_por_faixa(faixa)
+    if not grupo:
+        return False, 'Grupo tecnico nao identificado para a faixa', categoria_etaria, None
+
+    return True, None, categoria_etaria, grupo
 
 
 def buscar_classe_no_banco(nome_classe):
@@ -423,9 +620,9 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
     from .models import Inscricao
     
     print(f"\n{'='*80}")
-    print(f"🔍 AUDITORIA: Iniciando geração de chave")
+    print(f" AUDITORIA: Iniciando geração de chave")
     print(f"{'='*80}")
-    print(f"📋 Parâmetros recebidos:")
+    print(f" Parâmetros recebidos:")
     print(f"   - Categoria: {categoria_nome}")
     print(f"   - Classe: {classe}")
     print(f"   - Sexo: {sexo}")
@@ -433,10 +630,10 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
     print(f"   - Campeonato: {campeonato}")
     
     if not campeonato:
-        print(f"❌ ERRO: Campeonato não fornecido")
+        print(f" ERRO: Campeonato não fornecido")
         raise ValueError("Campeonato é obrigatório para gerar chaves")
     
-    print(f"\n🔍 Buscando inscrições...")
+    print(f"\n Buscando inscrições...")
     from django.db.models import Q
 
     fields = {f.name for f in Inscricao._meta.get_fields()}
@@ -459,25 +656,25 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
             classe_escolhida__iexact='Festival'
         )
 
-    categoria_filter = Q()
-    if has_categoria_real:
-        categoria_filter |= Q(categoria_real__categoria_nome=categoria_nome)
-        categoria_filter |= Q(categoria_real__label=categoria_nome)
-    if 'categoria_escolhida' in fields:
-        categoria_filter |= Q(categoria_escolhida=categoria_nome)
-    if 'categoria_ajustada' in fields:
-        categoria_filter |= Q(categoria_ajustada=categoria_nome)
-    if categoria_filter:
-        base_qs = base_qs.filter(categoria_filter)
+        categoria_filter = Q()
+        if has_categoria_real:
+            categoria_filter |= Q(categoria_real__categoria_nome=categoria_nome)
+            categoria_filter |= Q(categoria_real__label=categoria_nome)
+        if 'categoria_escolhida' in fields:
+            categoria_filter |= Q(categoria_escolhida=categoria_nome)
+        if 'categoria_ajustada' in fields:
+            categoria_filter |= Q(categoria_ajustada=categoria_nome)
+        if categoria_filter:
+            base_qs = base_qs.filter(categoria_filter)
 
-    select_related = ['atleta', 'atleta__academia']
-    if has_classe_real:
-        select_related.append('classe_real')
-    if has_categoria_real:
-        select_related.append('categoria_real')
-    base_qs = base_qs.select_related(*select_related)
+        select_related = ['atleta', 'atleta__academia']
+        if has_classe_real:
+            select_related.append('classe_real')
+        if has_categoria_real:
+            select_related.append('categoria_real')
+        base_qs = base_qs.select_related(*select_related)
 
-    total_inscritos = base_qs.count()
+        total_inscritos = base_qs.count()
     bloqueados = base_qs.filter(bloqueado_chave=True).count()
     sem_categoria = (
         base_qs.filter(categoria_real__isnull=True).count()
@@ -505,7 +702,7 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
         inscricoes = inscricoes.filter(peso__gt=Decimal('0.0'))
     
     inscricoes_count = inscricoes.count()
-    print(f"   📊 Totais para {classe}/{sexo}/{categoria_nome}:")
+    print(f"    Totais para {classe}/{sexo}/{categoria_nome}:")
     print(f"      - Inscritos (classe/sexo): {total_inscritos}")
     print(f"      - Bloqueados: {bloqueados}")
     print(f"      - Sem categoria_real: {sem_categoria}")
@@ -513,7 +710,7 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
     print(f"      - Aptos (status_inscricao aprovado/remanejado, desbloqueados, peso_real>0, categoria_real ok): {inscricoes_count}")
     
     if inscricoes_count == 0:
-        print(f"   ⚠️  Nenhuma inscrição encontrada com os critérios:")
+        print(f"   ️  Nenhuma inscrição encontrada com os critérios:")
         print(f"      - Campeonato: {campeonato.id} ({campeonato.nome})")
         print(f"      - Classe: {classe}")
         print(f"      - Sexo: {sexo}")
@@ -524,10 +721,10 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
     # Extrair lista de atletas das inscrições
     atletas_list = [inscricao.atleta for inscricao in inscricoes]
     num_atletas = len(atletas_list)
-    print(f"   ✅ {num_atletas} atletas extraídos")
+    print(f"    {num_atletas} atletas extraídos")
     
     if num_atletas > 0:
-        print(f"   📝 Atletas:")
+        print(f"    Atletas:")
         for idx, atleta in enumerate(atletas_list, 1):
             print(f"      {idx}. {atleta.nome} (ID: {atleta.id}, Academia: {atleta.academia.nome})")
     else:
@@ -535,30 +732,48 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
             f"Nenhuma inscrição elegível para gerar chave "
             f"({classe} / {sexo} / {categoria_nome}) no campeonato {campeonato.id}."
         )
-        print(f"   ⚠️  {aviso}")
+        print(f"   ️  {aviso}")
         # Não gerar/atualizar chave vazia
         raise ValueError(aviso)
     
+    # Determinar grupo de faixas (quando aplicável)
+    grupo_faixas = None
+    if classe_exige_grupo(classe):
+        grupos_detectados = set()
+        for atleta in atletas_list:
+            grupo_atleta = calcular_grupo_faixa(atleta.faixa, atleta.sexo)
+            grupos_detectados.add(grupo_atleta)
+        if not grupos_detectados:
+            raise ValueError(f"Não foi possível determinar grupo de faixas para {classe}/{sexo}/{categoria_nome}.")
+        if len(grupos_detectados) > 1:
+            raise ValueError(f"Atletas pertencem a múltiplos grupos de faixas ({grupos_detectados}) para {classe}/{sexo}/{categoria_nome}.")
+        grupo_faixas = grupos_detectados.pop()
+
     # Criar ou atualizar chave vinculada ao campeonato
-    print(f"\n🔍 Criando/atualizando chave no banco...")
+    print(f"\n Criando/atualizando chave no banco...")
+    defaults = {'estrutura': {}, 'grupo_faixas': grupo_faixas}
     chave, created = Chave.objects.get_or_create(
         campeonato=campeonato,
         classe=classe,
         sexo=sexo,
         categoria=categoria_nome,
-        defaults={'estrutura': {}}
+        defaults=defaults
     )
     
-    print(f"   {'✅ Chave criada' if created else '🔄 Chave existente encontrada'} (ID: {chave.id})")
+    print(f"   {' Chave criada' if created else ' Chave existente encontrada'} (ID: {chave.id})")
     
     # Garantir que o campeonato está definido (caso a chave já existisse)
     if not chave.campeonato:
         chave.campeonato = campeonato
         chave.save()
-        print(f"   ✅ Campeonato vinculado à chave")
+        print(f"    Campeonato vinculado à chave")
     
+    if chave.grupo_faixas != grupo_faixas:
+        chave.grupo_faixas = grupo_faixas
+        chave.save(update_fields=['grupo_faixas'])
+
     # Limpar lutas antigas e atletas
-    print(f"\n🧹 Limpando dados antigos...")
+    print(f"\n Limpando dados antigos...")
     lutas_antigas_count = chave.lutas.count()
     atletas_antigos_count = chave.atletas.count()
     print(f"   - Lutas antigas: {lutas_antigas_count}")
@@ -566,42 +781,42 @@ def gerar_chave(categoria_nome, classe, sexo, modelo_chave=None, campeonato=None
     
     chave.lutas.all().delete()
     chave.atletas.clear()
-    print(f"   ✅ Dados antigos removidos")
+    print(f"    Dados antigos removidos")
     
     # Vincular novos atletas
     if atletas_list:
         chave.atletas.set(atletas_list)
-        print(f"   ✅ {len(atletas_list)} atletas vinculados à chave")
+        print(f"    {len(atletas_list)} atletas vinculados à chave")
     else:
-        print(f"   ⚠️  Nenhum atleta para vincular")
+        print(f"   ️  Nenhum atleta para vincular")
     
     # Se modelo escolhido manualmente, usar ele
     if modelo_chave and modelo_chave != 'automatico':
-        print(f"\n🎯 Gerando chave com modelo manual: {modelo_chave}")
+        print(f"\n Gerando chave com modelo manual: {modelo_chave}")
         estrutura = gerar_chave_escolhida(chave, atletas_list, modelo_chave)
     else:
         # Comportamento automático baseado no número de atletas
-        print(f"\n🎯 Gerando chave automática para {num_atletas} atleta(s)")
+        print(f"\n Gerando chave automática para {num_atletas} atleta(s)")
         estrutura = gerar_chave_automatica(chave, atletas_list)
     
-    print(f"   ✅ Estrutura gerada: tipo={estrutura.get('tipo')}, atletas={estrutura.get('atletas', 0)}")
+    print(f"    Estrutura gerada: tipo={estrutura.get('tipo')}, atletas={estrutura.get('atletas', 0)}")
     
     # Verificar se lutas foram criadas
     lutas_criadas_count = chave.lutas.count()
-    print(f"   ✅ Lutas criadas no banco: {lutas_criadas_count}")
+    print(f"    Lutas criadas no banco: {lutas_criadas_count}")
     
     if lutas_criadas_count == 0 and num_atletas > 0:
-        print(f"   ⚠️  ATENÇÃO: Nenhuma luta foi criada, mas há {num_atletas} atleta(s)!")
-        print(f"   ⚠️  Tipo de estrutura: {estrutura.get('tipo')}")
+        print(f"   ️  ATENÇÃO: Nenhuma luta foi criada, mas há {num_atletas} atleta(s)!")
+        print(f"   ️  Tipo de estrutura: {estrutura.get('tipo')}")
         if 'lutas' in estrutura:
-            print(f"   ⚠️  IDs de lutas na estrutura: {estrutura.get('lutas', [])}")
+            print(f"   ️  IDs de lutas na estrutura: {estrutura.get('lutas', [])}")
     
     chave.estrutura = estrutura
     chave.save()
-    print(f"   ✅ Chave salva no banco")
+    print(f"    Chave salva no banco")
     
     print(f"\n{'='*80}")
-    print(f"✅ Geração de chave concluída (ID: {chave.id})")
+    print(f" Geração de chave concluída (ID: {chave.id})")
     print(f"{'='*80}\n")
     
     return chave
@@ -689,10 +904,10 @@ def alternar_lado_kimono(round_num, luta_num):
 
 def gerar_melhor_de_3(chave, atletas_list):
     """Gera chave tipo Melhor de 3 com alternância de lados"""
-    print(f"   🔧 gerar_melhor_de_3: {len(atletas_list)} atleta(s)")
+    print(f"    gerar_melhor_de_3: {len(atletas_list)} atleta(s)")
     
     if len(atletas_list) < 2:
-        print(f"   ❌ ERRO: Melhor de 3 requer pelo menos 2 atletas")
+        print(f"    ERRO: Melhor de 3 requer pelo menos 2 atletas")
         return {"tipo": "vazia", "atletas": len(atletas_list)}
     
     estrutura = {
@@ -703,7 +918,7 @@ def gerar_melhor_de_3(chave, atletas_list):
     }
     
     # Criar 3 lutas com alternância de lados
-    print(f"   🔧 Criando 3 lutas entre {atletas_list[0].nome} e {atletas_list[1].nome}")
+    print(f"    Criando 3 lutas entre {atletas_list[0].nome} e {atletas_list[1].nome}")
     for i in range(3):
         try:
             # Alternar lados: 1ª luta = A branco, 2ª = A azul, 3ª = A branco
@@ -719,20 +934,20 @@ def gerar_melhor_de_3(chave, atletas_list):
                 lado_atleta_b=lado_b
             )
             estrutura["lutas"].append(luta.id)
-            print(f"      ✅ Luta {i+1} criada (ID: {luta.id}) - A: {lado_a}, B: {lado_b}")
+            print(f"       Luta {i+1} criada (ID: {luta.id}) - A: {lado_a}, B: {lado_b}")
         except Exception as e:
-            print(f"      ❌ ERRO ao criar luta {i+1}: {str(e)}")
+            print(f"       ERRO ao criar luta {i+1}: {str(e)}")
             import traceback
             traceback.print_exc()
     
-    print(f"   ✅ Melhor de 3 gerado: {len(estrutura['lutas'])} lutas criadas")
+    print(f"    Melhor de 3 gerado: {len(estrutura['lutas'])} lutas criadas")
     return estrutura
 
 
 def gerar_round_robin(chave, atletas_list):
     """Gera chave tipo Round Robin (todos contra todos - Rodízio)"""
     num_atletas = len(atletas_list)
-    print(f"   🔧 gerar_round_robin: {num_atletas} atleta(s)")
+    print(f"    gerar_round_robin: {num_atletas} atleta(s)")
     
     estrutura = {
         "tipo": "round_robin",
@@ -744,7 +959,7 @@ def gerar_round_robin(chave, atletas_list):
     # Gerar todas as combinações possíveis (todos contra todos)
     lutas_ids = []
     total_combinacoes = (num_atletas * (num_atletas - 1)) // 2
-    print(f"   🔧 Criando {total_combinacoes} combinações de lutas")
+    print(f"    Criando {total_combinacoes} combinações de lutas")
     
     luta_num = 0
     for i in range(num_atletas):
@@ -763,17 +978,17 @@ def gerar_round_robin(chave, atletas_list):
                     lado_atleta_b=lado_b
                 )
                 lutas_ids.append(luta.id)
-                print(f"      ✅ Luta criada: {atletas_list[i].nome} vs {atletas_list[j].nome} (ID: {luta.id}) - A: {lado_a}, B: {lado_b}")
+                print(f"       Luta criada: {atletas_list[i].nome} vs {atletas_list[j].nome} (ID: {luta.id}) - A: {lado_a}, B: {lado_b}")
                 luta_num += 1
             except Exception as e:
-                print(f"      ❌ ERRO ao criar luta {atletas_list[i].nome} vs {atletas_list[j].nome}: {str(e)}")
+                print(f"       ERRO ao criar luta {atletas_list[i].nome} vs {atletas_list[j].nome}: {str(e)}")
                 import traceback
                 traceback.print_exc()
     
     estrutura["lutas"] = lutas_ids
     estrutura["rounds"][1] = lutas_ids
     
-    print(f"   ✅ Round Robin gerado: {len(lutas_ids)} lutas criadas")
+    print(f"    Round Robin gerado: {len(lutas_ids)} lutas criadas")
     return estrutura
 
 
@@ -794,15 +1009,15 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
     Atletas da mesma academia não se enfrentam na primeira rodada.
     """
     num_atletas = len(atletas_list)
-    print(f"   🔧 gerar_eliminatoria_repescagem: {num_atletas} atleta(s), tamanho_chave={tamanho_chave}")
+    print(f"    gerar_eliminatoria_repescagem: {num_atletas} atleta(s), tamanho_chave={tamanho_chave}")
     
     # Organizar atletas para evitar mesma academia na 1ª rodada
     atletas_organizados = agrupar_atletas_por_academia(atletas_list)
-    print(f"   🔧 Atletas organizados: {len(atletas_organizados)}")
+    print(f"    Atletas organizados: {len(atletas_organizados)}")
     
     # Preencher com BYEs se necessário
     atletas_com_bye = atletas_organizados + [None] * (tamanho_chave - num_atletas)
-    print(f"   🔧 Atletas com BYEs: {len(atletas_com_bye)} (BYEs: {tamanho_chave - num_atletas})")
+    print(f"    Atletas com BYEs: {len(atletas_com_bye)} (BYEs: {tamanho_chave - num_atletas})")
     
     estrutura = {
         "tipo": "eliminatoria_repescagem",
@@ -819,7 +1034,7 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
     round_num = 1
     lutas_round1 = []
     num_lutas_round1 = tamanho_chave // 2
-    print(f"   🔧 Criando {num_lutas_round1} lutas do Round {round_num} (inicial)")
+    print(f"    Criando {num_lutas_round1} lutas do Round {round_num} (inicial)")
     
     for i in range(0, tamanho_chave, 2):
         atleta_a = atletas_com_bye[i] if i < len(atletas_organizados) else None
@@ -843,14 +1058,14 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
             lutas_round1.append(luta.id)
             nome_a = atleta_a.nome if atleta_a else "BYE"
             nome_b = atleta_b.nome if atleta_b else "BYE"
-            print(f"      ✅ Luta Round {round_num} criada: {nome_a} vs {nome_b} (ID: {luta.id}) - A: {lado_a}, B: {lado_b}")
+            print(f"       Luta Round {round_num} criada: {nome_a} vs {nome_b} (ID: {luta.id}) - A: {lado_a}, B: {lado_b}")
         except Exception as e:
-            print(f"      ❌ ERRO ao criar luta Round {round_num}: {str(e)}")
+            print(f"       ERRO ao criar luta Round {round_num}: {str(e)}")
             import traceback
             traceback.print_exc()
     
     estrutura["rounds"][round_num] = lutas_round1
-    print(f"   ✅ Round {round_num} criado: {len(lutas_round1)} lutas")
+    print(f"    Round {round_num} criado: {len(lutas_round1)} lutas")
     
     # ========== CHAVE PRINCIPAL: VENCEDORES SEGUEM ==========
     lutas_anteriores = lutas_round1
@@ -859,7 +1074,7 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
     while len(lutas_anteriores) > 1:
         num_lutas = len(lutas_anteriores) // 2
         lutas_novo_round = []
-        print(f"   🔧 Criando Round {round_num_principal} (Principal): {num_lutas} lutas")
+        print(f"    Criando Round {round_num_principal} (Principal): {num_lutas} lutas")
         
         for i in range(num_lutas):
             try:
@@ -871,9 +1086,9 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
                     proxima_luta=None
                 )
                 lutas_novo_round.append(luta.id)
-                print(f"      ✅ Luta Round {round_num_principal} criada (ID: {luta.id})")
+                print(f"       Luta Round {round_num_principal} criada (ID: {luta.id})")
             except Exception as e:
-                print(f"      ❌ ERRO ao criar luta Round {round_num_principal}: {str(e)}")
+                print(f"       ERRO ao criar luta Round {round_num_principal}: {str(e)}")
                 import traceback
                 traceback.print_exc()
         
@@ -886,10 +1101,10 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
                     luta_ant.proxima_luta = lutas_novo_round[proxima_luta_idx]
                     luta_ant.save()
             except Luta.DoesNotExist:
-                print(f"      ⚠️  Luta anterior {luta_ant_id} não encontrada para vincular")
+                print(f"      ️  Luta anterior {luta_ant_id} não encontrada para vincular")
         
         estrutura["rounds"][round_num_principal] = lutas_novo_round
-        print(f"   ✅ Round {round_num_principal} (Principal) criado: {len(lutas_novo_round)} lutas")
+        print(f"    Round {round_num_principal} (Principal) criado: {len(lutas_novo_round)} lutas")
         lutas_anteriores = lutas_novo_round
         round_num_principal += 1
     
@@ -909,7 +1124,7 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
     num_lutas_repescagem = num_lutas_round1 // 2  # Metade dos perdedores vão para próxima rodada
     
     if num_lutas_repescagem > 0:
-        print(f"   🔧 Criando estrutura de repescagem (Round {repescagem_round})")
+        print(f"    Criando estrutura de repescagem (Round {repescagem_round})")
         lutas_repescagem_round1 = []
         
         for i in range(num_lutas_repescagem):
@@ -922,9 +1137,9 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
                     proxima_luta=None
                 )
                 lutas_repescagem_round1.append(luta.id)
-                print(f"      ✅ Luta Repescagem Round {repescagem_round} criada (ID: {luta.id})")
+                print(f"       Luta Repescagem Round {repescagem_round} criada (ID: {luta.id})")
             except Exception as e:
-                print(f"      ❌ ERRO ao criar luta de repescagem: {str(e)}")
+                print(f"       ERRO ao criar luta de repescagem: {str(e)}")
                 import traceback
                 traceback.print_exc()
         
@@ -949,7 +1164,7 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
                     )
                     lutas_rep_novo_round.append(luta.id)
                 except Exception as e:
-                    print(f"      ❌ ERRO ao criar luta de repescagem Round {repescagem_round}: {str(e)}")
+                    print(f"       ERRO ao criar luta de repescagem Round {repescagem_round}: {str(e)}")
             
             # Vincular lutas da repescagem
             for idx, luta_ant_id in enumerate(lutas_rep_anteriores):
@@ -968,7 +1183,7 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
     
     # ========== LUTA DE 3º LUGAR ==========
     # Vencedor da repescagem vs Perdedor da semifinal da chave principal
-    print(f"   🔧 Criando luta de 3º lugar (Round 999)")
+    print(f"    Criando luta de 3º lugar (Round 999)")
     try:
         luta_3_lugar = Luta.objects.create(
             chave=chave,
@@ -979,15 +1194,15 @@ def gerar_eliminatoria_repescagem(chave, atletas_list, tamanho_chave=8):
         )
         estrutura["repescagem"]["luta_3_lugar"] = luta_3_lugar.id
         estrutura["rounds"][999] = [luta_3_lugar.id]  # Incluir no rounds para facilitar busca
-        print(f"      ✅ Luta de 3º lugar criada (ID: {luta_3_lugar.id})")
+        print(f"       Luta de 3º lugar criada (ID: {luta_3_lugar.id})")
     except Exception as e:
-        print(f"      ❌ ERRO ao criar luta de 3º lugar: {str(e)}")
+        print(f"       ERRO ao criar luta de 3º lugar: {str(e)}")
         import traceback
         traceback.print_exc()
     
     total_lutas = sum(len(lutas) for lutas in estrutura["rounds"].values())
     total_lutas_rep = sum(len(lutas) for lutas in estrutura["repescagem"]["rounds"].values())
-    print(f"   ✅ Eliminatória com repescagem gerada:")
+    print(f"    Eliminatória com repescagem gerada:")
     print(f"      - Chave Principal: {total_lutas - 1} lutas (sem contar 3º lugar)")
     print(f"      - Chave Repescagem: {total_lutas_rep} lutas")
     print(f"      - Luta 3º lugar: 1 luta")

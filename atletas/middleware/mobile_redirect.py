@@ -2,7 +2,7 @@
 import re
 from django.http import HttpResponseRedirect, HttpResponseNotFound
 
-from .models import Organizador
+from atletas.models import Organizador
 
 
 class MobileRedirectMiddleware:
@@ -125,6 +125,8 @@ class OrganizacaoMiddleware:
         '/admin/',
         '/static/',
         '/media/',
+        '/matches',
+        '/matches/',
         '/login/',
         '/logout/',
         '/selecionar-organizacao/',

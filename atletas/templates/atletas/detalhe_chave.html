@@ -207,6 +207,12 @@
                 {{ chave.campeonato.nome }} - 
             {% endif %}
             {{ chave.classe }} - {{ chave.get_sexo_display }} - {{ chave.categoria }}
+            {% if chave.grupo_faixas %}
+                <br>
+                <small style="font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                    Faixas: {{ chave.get_grupo_faixas_display }}
+                </small>
+            {% endif %}
             {% if chave.campeonato and chave.campeonato.data_competicao %}
                 <br>Data: {{ chave.campeonato.data_competicao|date:"d/m/Y" }}
             {% endif %}

@@ -3,6 +3,8 @@ from atletas.views_ajuda import ajuda_manual, ajuda_manual_web, ajuda_documentac
 
 # Importar todas as views principais de um arquivo separado
 
+from collections import Counter
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib import messages
@@ -643,11 +645,18 @@ def index(request, organizacao_slug=None):
         categorias_sem_chave_seen = set()
         atletas_sem_chave_alerta = []
         atletas_sem_chave_alerta_seen = set()
-        categorias_com_inscricao = (
+        categorias_com_inscricao = list(
             inscricoes_query
             .select_related('classe_real', 'categoria_real', 'atleta')
             .filter(classe_real__isnull=False, categoria_real__isnull=False)
             .distinct()
+        )
+        categoria_counts = Counter(
+            (
+                inscricao.classe_real.nome,
+                inscricao.atleta.sexo,
+                inscricao.categoria_real.categoria_nome
+            ) for inscricao in categorias_com_inscricao
         )
         for inscricao in categorias_com_inscricao:
             classe_name = inscricao.classe_real.nome
@@ -659,6 +668,7 @@ def index(request, organizacao_slug=None):
                     grupo = calcular_grupo_faixa(inscricao.atleta.faixa, sexo_value)
                 except ValueError:
                     grupo = None
+            clave = (classe_name, sexo_value, categoria_name)
             key = _build_categoria_key(classe_name, sexo_value, categoria_name, grupo)
             if not key:
                 continue
@@ -666,7 +676,8 @@ def index(request, organizacao_slug=None):
             if key in chave_keys or key in categorias_sem_chave_seen:
                 continue
             categorias_sem_chave_seen.add(key)
-            if len(atletas_sem_chave_alerta) < 5 and key not in atletas_sem_chave_alerta_seen:
+            single_entry = categoria_counts[clave] == 1
+            if not single_entry and len(atletas_sem_chave_alerta) < 5 and key not in atletas_sem_chave_alerta_seen:
                 atletas_sem_chave_alerta_seen.add(key)
                 atletas_sem_chave_alerta.append({
                     'atleta': inscricao.atleta,
